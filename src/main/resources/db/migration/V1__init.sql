@@ -1,18 +1,16 @@
--- Satellite catalog with current TLE data (simplified - no history)
-
 CREATE TABLE satellite
 (
     norad_cat_id       INTEGER PRIMARY KEY,
     object_name        VARCHAR(25),
-    object_type        VARCHAR(20),      -- PAYLOAD, ROCKET BODY, DEBRIS, UNKNOWN
-    country_code       VARCHAR(10),
+    object_type        VARCHAR(12),      -- PAYLOAD, ROCKET BODY, DEBRIS, UNKNOWN
+    country_code       VARCHAR(6),
     launch_date        DATE,
     decay_date         DATE,
 
     -- Current TLE data
     epoch              TIMESTAMP WITH TIME ZONE,
-    tle_line1          VARCHAR(70),
-    tle_line2          VARCHAR(70),
+    tle_line1          VARCHAR(71),
+    tle_line2          VARCHAR(71),
 
     -- Orbital elements
     mean_motion        DOUBLE PRECISION, -- revs/day
@@ -23,26 +21,23 @@ CREATE TABLE satellite
     mean_anomaly       DOUBLE PRECISION, -- degrees
     bstar              DOUBLE PRECISION, -- drag term
 
-    -- Derived values for fast filtering
+    -- Derived values
     semi_major_axis_km DOUBLE PRECISION,
     perigee_km         DOUBLE PRECISION,
     apogee_km          DOUBLE PRECISION,
-    orbital_period_min DOUBLE PRECISION,
-
-    updated_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    orbital_period_min DOUBLE PRECISION
 );
 
--- Index for orbital shell filtering
 CREATE INDEX idx_satellite_orbital_shell ON satellite (perigee_km, apogee_km);
 CREATE INDEX idx_satellite_inclination ON satellite (inclination);
 
--- Conjunction candidates table (for caching screening results)
+-- Conjunction candidates table
 CREATE TABLE conjunction_candidate
 (
     id                     BIGSERIAL PRIMARY KEY,
     object1_norad_id       INTEGER                  NOT NULL REFERENCES satellite (norad_cat_id),
     object2_norad_id       INTEGER                  NOT NULL REFERENCES satellite (norad_cat_id),
-    tca                    TIMESTAMP WITH TIME ZONE NOT NULL, -- time of closest approach
+    tca                    TIMESTAMP WITH TIME ZONE NOT NULL,
     miss_distance_km       DOUBLE PRECISION         NOT NULL,
     relative_velocity_km_s DOUBLE PRECISION,
     collision_probability  DOUBLE PRECISION,
@@ -63,6 +58,5 @@ CREATE TABLE ingestion_log
     objects_processed INTEGER                  DEFAULT 0,
     objects_inserted  INTEGER                  DEFAULT 0,
     objects_updated   INTEGER                  DEFAULT 0,
-    status            VARCHAR(20)              DEFAULT 'RUNNING', -- RUNNING, COMPLETED, FAILED
-    error_message     TEXT
+    successful        BOOLEAN                  DEFAULT FALSE
 );

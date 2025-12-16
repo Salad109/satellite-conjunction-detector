@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 @Setter
 @Getter
@@ -81,25 +82,17 @@ public class Satellite {
     @Column(name = "orbital_period_min")
     private Double orbitalPeriodMin;
 
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
-
     public Satellite() {
     }
 
     public Satellite(Integer noradCatId) {
         this.noradCatId = noradCatId;
-        this.updatedAt = OffsetDateTime.now();
     }
 
     @PrePersist
-    protected void onCreate() {
-        this.updatedAt = OffsetDateTime.now();
-    }
-
     @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = OffsetDateTime.now();
+    protected void recalculate() {
+        computeDerivedParameters();
     }
 
     /**
@@ -123,5 +116,17 @@ public class Satellite {
 
         // Orbital period in minutes
         this.orbitalPeriodMin = 1440.0 / meanMotion;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Satellite satellite)) return false;
+        return Objects.equals(noradCatId, satellite.noradCatId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(noradCatId);
     }
 }
