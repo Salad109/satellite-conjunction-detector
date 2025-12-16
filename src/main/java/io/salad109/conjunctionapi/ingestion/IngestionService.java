@@ -58,7 +58,7 @@ public class IngestionService {
      * Incremental sync - fetch only TLEs updated since last sync.
      * Scheduled to run every 6 hours by default.
      */
-    @Scheduled(cron = "${ingestion.schedule.cron:0 0 */6 * * *}")
+    @Scheduled(cron = "${ingestion.schedule.cron:0 21 */6 * * *}")
     @Transactional
     public IngestionResult incrementalSync() throws IOException {
         OffsetDateTime since = lastSync != null ? lastSync : OffsetDateTime.now().minusDays(1);

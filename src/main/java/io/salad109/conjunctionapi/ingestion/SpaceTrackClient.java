@@ -1,23 +1,12 @@
 package io.salad109.conjunctionapi.ingestion;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.cookie.BasicCookieStore;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -28,134 +17,95 @@ import java.util.List;
 @Service
 public class SpaceTrackClient {
 
-    private static final String SPACE_TRACK_BASE_URL = "https://www.space-track.org";
+    private static final String SPACE_TRACK_LOGIN_URL = "/ajaxauth/login";
+    // DECAY_DATE/null-val filters for active (non-decayed) satellites only
+    private static final String SPACE_TRACK_QUERY_URL = "/basicspacedata/query/class/gp/DECAY_DATE/null-val/orderby/NORAD_CAT_ID/format/json";
+    private static final String SPACE_TRACK_INCREMENTAL_QUERY_URL = "/basicspacedata/query/class/gp/DECAY_DATE/null-val/EPOCH/>%s/orderby/NORAD_CAT_ID/format/json";
     private static final Logger log = LoggerFactory.getLogger(SpaceTrackClient.class);
-    private final BasicCookieStore cookieStore = new BasicCookieStore();
-    private final ObjectMapper objectMapper;
-    private CloseableHttpClient httpClient;
-    private Instant lastLogin;
+    private final RestClient restClient;
     @Value("${spacetrack.username}")
     private String username;
     @Value("${spacetrack.password}")
     private String password;
 
-    public SpaceTrackClient() {
-        this.objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-
-    @PostConstruct
-    public void init() {
-        this.httpClient = HttpClients.custom()
-                .setDefaultCookieStore(cookieStore)
-                .build();
-    }
-
-    @PreDestroy
-    public void cleanup() throws IOException {
-        if (httpClient != null) {
-            httpClient.close();
-        }
+    public SpaceTrackClient(RestClient restClient) {
+        this.restClient = restClient;
     }
 
     /**
      * Authenticate with Space-Track. Session cookies are stored automatically.
      */
-    public void login() throws IOException {
+    private void login() throws IOException {
+        log.info("Authenticating with Space-Track...");
         if (username == null || username.isBlank()) {
             throw new IllegalStateException("SPACETRACK_USERNAME not configured");
         }
+        if (password == null || password.isBlank()) {
+            throw new IllegalStateException("SPACETRACK_PASSWORD not configured");
+        }
 
-        String loginUrl = SPACE_TRACK_BASE_URL + "/ajaxauth/login";
-        HttpPost post = new HttpPost(loginUrl);
+        var loginResponse = restClient.post()
+                .uri(SPACE_TRACK_LOGIN_URL)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body("identity=" + URLEncoder.encode(username, StandardCharsets.UTF_8) +
+                        "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8))
+                .retrieve()
+                .toBodilessEntity();
 
-        String body = "identity=" + URLEncoder.encode(username, StandardCharsets.UTF_8) +
-                "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8);
-        post.setEntity(new StringEntity(body, ContentType.APPLICATION_FORM_URLENCODED));
+        if (!loginResponse.getStatusCode().is2xxSuccessful()) {
+            throw new IOException("Login failed with status: " + loginResponse.getStatusCode());
+        }
 
-        httpClient.execute(post, response -> {
-            int status = response.getCode();
-            if (status != 200) {
-                throw new IOException("Login failed with status: " + status);
-            }
-            log.info("Successfully authenticated with Space-Track");
-            lastLogin = Instant.now();
-            return null;
-        });
+        log.info("Successfully authenticated with Space-Track");
     }
 
     /**
      * Fetch the entire GP catalog (current TLEs for all objects).
-     * Returns OMM (Orbit Mean-Elements Message) format as JSON.
      */
     public List<OmmRecord> fetchFullCatalog() throws IOException {
-        ensureLoggedIn();
-
-        // GP class gives us the latest TLE for each object
-        // DECAY_DATE/null-val filters for active (non-decayed) satellites only
-        String query = SPACE_TRACK_BASE_URL + "/basicspacedata/query/class/gp/DECAY_DATE/null-val/orderby/NORAD_CAT_ID/format/json";
+        login();
 
         log.info("Fetching full GP catalog from Space-Track...");
-        HttpGet get = new HttpGet(query);
 
-        return httpClient.execute(get, response -> {
-            int status = response.getCode();
-            if (status == 401) {
-                // Session expired, re-login and retry
-                login();
-                return fetchFullCatalog();
-            }
-            if (status != 200) {
-                throw new IOException("Catalog fetch failed with status: " + status);
-            }
+        var response = restClient.get()
+                .uri(SPACE_TRACK_QUERY_URL)
+                .retrieve()
+                .toEntity(new ParameterizedTypeReference<List<OmmRecord>>() {
+                });
 
-            String json = EntityUtils.toString(response.getEntity());
-            List<OmmRecord> records = objectMapper.readValue(json, new TypeReference<>() {
-            });
-            log.info("Fetched {} objects from Space-Track", records.size());
-            return records;
-        });
+        if (response.getStatusCode().isError()) {
+            throw new IOException("Catalog fetch failed with status: " + response.getStatusCode());
+        }
+        if (response.getBody() == null) {
+            throw new IOException("Catalog fetch returned no data");
+        }
+        log.info("Fetched {} objects from Space-Track", response.getBody().size());
+        return response.getBody();
     }
 
     /**
      * Fetch TLEs updated since a given epoch.
-     * Useful for incremental sync.
      */
     public List<OmmRecord> fetchUpdatedSince(Instant since) throws IOException {
-        ensureLoggedIn();
+        login();
 
-        String epochFilter = since.toString().replace(":", "%3A");
-        String query = SPACE_TRACK_BASE_URL + "/basicspacedata/query/class/gp" +
-                "/DECAY_DATE/null-val" +
-                "/EPOCH/%3E" + epochFilter +
-                "/orderby/NORAD_CAT_ID/format/json";
+        String encodedEpoch = URLEncoder.encode(since.toString(), StandardCharsets.UTF_8);
+        String query = String.format(SPACE_TRACK_INCREMENTAL_QUERY_URL, encodedEpoch);
 
         log.info("Fetching TLEs updated since {}", since);
-        HttpGet get = new HttpGet(query);
 
-        return httpClient.execute(get, response -> {
-            int status = response.getCode();
-            if (status == 401) {
-                login();
-                return fetchUpdatedSince(since);
-            }
-            if (status != 200) {
-                throw new IOException("Incremental fetch failed with status: " + status);
-            }
-
-            String json = EntityUtils.toString(response.getEntity());
-            List<OmmRecord> records = objectMapper.readValue(json, new TypeReference<>() {
-            });
-            log.info("Fetched {} updated objects", records.size());
-            return records;
-        });
-    }
-
-    private void ensureLoggedIn() throws IOException {
-        // Re-login if never logged in or session older than 1 hour
-        if (lastLogin == null || lastLogin.plusSeconds(3600).isBefore(Instant.now())) {
-            login();
+        var response = restClient.get()
+                .uri(query)
+                .retrieve()
+                .toEntity(new ParameterizedTypeReference<List<OmmRecord>>() {
+                });
+        if (response.getStatusCode().isError()) {
+            throw new IOException("Incremental fetch failed with status: " + response.getStatusCode());
         }
+        if (response.getBody() == null) {
+            throw new IOException("Incremental fetch returned no data");
+        }
+        log.info("Fetched {} updated objects", response.getBody().size());
+        return response.getBody();
     }
 }
