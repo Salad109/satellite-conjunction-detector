@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: conjunction-db
+    environment:
+      POSTGRES_DB: conjunction
+      POSTGRES_USER: conjunction
+      POSTGRES_PASSWORD: conjunction_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - conjunction_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U conjunction -d conjunction" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: conjunction-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/conjunction
+      SPRING_DATASOURCE_USERNAME: conjunction
+      SPRING_DATASOURCE_PASSWORD: conjunction_dev_password
+      SPACETRACK_USERNAME: ${SPACETRACK_USERNAME}
+      SPACETRACK_PASSWORD: ${SPACETRACK_PASSWORD}
+    ports:
+      - "8080:8080"
+    volumes:
+      - tle_cache:/app/cache
+
+volumes:
+  conjunction_data:
+    name: conjunction_postgres_data
+  tle_cache:
+    name: conjunction_tle_cache
