@@ -46,28 +46,6 @@ public class CatalogController {
     }
 
     /**
-     * Trigger an incremental sync (satellites updated since last sync).
-     */
-    @PostMapping("/catalog/sync/incremental")
-    public ResponseEntity<?> incrementalSync() {
-        try {
-            var result = ingestionService.incrementalSync();
-            return ResponseEntity.ok(Map.of(
-                    "status", "completed",
-                    "processed", result.processed(),
-                    "created", result.created(),
-                    "updated", result.updated(),
-                    "skipped", result.skipped()
-            ));
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                    "status", "error",
-                    "message", e.getMessage()
-            ));
-        }
-    }
-
-    /**
      * Get catalog statistics.
      */
     @GetMapping("/catalog/stats")

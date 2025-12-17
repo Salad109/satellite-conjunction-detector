@@ -11,7 +11,6 @@ import org.springframework.web.client.RestClient;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -20,7 +19,6 @@ public class SpaceTrackClient {
     private static final String SPACE_TRACK_LOGIN_URL = "/ajaxauth/login";
     // DECAY_DATE/null-val filters for active (non-decayed) satellites only
     private static final String SPACE_TRACK_QUERY_URL = "/basicspacedata/query/class/gp/DECAY_DATE/null-val/orderby/NORAD_CAT_ID/format/json";
-    private static final String SPACE_TRACK_INCREMENTAL_QUERY_URL = "/basicspacedata/query/class/gp/DECAY_DATE/null-val/EPOCH/>%s/orderby/NORAD_CAT_ID/format/json";
     private static final Logger log = LoggerFactory.getLogger(SpaceTrackClient.class);
     private final RestClient restClient;
     @Value("${spacetrack.username}")
@@ -36,7 +34,7 @@ public class SpaceTrackClient {
      * Authenticate with Space-Track. Session cookies are stored automatically.
      */
     private void login() throws IOException {
-        log.info("Authenticating with Space-Track...");
+        log.debug("Authenticating with Space-Track...");
         if (username == null || username.isBlank()) {
             throw new IllegalStateException("SPACETRACK_USERNAME not configured");
         }
@@ -56,7 +54,7 @@ public class SpaceTrackClient {
             throw new IOException("Login failed with status: " + loginResponse.getStatusCode());
         }
 
-        log.info("Successfully authenticated with Space-Track");
+        log.debug("Successfully authenticated with Space-Track");
     }
 
     /**
@@ -65,7 +63,7 @@ public class SpaceTrackClient {
     public List<OmmRecord> fetchFullCatalog() throws IOException {
         login();
 
-        log.info("Fetching full GP catalog from Space-Track...");
+        log.debug("Fetching full GP catalog from Space-Track...");
 
         var response = restClient.get()
                 .uri(SPACE_TRACK_QUERY_URL)
@@ -79,33 +77,7 @@ public class SpaceTrackClient {
         if (response.getBody() == null) {
             throw new IOException("Catalog fetch returned no data");
         }
-        log.info("Fetched {} objects from Space-Track", response.getBody().size());
-        return response.getBody();
-    }
-
-    /**
-     * Fetch TLEs updated since a given epoch.
-     */
-    public List<OmmRecord> fetchUpdatedSince(Instant since) throws IOException {
-        login();
-
-        String encodedEpoch = URLEncoder.encode(since.toString(), StandardCharsets.UTF_8);
-        String query = String.format(SPACE_TRACK_INCREMENTAL_QUERY_URL, encodedEpoch);
-
-        log.info("Fetching TLEs updated since {}", since);
-
-        var response = restClient.get()
-                .uri(query)
-                .retrieve()
-                .toEntity(new ParameterizedTypeReference<List<OmmRecord>>() {
-                });
-        if (response.getStatusCode().isError()) {
-            throw new IOException("Incremental fetch failed with status: " + response.getStatusCode());
-        }
-        if (response.getBody() == null) {
-            throw new IOException("Incremental fetch returned no data");
-        }
-        log.info("Fetched {} updated objects", response.getBody().size());
+        log.debug("Fetched {} objects from Space-Track", response.getBody().size());
         return response.getBody();
     }
 }

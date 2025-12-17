@@ -40,6 +40,7 @@ public class IngestionService {
     /**
      * Perform a full catalog sync from Space-Track.
      */
+    @Scheduled(cron = "${ingestion.schedule.cron:0 21 */6 * * *}")
     @Transactional
     public IngestionResult fullSync() throws IOException {
         log.info("Starting full catalog sync...");
@@ -67,46 +68,10 @@ public class IngestionService {
     }
 
     /**
-     * Incremental sync - fetch only TLEs updated since last sync.
-     */
-    @Scheduled(cron = "${ingestion.schedule.cron:0 21 */6 * * *}")
-    @Transactional
-    public IngestionResult incrementalSync() throws IOException {
-        var logOptional = ingestionLogRepository.findTopBySuccessfulOrderByCompletedAtDesc(true);
-        if (logOptional.isEmpty()) {
-            log.info("No previous sync log found, performing full sync instead");
-            return fullSync();
-        }
-        OffsetDateTime since = logOptional.get().getStartedAt();
-
-        log.info("Starting incremental sync since {}...", since);
-        long startTime = System.currentTimeMillis();
-        OffsetDateTime startedAt = OffsetDateTime.now();
-
-        List<OmmRecord> records = spaceTrackClient.fetchUpdatedSince(since.toInstant());
-        IngestionResult result = processRecords(records);
-
-        ingestionLogRepository.save(new IngestionLog(
-                null,
-                startedAt,
-                OffsetDateTime.now(),
-                result.processed,
-                result.created,
-                result.updated,
-                result.skipped,
-                true));
-
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("Incremental sync completed in {}ms: {}", duration, result);
-
-        return result;
-    }
-
-    /**
      * Process OMM records - upsert satellites with their current TLE data.
      */
     private IngestionResult processRecords(List<OmmRecord> records) {
-        log.info("Processing {} records...", records.size());
+        log.debug("Processing {} records...", records.size());
         int processed = 0;
         int created = 0;
         int updated = 0;
@@ -159,9 +124,11 @@ public class IngestionService {
         // Save remaining
         if (!toSave.isEmpty()) {
             satelliteRepository.saveAll(toSave);
-            log.info("Saved {} satellites", toSave.size());
+            log.debug("Saving batch of {} satellites", toSave.size());
         }
 
+        log.debug("Processing complete: {} processed, {} created, {} updated, {} skipped",
+                processed, created, updated, skipped);
         return new IngestionResult(processed, created, updated, skipped);
     }
 
