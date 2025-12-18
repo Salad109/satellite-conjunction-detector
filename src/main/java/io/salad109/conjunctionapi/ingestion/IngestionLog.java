@@ -40,5 +40,9 @@ public class IngestionLog {
     @Column(name = "objects_deleted")
     private int objectsDeleted;
 
+    @Column(name = "successful")
     private boolean successful;
+
+    @Column(name = "error_message")
+    String errorMessage;
 }

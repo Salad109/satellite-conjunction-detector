@@ -60,5 +60,6 @@ CREATE TABLE ingestion_log
     objects_updated   INTEGER                  DEFAULT 0,
     objects_skipped   INTEGER                  DEFAULT 0,
     objects_deleted   INTEGER                  DEFAULT 0,
-    successful        BOOLEAN                  DEFAULT FALSE
+    successful        BOOLEAN                  DEFAULT FALSE,
+    error_message     TEXT                     DEFAULT NULL
 );

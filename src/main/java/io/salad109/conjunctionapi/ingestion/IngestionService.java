@@ -24,17 +24,17 @@ public class IngestionService {
 
     private final SpaceTrackClient spaceTrackClient;
     private final SatelliteRepository satelliteRepository;
-    private final IngestionLogRepository ingestionLogRepository;
+    private final IngestionLogService ingestionLogService;
 
     @Value("${ingestion.batch-size:1000}")
     private int batchSize;
 
     public IngestionService(SpaceTrackClient spaceTrackClient,
                             SatelliteRepository satelliteRepository,
-                            IngestionLogRepository ingestionLogRepository) {
+                            IngestionLogService ingestionLogService) {
         this.spaceTrackClient = spaceTrackClient;
         this.satelliteRepository = satelliteRepository;
-        this.ingestionLogRepository = ingestionLogRepository;
+        this.ingestionLogService = ingestionLogService;
     }
 
     /**
@@ -47,26 +47,19 @@ public class IngestionService {
         long startTime = System.currentTimeMillis();
         OffsetDateTime startedAt = OffsetDateTime.now();
 
-        List<OmmRecord> records = spaceTrackClient.fetchCatalog();
-        IngestionResult result = processRecords(records);
+        try {
+            List<OmmRecord> records = spaceTrackClient.fetchCatalog();
+            IngestionResult result = processRecords(records);
+            ingestionLogService.saveIngestionLog(startedAt, result, true, null);
 
-        ingestionLogRepository.save(new IngestionLog(
-                null,
-                startedAt,
-                OffsetDateTime.now(),
-                result.processed,
-                result.created,
-                result.updated,
-                result.skipped,
-                result.deleted,
-                true
-        )); // todo handle unsuccessful checks
+            log.info("Sync completed in {}ms. {} processed, {} created, {} updated, {} skipped, {} deleted",
+                    System.currentTimeMillis() - startTime, result.processed(), result.created(), result.updated(), result.skipped(), result.deleted());
 
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("Sync completed in {}ms. {} processed, {} created, {} updated, {} skipped, {} deleted",
-                duration, result.processed, result.created, result.updated, result.skipped, result.deleted);
-
-        return result;
+            return result;
+        } catch (Exception e) {
+            ingestionLogService.saveIngestionLog(startedAt, new IngestionResult(0, 0, 0, 0, 0), false, e.getMessage());
+            throw new FailedSyncException(e);
+        }
     }
 
     /**
@@ -98,25 +91,25 @@ public class IngestionService {
 
         List<Satellite> toSave = new ArrayList<>();
 
-        for (OmmRecord record : records) {
-            if (!record.isValid()) {
+        for (OmmRecord ommRecord : records) {
+            if (!ommRecord.isValid()) {
                 skipped++;
                 continue;
             }
 
-            Satellite satellite = existingSatellites.get(record.noradCatId());
+            Satellite satellite = existingSatellites.get(ommRecord.noradCatId());
 
             if (satellite == null) {
                 // New satellite
-                satellite = new Satellite(record.noradCatId());
-                existingSatellites.put(record.noradCatId(), satellite);
+                satellite = new Satellite(ommRecord.noradCatId());
+                existingSatellites.put(ommRecord.noradCatId(), satellite);
                 created++;
             } else {
                 updated++;
             }
 
             // Update all fields from the record
-            updateSatellite(satellite, record);
+            updateSatellite(satellite, ommRecord);
             toSave.add(satellite);
             processed++;
 
@@ -139,32 +132,29 @@ public class IngestionService {
         return new IngestionResult(processed, created, updated, skipped, deleted);
     }
 
-    private void updateSatellite(Satellite sat, OmmRecord record) {
+    private void updateSatellite(Satellite sat, OmmRecord ommRecord) {
         // Metadata
-        sat.setObjectName(record.objectName());
-        sat.setObjectType(record.objectType());
-        sat.setCountryCode(record.countryCode());
-        sat.setLaunchDate(record.launchDate());
-        sat.setDecayDate(record.decayDate());
+        sat.setObjectName(ommRecord.objectName());
+        sat.setObjectType(ommRecord.objectType());
+        sat.setCountryCode(ommRecord.countryCode());
+        sat.setLaunchDate(ommRecord.launchDate());
+        sat.setDecayDate(ommRecord.decayDate());
 
         // TLE data
-        sat.setEpoch(record.getEpochUtc());
-        sat.setTleLine1(record.tleLine1());
-        sat.setTleLine2(record.tleLine2());
+        sat.setEpoch(ommRecord.getEpochUtc());
+        sat.setTleLine1(ommRecord.tleLine1());
+        sat.setTleLine2(ommRecord.tleLine2());
 
         // Orbital elements
-        sat.setMeanMotion(record.meanMotion());
-        sat.setEccentricity(record.eccentricity());
-        sat.setInclination(record.inclination());
-        sat.setRaan(record.raan());
-        sat.setArgPerigee(record.argPerigee());
-        sat.setMeanAnomaly(record.meanAnomaly());
-        sat.setBstar(record.bstar() != null ? record.bstar() : 0.0);
+        sat.setMeanMotion(ommRecord.meanMotion());
+        sat.setEccentricity(ommRecord.eccentricity());
+        sat.setInclination(ommRecord.inclination());
+        sat.setRaan(ommRecord.raan());
+        sat.setArgPerigee(ommRecord.argPerigee());
+        sat.setMeanAnomaly(ommRecord.meanAnomaly());
+        sat.setBstar(ommRecord.bstar() != null ? ommRecord.bstar() : 0.0);
 
         // Compute derived parameters (perigee, apogee, etc.)
         sat.computeDerivedParameters();
-    }
-
-    public record IngestionResult(int processed, int created, int updated, int skipped, int deleted) {
     }
 }
