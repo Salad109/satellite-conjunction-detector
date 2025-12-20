@@ -4,6 +4,9 @@ import io.salad109.conjunctionapi.satellite.Satellite;
 
 public class PairReduction {
 
+    private PairReduction() {
+    }
+
     /**
      * Determines if two satellites could possibly collide.
      * Applies orbital geometry filters with mathematical certainty.
@@ -77,7 +80,7 @@ public class PairReduction {
     private static double computeRelativeInclination(double iA, double iB, double deltaRaan) {
         double cosRelInc = Math.cos(iA) * Math.cos(iB)
                 + Math.sin(iA) * Math.sin(iB) * Math.cos(deltaRaan);
-        return Math.acos(Math.max(-1, Math.min(1, cosRelInc)));
+        return Math.acos(Math.clamp(cosRelInc, -1, 1));
     }
 
     private static double computeAlphaA(double iA, double iB, double deltaRaan) {

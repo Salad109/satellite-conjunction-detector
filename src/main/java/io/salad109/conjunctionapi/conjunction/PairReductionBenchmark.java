@@ -14,7 +14,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 /**
- * Run with: ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark
+ * Run on Linux: ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark
+ * Run on Windows: ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark"
  */
 @Component
 @Profile("benchmark")
