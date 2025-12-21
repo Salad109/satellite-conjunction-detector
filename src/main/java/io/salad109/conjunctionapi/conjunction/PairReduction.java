@@ -4,15 +4,19 @@ import io.salad109.conjunctionapi.satellite.Satellite;
 
 public class PairReduction {
 
+    private PairReduction() {
+    }
+
     /**
      * Determines if two satellites could possibly collide.
      * Applies orbital geometry filters with mathematical certainty.
      */
     public static boolean canCollide(Satellite a, Satellite b, double toleranceKm) {
         // Apply filters starting with computationally cheapest
-        if (!altitudeShellsOverlap(a, b, toleranceKm)) return false;
-        if (isDebrisOnDebris(a, b)) return false;
-        return orbitalPlanesIntersect(a, b, toleranceKm);
+        return altitudeShellsOverlap(a, b, toleranceKm) &&
+                neitherAreDebris(a, b) &&
+                orbitalPlanesIntersect(a, b, toleranceKm) &&
+                areNotDocked(a, b);
     }
 
     private static boolean altitudeShellsOverlap(Satellite a, Satellite b, double toleranceKm) {
@@ -23,8 +27,8 @@ public class PairReduction {
         return !(apogeeA + toleranceKm < perigeeB || apogeeB + toleranceKm < perigeeA);
     }
 
-    private static boolean isDebrisOnDebris(Satellite a, Satellite b) {
-        return "DEBRIS".equals(a.getObjectType()) && "DEBRIS".equals(b.getObjectType());
+    private static boolean neitherAreDebris(Satellite a, Satellite b) {
+        return !"DEBRIS".equals(a.getObjectType()) && !"DEBRIS".equals(b.getObjectType());
     }
 
     private static boolean orbitalPlanesIntersect(Satellite a, Satellite b, double toleranceKm) {
@@ -77,7 +81,7 @@ public class PairReduction {
     private static double computeRelativeInclination(double iA, double iB, double deltaRaan) {
         double cosRelInc = Math.cos(iA) * Math.cos(iB)
                 + Math.sin(iA) * Math.sin(iB) * Math.cos(deltaRaan);
-        return Math.acos(Math.max(-1, Math.min(1, cosRelInc)));
+        return Math.acos(Math.clamp(cosRelInc, -1, 1));
     }
 
     private static double computeAlphaA(double iA, double iB, double deltaRaan) {
@@ -117,5 +121,15 @@ public class PairReduction {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
         return angle;
+    }
+
+    private static boolean areNotDocked(Satellite a, Satellite b) {
+        return !(a.getEpoch() != null && a.getEpoch().equals(b.getEpoch()) &&
+                a.getMeanMotion() != null && a.getMeanMotion().equals(b.getMeanMotion()) &&
+                a.getEccentricity() != null && a.getEccentricity().equals(b.getEccentricity()) &&
+                a.getInclination() != null && a.getInclination().equals(b.getInclination()) &&
+                a.getRaan() != null && a.getRaan().equals(b.getRaan()) &&
+                a.getArgPerigee() != null && a.getArgPerigee().equals(b.getArgPerigee()) &&
+                a.getMeanAnomaly() != null && a.getMeanAnomaly().equals(b.getMeanAnomaly()));
     }
 }
