@@ -1,7 +1,5 @@
-package io.salad109.conjunctionapi.conjunction;
+package io.salad109.conjunctionapi.satellite;
 
-import io.salad109.conjunctionapi.satellite.Satellite;
-import io.salad109.conjunctionapi.satellite.SatelliteRepository;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +12,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 /**
- * Run on Linux: ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark
- * Run on Windows: ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark"
+ * Run on Linux: ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter
+ * Run on Windows: ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter"
  */
 @Component
-@Profile("benchmark")
+@Profile("benchmark-filter")
 public class PairReductionBenchmark implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PairReductionBenchmark.class);
@@ -32,7 +30,7 @@ public class PairReductionBenchmark implements CommandLineRunner {
 
     @Override
     public void run(String @NonNull ... args) {
-        log.info("Starting Pair reduction benchmark");
+        log.info("Starting pair reduction benchmark");
 
         List<Satellite> satellites = satelliteRepository.findAll();
         int satelliteCount = satellites.size();

@@ -1,6 +1,4 @@
-package io.salad109.conjunctionapi.conjunction;
-
-import io.salad109.conjunctionapi.satellite.Satellite;
+package io.salad109.conjunctionapi.satellite;
 
 public class PairReduction {
 
