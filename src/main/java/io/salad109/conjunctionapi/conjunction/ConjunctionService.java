@@ -43,6 +43,7 @@ public class ConjunctionService {
         log.info("Starting conjunction screening...");
 
         List<Satellite> satellites = satelliteRepository.findAll();
+        log.debug("Loaded {} satellites from database in {}ms", satellites.size(), System.currentTimeMillis() - startMs);
         List<SatellitePair> pairs = findPotentialCollisionPairs(satellites);
         Map<Integer, TLEPropagator> propagators = buildPropagators(satellites);
 
@@ -141,9 +142,10 @@ public class ConjunctionService {
     }
 
     private List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites) {
+        long startMs = System.currentTimeMillis();
         int satelliteCount = satellites.size();
 
-        return IntStream.range(0, satelliteCount)
+        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
                 .parallel()
                 .boxed()
                 .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
@@ -156,19 +158,15 @@ public class ConjunctionService {
                     }
                 })
                 .toList();
+
+        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
+        return pairs;
     }
 
     public void saveClosestApproaches(List<Conjunction> conjunctions) {
         long startMs = System.currentTimeMillis();
 
-        for (Conjunction c : conjunctions) {
-            conjunctionRepository.upsertIfCloser(
-                    c.getObject1NoradId(),
-                    c.getObject2NoradId(),
-                    c.getMissDistanceKm(),
-                    c.getTca()
-            );
-        }
+        conjunctionRepository.batchUpsertIfCloser(conjunctions);
 
         log.debug("Upserted {} conjunctions in {}ms", conjunctions.size(), System.currentTimeMillis() - startMs);
     }
