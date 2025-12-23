@@ -1,4 +1,4 @@
-package io.salad109.conjunctionapi.conjunction;
+package io.salad109.conjunctionapi.conjunction.internal;
 
 import java.util.List;
 

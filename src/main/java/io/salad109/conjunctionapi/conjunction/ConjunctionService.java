@@ -1,5 +1,8 @@
 package io.salad109.conjunctionapi.conjunction;
 
+import io.salad109.conjunctionapi.conjunction.internal.Conjunction;
+import io.salad109.conjunctionapi.conjunction.internal.ConjunctionRepository;
+import io.salad109.conjunctionapi.conjunction.internal.PairReduction;
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatelliteRepository;
 import org.orekit.propagation.analytical.tle.TLE;

@@ -1,4 +1,4 @@
-package io.salad109.conjunctionapi.conjunction;
+package io.salad109.conjunctionapi.conjunction.internal;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

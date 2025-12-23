@@ -1,6 +1,7 @@
-package io.salad109.conjunctionapi.ingestion.internal;
+package io.salad109.conjunctionapi.ingestion;
 
-import io.salad109.conjunctionapi.ingestion.SyncResult;
+import io.salad109.conjunctionapi.ingestion.internal.IngestionLog;
+import io.salad109.conjunctionapi.ingestion.internal.IngestionLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class IngestionLogService {
      * Save an ingestion log entry in a new transaction. REQUIRES_NEW ensures log isn't rolled back if sync fails.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void saveIngestionLog(SyncResult syncResult, String errorMessage) {
+    void saveIngestionLog(SyncResult syncResult, String errorMessage) {
         ingestionLogRepository.save(new IngestionLog(
                 null,
                 syncResult.startedAt(),

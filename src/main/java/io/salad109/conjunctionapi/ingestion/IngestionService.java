@@ -1,6 +1,5 @@
 package io.salad109.conjunctionapi.ingestion;
 
-import io.salad109.conjunctionapi.ingestion.internal.IngestionLogService;
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatelliteRepository;
 import io.salad109.conjunctionapi.spacetrack.OmmRecord;
@@ -8,7 +7,6 @@ import io.salad109.conjunctionapi.spacetrack.SpaceTrackClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +41,6 @@ public class IngestionService {
     /**
      * Perform a full catalog sync from Space-Track.
      */
-    @Scheduled(cron = "${ingestion.schedule.cron:0 21 */6 * * *}")
     @Transactional
     public SyncResult sync() {
         log.info("Starting catalog sync...");

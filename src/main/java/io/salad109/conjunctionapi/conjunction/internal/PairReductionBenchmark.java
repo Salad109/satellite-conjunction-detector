@@ -1,4 +1,4 @@
-package io.salad109.conjunctionapi.conjunction;
+package io.salad109.conjunctionapi.conjunction.internal;
 
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatelliteRepository;
