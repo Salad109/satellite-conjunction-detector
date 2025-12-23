@@ -40,14 +40,15 @@ public record OmmRecord(
         @JsonProperty("PERIAPSIS") Double periapsis
 ) {
     /**
-     * Validates that this record has the minimum required fields.
+     * Validates that this record has valid and minimum required fields.
      */
     public boolean isValid() {
         return noradCatId != null
                 && tleLine1 != null && !tleLine1.isBlank()
                 && tleLine2 != null && !tleLine2.isBlank()
-                && epoch != null
-                && meanMotion != null && meanMotion > 0;
+                && epoch != null && epoch.isAfter(LocalDateTime.now().minusDays(30))
+                && meanMotion != null && meanMotion > 0
+                && eccentricity != null && eccentricity >= 0 && eccentricity < 0.95;
     }
 
     /**

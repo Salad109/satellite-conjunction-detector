@@ -15,8 +15,7 @@ public class PairReduction {
         // Apply filters starting with computationally cheapest
         return altitudeShellsOverlap(a, b, toleranceKm) &&
                 neitherAreDebris(a, b) &&
-                orbitalPlanesIntersect(a, b, toleranceKm) &&
-                areNotDocked(a, b);
+                orbitalPlanesIntersect(a, b, toleranceKm);
     }
 
     private static boolean altitudeShellsOverlap(Satellite a, Satellite b, double toleranceKm) {
@@ -123,13 +122,4 @@ public class PairReduction {
         return angle;
     }
 
-    private static boolean areNotDocked(Satellite a, Satellite b) {
-        return !(a.getEpoch() != null && a.getEpoch().equals(b.getEpoch()) &&
-                a.getMeanMotion() != null && a.getMeanMotion().equals(b.getMeanMotion()) &&
-                a.getEccentricity() != null && a.getEccentricity().equals(b.getEccentricity()) &&
-                a.getInclination() != null && a.getInclination().equals(b.getInclination()) &&
-                a.getRaan() != null && a.getRaan().equals(b.getRaan()) &&
-                a.getArgPerigee() != null && a.getArgPerigee().equals(b.getArgPerigee()) &&
-                a.getMeanAnomaly() != null && a.getMeanAnomaly().equals(b.getMeanAnomaly()));
-    }
 }

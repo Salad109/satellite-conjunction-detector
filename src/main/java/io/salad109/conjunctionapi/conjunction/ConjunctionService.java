@@ -21,7 +21,6 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -66,32 +65,48 @@ public class ConjunctionService {
         log.info("Conjunction screening completed in {}ms", System.currentTimeMillis() - startMs);
     }
 
+    private List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites) {
+        long startMs = System.currentTimeMillis();
+        int satelliteCount = satellites.size();
+
+        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
+                .parallel()
+                .boxed()
+                .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
+                    Satellite a = satellites.get(i);
+                    for (int j = i + 1; j < satelliteCount; j++) {
+                        Satellite b = satellites.get(j);
+                        if (PairReduction.canCollide(a, b, toleranceKm)) {
+                            consumer.accept(new SatellitePair(a, b));
+                        }
+                    }
+                })
+                .toList();
+
+        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
+        return pairs;
+    }
+
     private Map<Integer, TLEPropagator> buildPropagators(List<Satellite> satellites) {
         long startMs = System.currentTimeMillis();
         Map<Integer, TLEPropagator> propagators = new HashMap<>();
-        int skipped = 0;
 
         for (Satellite sat : satellites) {
+            TLE tle = new TLE(sat.getTleLine1(), sat.getTleLine2());
             try {
-                if (sat.getEccentricity() != null && sat.getEccentricity() >= 1.0) {
-                    skipped++;
-                    continue;
-                }
-                TLE tle = new TLE(sat.getTleLine1(), sat.getTleLine2());
                 propagators.put(sat.getNoradCatId(), TLEPropagator.selectExtrapolator(tle));
             } catch (Exception e) {
-                skipped++;
+                log.error("FUCK: {}", tle, e);
             }
         }
 
-        log.debug("Built {} propagators ({} skipped) in {}ms", propagators.size(), skipped, System.currentTimeMillis() - startMs);
+        log.debug("Built {} propagators in {}ms", propagators.size(), System.currentTimeMillis() - startMs);
         return propagators;
     }
 
     private Map<Integer, PVCoordinates> propagateAll(Map<Integer, TLEPropagator> propagators, OffsetDateTime targetTime) {
         long startMs = System.currentTimeMillis();
         AbsoluteDate targetDate = toAbsoluteDate(targetTime);
-        AtomicInteger errors = new AtomicInteger();
 
         Map<Integer, PVCoordinates> positions = propagators.entrySet().parallelStream()
                 .<Map.Entry<Integer, PVCoordinates>>mapMulti((entry, consumer) -> {
@@ -99,14 +114,14 @@ public class ConjunctionService {
                         PVCoordinates pv = entry.getValue().getPVCoordinates(targetDate, entry.getValue().getFrame());
                         consumer.accept(Map.entry(entry.getKey(), pv));
                     } catch (Exception e) {
-                        errors.getAndIncrement();
+                        log.error("Failed to propagate satellite {}: {}", entry.getKey(), e.getMessage());
                     }
                 })
                 .collect(HashMap::new,
                         (map, entry) -> map.put(entry.getKey(), entry.getValue()),
                         HashMap::putAll);
 
-        log.debug("Propagated {} satellites in {}ms ({} failed)", positions.size(), System.currentTimeMillis() - startMs, errors);
+        log.debug("Propagated {} satellites in {}ms", positions.size(), System.currentTimeMillis() - startMs);
         return positions;
     }
 
@@ -156,28 +171,6 @@ public class ConjunctionService {
                 dateTime.getSecond() + dateTime.getNano() / 1e9,
                 TimeScalesFactory.getUTC()
         );
-    }
-
-    private List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites) {
-        long startMs = System.currentTimeMillis();
-        int satelliteCount = satellites.size();
-
-        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
-                .parallel()
-                .boxed()
-                .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
-                    Satellite a = satellites.get(i);
-                    for (int j = i + 1; j < satelliteCount; j++) {
-                        Satellite b = satellites.get(j);
-                        if (PairReduction.canCollide(a, b, toleranceKm)) {
-                            consumer.accept(new SatellitePair(a, b));
-                        }
-                    }
-                })
-                .toList();
-
-        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
-        return pairs;
     }
 
     public void saveClosestApproaches(List<Conjunction> conjunctions) {
