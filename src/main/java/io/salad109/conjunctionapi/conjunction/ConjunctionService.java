@@ -1,11 +1,12 @@
 package io.salad109.conjunctionapi.conjunction;
 
 import io.salad109.conjunctionapi.conjunction.internal.Conjunction;
+import io.salad109.conjunctionapi.conjunction.internal.ConjunctionInfo;
 import io.salad109.conjunctionapi.conjunction.internal.ConjunctionRepository;
-import io.salad109.conjunctionapi.satellite.SatellitePair;
 import io.salad109.conjunctionapi.satellite.PairReductionService;
-import io.salad109.conjunctionapi.satellite.SatelliteService;
 import io.salad109.conjunctionapi.satellite.Satellite;
+import io.salad109.conjunctionapi.satellite.SatellitePair;
+import io.salad109.conjunctionapi.satellite.SatelliteService;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -14,6 +15,8 @@ import org.orekit.utils.PVCoordinates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +45,11 @@ public class ConjunctionService {
         this.satelliteService = satelliteService;
         this.conjunctionRepository = conjunctionRepository;
         this.pairReductionService = pairReductionService;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ConjunctionInfo> getConjunctions(Pageable pageable) {
+        return conjunctionRepository.getConjunctionInfos(pageable);
     }
 
     @Transactional

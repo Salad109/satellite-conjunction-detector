@@ -21,9 +21,6 @@ public class DevController {
         this.conjunctionService = conjunctionService;
     }
 
-    /**
-     * Trigger a full catalog sync from Space-Track.
-     */
     @PostMapping("/sync")
     public ResponseEntity<SyncResult> sync() {
         var result = ingestionService.sync();

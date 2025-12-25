@@ -17,9 +17,6 @@ public class PairReductionService {
     @Value("${conjunction.tolerance-km:10.0}")
     private double toleranceKm;
 
-    private PairReductionService() {
-    }
-
     /**
      * Finds all pairs of satellites that could potentially collide.
      * Uses orbital geometry filters to reduce the number of pairs for detailed analysis.
