@@ -22,6 +22,7 @@ public class SatelliteService {
         this.satelliteRepository = satelliteRepository;
     }
 
+    @Transactional(readOnly = true)
     public Map<Integer, Satellite> getByCatalogIds(Iterable<Integer> catalogIds) {
         return satelliteRepository.findAllById(catalogIds).stream()
                 .collect(Collectors.toMap(Satellite::getNoradCatId, Function.identity()));

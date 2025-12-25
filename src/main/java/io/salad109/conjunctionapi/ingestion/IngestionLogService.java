@@ -19,6 +19,7 @@ public class IngestionLogService {
         this.ingestionLogRepository = ingestionLogRepository;
     }
 
+    @Transactional(readOnly = true)
     public Page<SyncResult> getSyncHistory(Pageable pageable) {
         Page<IngestionLog> page = ingestionLogRepository.findAllByOrderByStartedAtDesc(pageable);
         return page.map(log -> new SyncResult(

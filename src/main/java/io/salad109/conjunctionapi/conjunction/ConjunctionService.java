@@ -173,7 +173,7 @@ public class ConjunctionService {
         );
     }
 
-    public void saveClosestApproaches(List<Conjunction> conjunctions) {
+    private void saveClosestApproaches(List<Conjunction> conjunctions) {
         long startMs = System.currentTimeMillis();
 
         conjunctionRepository.batchUpsertIfCloser(conjunctions);
