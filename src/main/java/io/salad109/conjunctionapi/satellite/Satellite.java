@@ -82,6 +82,10 @@ public class Satellite {
     @Column(name = "orbital_period_min")
     private Double orbitalPeriodMin;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     public Satellite() {
     }
 
