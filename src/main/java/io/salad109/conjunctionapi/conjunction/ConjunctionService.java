@@ -2,9 +2,10 @@ package io.salad109.conjunctionapi.conjunction;
 
 import io.salad109.conjunctionapi.conjunction.internal.Conjunction;
 import io.salad109.conjunctionapi.conjunction.internal.ConjunctionRepository;
-import io.salad109.conjunctionapi.conjunction.internal.PairReduction;
+import io.salad109.conjunctionapi.satellite.SatellitePair;
+import io.salad109.conjunctionapi.satellite.PairReductionService;
+import io.salad109.conjunctionapi.satellite.SatelliteService;
 import io.salad109.conjunctionapi.satellite.Satellite;
-import io.salad109.conjunctionapi.satellite.SatelliteRepository;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -22,16 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 @Service
 public class ConjunctionService {
 
     private static final Logger log = LoggerFactory.getLogger(ConjunctionService.class);
-    private final SatelliteRepository satelliteRepository;
+    private final SatelliteService satelliteService;
     private final ConjunctionRepository conjunctionRepository;
-    @Value("${conjunction.tolerance-km:10.0}")
-    private double toleranceKm;
+    private final PairReductionService pairReductionService;
     @Value("${conjunction.collision-threshold-km:5.0}")
     private double conjunctionThresholdKm;
     @Value("${conjunction.lookahead-hours:1}")
@@ -39,9 +38,10 @@ public class ConjunctionService {
     @Value("${conjunction.step-seconds:60}")
     private int stepSeconds;
 
-    public ConjunctionService(SatelliteRepository satelliteRepository, ConjunctionRepository conjunctionRepository) {
-        this.satelliteRepository = satelliteRepository;
+    public ConjunctionService(SatelliteService satelliteService, ConjunctionRepository conjunctionRepository, PairReductionService pairReductionService) {
+        this.satelliteService = satelliteService;
         this.conjunctionRepository = conjunctionRepository;
+        this.pairReductionService = pairReductionService;
     }
 
     @Transactional
@@ -49,9 +49,9 @@ public class ConjunctionService {
         long startMs = System.currentTimeMillis();
         log.info("Starting conjunction screening...");
 
-        List<Satellite> satellites = satelliteRepository.findAll();
+        List<Satellite> satellites = satelliteService.getAll();
         log.debug("Loaded {} satellites from database in {}ms", satellites.size(), System.currentTimeMillis() - startMs);
-        List<SatellitePair> pairs = findPotentialCollisionPairs(satellites);
+        List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites);
         Map<Integer, TLEPropagator> propagators = buildPropagators(satellites);
         OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC);
 
@@ -65,39 +65,13 @@ public class ConjunctionService {
         log.info("Conjunction screening completed in {}ms", System.currentTimeMillis() - startMs);
     }
 
-    private List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites) {
-        long startMs = System.currentTimeMillis();
-        int satelliteCount = satellites.size();
-
-        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
-                .parallel()
-                .boxed()
-                .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
-                    Satellite a = satellites.get(i);
-                    for (int j = i + 1; j < satelliteCount; j++) {
-                        Satellite b = satellites.get(j);
-                        if (PairReduction.canCollide(a, b, toleranceKm)) {
-                            consumer.accept(new SatellitePair(a, b));
-                        }
-                    }
-                })
-                .toList();
-
-        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
-        return pairs;
-    }
-
     private Map<Integer, TLEPropagator> buildPropagators(List<Satellite> satellites) {
         long startMs = System.currentTimeMillis();
         Map<Integer, TLEPropagator> propagators = new HashMap<>();
 
         for (Satellite sat : satellites) {
             TLE tle = new TLE(sat.getTleLine1(), sat.getTleLine2());
-            try {
-                propagators.put(sat.getNoradCatId(), TLEPropagator.selectExtrapolator(tle));
-            } catch (Exception e) {
-                log.error("FUCK: {}", tle, e);
-            }
+            propagators.put(sat.getNoradCatId(), TLEPropagator.selectExtrapolator(tle));
         }
 
         log.debug("Built {} propagators in {}ms", propagators.size(), System.currentTimeMillis() - startMs);
@@ -179,8 +153,5 @@ public class ConjunctionService {
         conjunctionRepository.batchUpsertIfCloser(conjunctions);
 
         log.debug("Upserted {} conjunctions in {}ms", conjunctions.size(), System.currentTimeMillis() - startMs);
-    }
-
-    private record SatellitePair(Satellite a, Satellite b) {
     }
 }

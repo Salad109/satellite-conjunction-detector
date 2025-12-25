@@ -1,5 +1,6 @@
 package io.salad109.conjunctionapi.satellite;
 
+import io.salad109.conjunctionapi.satellite.internal.SatelliteRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,11 @@ public class SatelliteService {
 
     public SatelliteService(SatelliteRepository satelliteRepository) {
         this.satelliteRepository = satelliteRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Satellite> getAll() {
+        return satelliteRepository.findAll();
     }
 
     @Transactional(readOnly = true)

@@ -1,7 +1,7 @@
-package io.salad109.conjunctionapi.conjunction.internal;
+package io.salad109.conjunctionapi.satellite.internal;
 
+import io.salad109.conjunctionapi.satellite.PairReductionService;
 import io.salad109.conjunctionapi.satellite.Satellite;
-import io.salad109.conjunctionapi.satellite.SatelliteRepository;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,12 +22,13 @@ import java.util.stream.IntStream;
 public class PairReductionBenchmark implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PairReductionBenchmark.class);
-    private static final double TOLERANCE_KM = 10.0;
 
     private final SatelliteRepository satelliteRepository;
+    private final PairReductionService pairReductionService;
 
-    public PairReductionBenchmark(SatelliteRepository satelliteRepository) {
+    public PairReductionBenchmark(SatelliteRepository satelliteRepository, PairReductionService pairReductionService) {
         this.satelliteRepository = satelliteRepository;
+        this.pairReductionService = pairReductionService;
     }
 
     @Override
@@ -48,7 +49,7 @@ public class PairReductionBenchmark implements CommandLineRunner {
             Satellite a = satellites.get(i);
             for (int j = i + 1; j < satelliteCount; j++) {
                 Satellite b = satellites.get(j);
-                if (PairReduction.canCollide(a, b, TOLERANCE_KM)) {
+                if (pairReductionService.canCollide(a, b)) {
                     passAllFilters.incrementAndGet();
                 }
             }
@@ -68,6 +69,6 @@ public class PairReductionBenchmark implements CommandLineRunner {
         log.info("Elapsed time: {} seconds",
                 String.format("%.2f", elapsed / 1000.0));
         log.info("Throughput: {} pairs/second",
-                String.format("%,.0f", (double) totalPairs / (elapsed / 1000.0)));
+                String.format("%,.0f", totalPairs / (elapsed / 1000.0)));
     }
 }

@@ -1,4 +1,4 @@
-package io.salad109.conjunctionapi.spacetrack;
+package io.salad109.conjunctionapi.spacetrack.internal;
 
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.CookieStore;

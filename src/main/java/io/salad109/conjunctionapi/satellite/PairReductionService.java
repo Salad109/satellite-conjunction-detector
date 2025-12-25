@@ -1,24 +1,63 @@
-package io.salad109.conjunctionapi.conjunction.internal;
+package io.salad109.conjunctionapi.satellite;
 
-import io.salad109.conjunctionapi.satellite.Satellite;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-public class PairReduction {
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
-    private PairReduction() {
+@Service
+public class PairReductionService {
+
+    private static final Logger log = LoggerFactory.getLogger(PairReductionService.class);
+
+    @Value("${conjunction.tolerance-km:10.0}")
+    private double toleranceKm;
+
+    private PairReductionService() {
+    }
+
+    /**
+     * Finds all pairs of satellites that could potentially collide.
+     * Uses orbital geometry filters to reduce the number of pairs for detailed analysis.
+     */
+    public List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites) {
+        long startMs = System.currentTimeMillis();
+        int satelliteCount = satellites.size();
+
+        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
+                .parallel()
+                .boxed()
+                .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
+                    Satellite a = satellites.get(i);
+                    for (int j = i + 1; j < satelliteCount; j++) {
+                        Satellite b = satellites.get(j);
+                        if (canCollide(a, b)) {
+                            consumer.accept(new SatellitePair(a, b));
+                        }
+                    }
+                })
+                .toList();
+
+        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
+        return pairs;
     }
 
     /**
      * Determines if two satellites could possibly collide.
      * Applies orbital geometry filters with mathematical certainty.
      */
-    public static boolean canCollide(Satellite a, Satellite b, double toleranceKm) {
+    public boolean canCollide(Satellite a, Satellite b) {
         // Apply filters starting with computationally cheapest
-        return altitudeShellsOverlap(a, b, toleranceKm) &&
+        return altitudeShellsOverlap(a, b) &&
                 neitherAreDebris(a, b) &&
-                orbitalPlanesIntersect(a, b, toleranceKm);
+                orbitalPlanesIntersect(a, b);
     }
 
-    private static boolean altitudeShellsOverlap(Satellite a, Satellite b, double toleranceKm) {
+    private boolean altitudeShellsOverlap(Satellite a, Satellite b) {
         double perigeeA = a.getPerigeeKm();
         double apogeeA = a.getApogeeKm();
         double perigeeB = b.getPerigeeKm();
@@ -26,11 +65,11 @@ public class PairReduction {
         return !(apogeeA + toleranceKm < perigeeB || apogeeB + toleranceKm < perigeeA);
     }
 
-    private static boolean neitherAreDebris(Satellite a, Satellite b) {
+    private boolean neitherAreDebris(Satellite a, Satellite b) {
         return !"DEBRIS".equals(a.getObjectType()) && !"DEBRIS".equals(b.getObjectType());
     }
 
-    private static boolean orbitalPlanesIntersect(Satellite a, Satellite b, double toleranceKm) {
+    private boolean orbitalPlanesIntersect(Satellite a, Satellite b) {
         double iA = Math.toRadians(a.getInclination());
         double iB = Math.toRadians(b.getInclination());
         double raanA = Math.toRadians(a.getRaan());
@@ -77,13 +116,13 @@ public class PairReduction {
         return minDiff <= toleranceKm;
     }
 
-    private static double computeRelativeInclination(double iA, double iB, double deltaRaan) {
+    private double computeRelativeInclination(double iA, double iB, double deltaRaan) {
         double cosRelInc = Math.cos(iA) * Math.cos(iB)
                 + Math.sin(iA) * Math.sin(iB) * Math.cos(deltaRaan);
         return Math.acos(Math.clamp(cosRelInc, -1, 1));
     }
 
-    private static double computeAlphaA(double iA, double iB, double deltaRaan) {
+    private double computeAlphaA(double iA, double iB, double deltaRaan) {
         double sinIB = Math.sin(iB);
         double cosIB = Math.cos(iB);
         double sinIA = Math.sin(iA);
@@ -97,7 +136,7 @@ public class PairReduction {
         return Math.atan2(y, x);
     }
 
-    private static double computeAlphaB(double iA, double iB, double deltaRaan) {
+    private double computeAlphaB(double iA, double iB, double deltaRaan) {
         double sinIB = Math.sin(iB);
         double cosIB = Math.cos(iB);
         double sinIA = Math.sin(iA);
@@ -111,15 +150,14 @@ public class PairReduction {
         return Math.atan2(y, x);
     }
 
-    private static double orbitalRadius(double semiMajorAxis, double eccentricity, double trueAnomaly) {
+    private double orbitalRadius(double semiMajorAxis, double eccentricity, double trueAnomaly) {
         double p = semiMajorAxis * (1 - eccentricity * eccentricity);
         return p / (1 + eccentricity * Math.cos(trueAnomaly));
     }
 
-    private static double normalizeAngle(double angle) {
+    private double normalizeAngle(double angle) {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
         return angle;
     }
-
 }

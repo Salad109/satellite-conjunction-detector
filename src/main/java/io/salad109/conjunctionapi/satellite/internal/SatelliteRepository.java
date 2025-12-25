@@ -1,5 +1,6 @@
-package io.salad109.conjunctionapi.satellite;
+package io.salad109.conjunctionapi.satellite.internal;
 
+import io.salad109.conjunctionapi.satellite.Satellite;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;

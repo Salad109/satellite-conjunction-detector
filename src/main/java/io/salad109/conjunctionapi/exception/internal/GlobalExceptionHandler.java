@@ -1,4 +1,4 @@
-package io.salad109.conjunctionapi.exception;
+package io.salad109.conjunctionapi.exception.internal;
 
 
 import jakarta.servlet.http.HttpServletRequest;
