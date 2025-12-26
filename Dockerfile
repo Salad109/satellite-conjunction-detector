@@ -1,27 +1,21 @@
 # Build stage
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /build
-
-# Install Maven
-RUN apk add --no-cache maven
-
-# Copy pom.xml first for dependency caching
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source and build
-COPY src src
-RUN mvn package -DskipTests -B
+FROM eclipse-temurin:21-jdk-jammy AS builder
+WORKDIR /app
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw dependency:go-offline
+COPY src ./src
+RUN ./mvnw clean package -DskipTests && \
+    java -Djarmode=layertools -jar target/*.jar extract
 
 # Runtime stage
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -S app && adduser -S app -G app
-USER app
-
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /app/dependencies/ ./
+COPY --from=builder /app/spring-boot-loader/ ./
+COPY --from=builder /app/snapshot-dependencies/ ./
+COPY --from=builder /app/application/ ./
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

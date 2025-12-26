@@ -24,9 +24,17 @@ public class ConjunctionApiApplication {
 
     @PostConstruct
     public void initOrekit() {
-        File orekitData = new File("src/main/resources/orekit-data");
         DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-        manager.addProvider(new DirectoryCrawler(orekitData));
+
+        // Try Docker path first, fall back to local development path
+        File dockerPath = new File("/app/orekit-data");
+        File localPath = new File("src/main/resources/orekit-data");
+
+        if (dockerPath.exists()) {
+            manager.addProvider(new DirectoryCrawler(dockerPath));
+        } else {
+            manager.addProvider(new DirectoryCrawler(localPath));
+        }
     }
 
 }
