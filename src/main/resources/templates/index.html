@@ -7,7 +7,7 @@
           rel="icon">
     <title>Conjunction API</title>
 </head>
-<body class="bg-white text-gray-900 p-8 min-h-screen" hx-get="/ui/conjunctions" hx-target="#results" hx-trigger="load">
+<body class="bg-white text-gray-900 p-8 min-h-screen">
 <h1 class="text-2xl font-semibold mb-6">Conjunction API</h1>
 
 <label class="flex items-center gap-2 text-sm cursor-pointer">
@@ -21,6 +21,8 @@
     <span>Include formations (< 10 m/s)</span>
 </label>
 
-<div class="mt-6" id="results"></div>
+<div class="mt-6" hx-get="/ui/conjunctions" hx-trigger="load" id="results"></div>
+
+<div class="mt-8" hx-get="/ui/lastsync" hx-trigger="load" id="sync-info"></div>
 </body>
 </html>

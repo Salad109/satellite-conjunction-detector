@@ -41,4 +41,10 @@ public class UiController {
 
         return "fragments/conjunction-table";
     }
+
+    @GetMapping("/lastsync")
+    public String getLastSyncLog(Model model) {
+        model.addAttribute("log", ingestionLogService.getLatest());
+        return "fragments/last-sync-log";
+    }
 }
