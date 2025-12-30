@@ -54,7 +54,7 @@ public class PairReductionService {
                 orbitalPlanesIntersect(a, b);
     }
 
-    private boolean altitudeShellsOverlap(Satellite a, Satellite b) {
+    public boolean altitudeShellsOverlap(Satellite a, Satellite b) {
         double perigeeA = a.getPerigeeKm();
         double apogeeA = a.getApogeeKm();
         double perigeeB = b.getPerigeeKm();
@@ -62,11 +62,11 @@ public class PairReductionService {
         return !(apogeeA + toleranceKm < perigeeB || apogeeB + toleranceKm < perigeeA);
     }
 
-    private boolean neitherAreDebris(Satellite a, Satellite b) {
+    public boolean neitherAreDebris(Satellite a, Satellite b) {
         return !"DEBRIS".equals(a.getObjectType()) && !"DEBRIS".equals(b.getObjectType());
     }
 
-    private boolean orbitalPlanesIntersect(Satellite a, Satellite b) {
+    public boolean orbitalPlanesIntersect(Satellite a, Satellite b) {
         double iA = Math.toRadians(a.getInclination());
         double iB = Math.toRadians(b.getInclination());
         double raanA = Math.toRadians(a.getRaan());
@@ -102,7 +102,6 @@ public class PairReductionService {
         double rB1 = orbitalRadius(aB, eB, nuB1);
         double rB2 = orbitalRadius(aB, eB, nuB2);
 
-        // If radii match at either crossing point, orbits can intersect
         // Check all four combinations
         double diff1 = Math.abs(rA1 - rB1);
         double diff2 = Math.abs(rA1 - rB2);

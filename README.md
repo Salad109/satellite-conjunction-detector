@@ -26,16 +26,16 @@ The application is organized into five modules:
 
 ## Conjunction Candidate Reduction
 
-With ~30,000 tracked objects, the naive approach would check over 500 million satellite pairs. The system applies
+With ~30,000 tracked objects, the naive approach would check over 400 million satellite pairs. The system applies
 several sequential filters to reduce computational load:
 
 | Strategy                        |   Unique Pairs | % of Original |
 |---------------------------------|---------------:|--------------:|
-| Full set (32,641 satellites)    |    532,701,120 |        100.0% |
-| Skip debris on debris           |    454,832,160 |         85.4% |
-| Only overlapping apogee/perigee |     99,450,032 |         18.7% |
-| Intersecting orbital planes     |     25,216,090 |          4.7% |
-| **All strategies combined**     | **17,797,818** |      **3.3%** |
+| Full set (32,641 satellites)    |    437,562,153 |        100.0% |
+| Skip debris on debris           |    190,915,570 |        43.63% |
+| Only overlapping apogee/perigee |     80,289,038 |        18.35% |
+| Intersecting orbital planes     |     22,813,396 |         5.21% |
+| **All strategies combined**     | **14,708,895** |     **3.36%** |
 
 ## Setup
 

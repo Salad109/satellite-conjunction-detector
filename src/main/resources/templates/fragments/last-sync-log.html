@@ -1,0 +1,10 @@
+<p class="text-sm text-gray-500" th:if="${log != null}">
+    Last sync: <span th:text="${#temporals.format(log.startedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
+    <span class="text-green-600 ml-1" th:if="${log.successful}">OK</span>
+    <span class="text-red-600 ml-1" th:unless="${log.successful}">FAILED</span>
+    - <span th:text="${log.objectsInserted}"></span> inserted,
+    <span th:text="${log.objectsUpdated}"></span> updated,
+    <span th:text="${log.objectsSkipped}"></span> skipped<span th:if="${log.objectsDeleted > 0}">, <span
+        th:text="${log.objectsDeleted}"></span> deleted</span>
+</p>
+<p class="text-sm text-gray-400" th:if="${log == null}">No sync data available</p>

@@ -10,7 +10,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 
 /**
@@ -39,36 +40,109 @@ public class PairReductionBenchmark implements CommandLineRunner {
         int satelliteCount = satellites.size();
         long totalPairs = (long) satelliteCount * (satelliteCount - 1) / 2;
 
-        log.info("Loaded {} satellites", satelliteCount);
+        log.info("Loaded {} satellites ({} total pairs)", satelliteCount, String.format("%,d", totalPairs));
+        log.info("");
 
-        AtomicLong passAllFilters = new AtomicLong(0);
+        BenchmarkResult noReduction = benchmarkStrategy(
+                "no reduction",
+                satellites,
+                totalPairs,
+                (a, b) -> true
+        );
 
-        long startTime = System.currentTimeMillis();
+        BenchmarkResult noDebris = benchmarkStrategy(
+                "no debris on debris",
+                satellites,
+                totalPairs,
+                pairReductionService::neitherAreDebris
+        );
+
+        BenchmarkResult altitudesOverlap = benchmarkStrategy(
+                "altitudes overlap",
+                satellites,
+                totalPairs,
+                pairReductionService::altitudeShellsOverlap
+        );
+
+        BenchmarkResult planesIntersect = benchmarkStrategy(
+                "planes intersect",
+                satellites,
+                totalPairs,
+                pairReductionService::orbitalPlanesIntersect
+        );
+
+        BenchmarkResult allStrategies = benchmarkStrategy(
+                "all strategies",
+                satellites,
+                totalPairs,
+                pairReductionService::canCollide
+        );
+
+        printResultsTable(totalPairs, noReduction, noDebris, altitudesOverlap, planesIntersect, allStrategies);
+    }
+
+    private BenchmarkResult benchmarkStrategy(
+            String name,
+            List<Satellite> satellites,
+            long totalPairs,
+            BiPredicate<Satellite, Satellite> filter
+    ) {
+        log.info("Benchmarking: {}", name);
+        int satelliteCount = satellites.size();
+
+        LongAdder passingPairs = new LongAdder();
+
+        long startTime = System.nanoTime();
 
         IntStream.range(0, satelliteCount).parallel().forEach(i -> {
             Satellite a = satellites.get(i);
+            long localCount = 0;
             for (int j = i + 1; j < satelliteCount; j++) {
                 Satellite b = satellites.get(j);
-                if (pairReductionService.canCollide(a, b)) {
-                    passAllFilters.incrementAndGet();
+                if (filter.test(a, b)) {
+                    localCount++;
                 }
             }
+            passingPairs.add(localCount);
         });
 
-        long elapsed = System.currentTimeMillis() - startTime;
+        long elapsedNanos = System.nanoTime() - startTime;
+        long resultCount = passingPairs.sum();
 
+        log.info(" -> {} pairs in {}ms", String.format("%,d", resultCount), elapsedNanos / 1_000_000);
+
+        return new BenchmarkResult(name, resultCount, elapsedNanos, totalPairs);
+    }
+
+    private void printResultsTable(long totalPairs, BenchmarkResult... results) {
         log.info("");
-        log.info("Benchmark results:");
-        log.info("Total pairs: {}",
-                String.format("%,d", totalPairs));
-        log.info("Remaining candidates: {} ({}%)",
-                String.format("%,d", passAllFilters.get()),
-                String.format("%.2f", 100.0 * passAllFilters.get() / totalPairs));
-        log.info("Total reduction: {}%",
-                String.format("%.2f", 100.0 * (1 - (double) passAllFilters.get() / totalPairs)));
-        log.info("Elapsed time: {} seconds",
-                String.format("%.2f", elapsed / 1000.0));
-        log.info("Throughput: {} pairs/second",
-                String.format("%,.0f", totalPairs / (elapsed / 1000.0)));
+        log.info("=".repeat(80));
+        log.info("BENCHMARK RESULTS ({} total pairs)", String.format("%,d", totalPairs));
+        log.info("=".repeat(80));
+        log.info(String.format("%-19s | %12s | %13s | %10s | %14s",
+                "strategy", "unique pairs", "% of full set", "time", "throughput/sec"));
+        log.info("-".repeat(80));
+
+        for (BenchmarkResult result : results) {
+            double percentOfFull = 100.0 * result.passingPairs / result.totalPairs;
+            double elapsedSeconds = result.elapsedNanos / 1_000_000_000.0;
+            double throughput = result.totalPairs / elapsedSeconds;
+
+            String timeStr = elapsedSeconds >= 1.0
+                    ? String.format("%.2fs", elapsedSeconds)
+                    : String.format("%.0fms", result.elapsedNanos / 1_000_000.0);
+
+            log.info(String.format("%-19s | %12s | %12.2f%% | %10s | %14s",
+                    result.name,
+                    String.format("%,d", result.passingPairs),
+                    percentOfFull,
+                    timeStr,
+                    String.format("%,.0f", throughput)));
+        }
+
+        log.info("=".repeat(80));
+    }
+
+    private record BenchmarkResult(String name, long passingPairs, long elapsedNanos, long totalPairs) {
     }
 }
