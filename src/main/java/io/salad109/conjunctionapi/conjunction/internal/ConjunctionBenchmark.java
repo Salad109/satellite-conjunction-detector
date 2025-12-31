@@ -13,6 +13,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -65,9 +70,17 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         List<BenchmarkResult> results = new ArrayList<>();
 
+        // Run benchmarks with varying tolerance (60-600km, step 15) and step seconds (4-40s, step 1)
+        double toleranceKm = 60;
+        int stepSeconds = 4;
+        while (toleranceKm <= 600) {
+            results.add(runBenchmark(pairs, propagators, fixedStartTime, toleranceKm, stepSeconds, lookaheadHours, thresholdKm));
+            toleranceKm += 15;
+            stepSeconds += 1;
+        }
 
-        results.add(runBenchmark(pairs, propagators, fixedStartTime, 50, 4, lookaheadHours, thresholdKm));
         printResultsTable(results);
+        writeCsvResults(results);
     }
 
     private BenchmarkResult runBenchmark(
@@ -145,6 +158,37 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         if (count >= 1_000_000) return String.format("%.1fM", count / 1_000_000.0);
         if (count >= 1_000) return String.format("%.0fK", count / 1_000.0);
         return String.valueOf(count);
+    }
+
+    private void writeCsvResults(List<BenchmarkResult> results) {
+        Path outputPath = Paths.get("docs", "conjunction-plots", "conjunction_benchmark.csv");
+
+        try {
+            Files.createDirectories(outputPath.getParent());
+
+            try (FileWriter writer = new FileWriter(outputPath.toFile())) {
+                writer.write("tolerance_km,step_s,detections,events,conj,dedup,coarse_s,refine_s,total_s\n");
+
+                for (BenchmarkResult r : results) {
+                    writer.write(String.format("%.0f,%d,%d,%d,%d,%d,%.1f,%.1f,%.1f\n",
+                            r.toleranceKm,
+                            r.stepSeconds,
+                            r.detections,
+                            r.events,
+                            r.conjunctions,
+                            r.deduplicated,
+                            r.coarseTimeMs / 1000.0,
+                            r.refineTimeMs / 1000.0,
+                            r.totalTimeMs / 1000.0));
+                }
+            }
+
+            log.info("");
+            log.info("CSV results written to: {}", outputPath.toAbsolutePath());
+
+        } catch (IOException e) {
+            log.error("Failed to write CSV file", e);
+        }
     }
 
     private record BenchmarkResult(String name, double toleranceKm, int stepSeconds, long detections,
