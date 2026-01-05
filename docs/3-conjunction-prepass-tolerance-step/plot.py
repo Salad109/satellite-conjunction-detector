@@ -20,15 +20,15 @@ for idx, ratio in enumerate([12, 15, 18, 20]):
     ax.set_ylabel('Prepass (km)')
 
 plt.tight_layout()
-plt.savefig('1_heatmap_by_ratio.png', dpi=300, bbox_inches='tight')
+plt.savefig('1_ratio_heatmap.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Plot 2: Heatmaps by prepass
-fig, axes = plt.subplots(2, 3, figsize=(16, 9))
+fig, axes = plt.subplots(2, 4, figsize=(20, 9))
 fig.suptitle('Total Time by Prepass Distance (tolerance vs ratio)', fontsize=14, fontweight='bold')
 
-for idx, prepass in enumerate([180, 300, 360, 420, 480, 600]):
-    ax = axes[idx // 3, idx % 3]
+for idx, prepass in enumerate([180, 240, 300, 360, 420, 480, 540, 600]):
+    ax = axes[idx // 4, idx % 4]
     subset = df[df['prepass_km'] == prepass]
     pivot = subset.pivot(index='ratio', columns='tolerance_km', values='total_s')
 
@@ -38,7 +38,7 @@ for idx, prepass in enumerate([180, 300, 360, 420, 480, 600]):
     ax.set_ylabel('Ratio')
 
 plt.tight_layout()
-plt.savefig('2_heatmap_by_prepass.png', dpi=300, bbox_inches='tight')
+plt.savefig('2_prepass_heatmap.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Plot 3: Deduplicated conjunctions vs tolerance, grouped by ratio, averaged across prepass
@@ -57,5 +57,5 @@ ax.set_title('Conjunction Count vs Tolerance by Step Ratio', fontsize=14, fontwe
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('3_events_by_ratio.png', dpi=300, bbox_inches='tight')
+plt.savefig('3_dedup_by_ratio.png', dpi=300, bbox_inches='tight')
 plt.close()

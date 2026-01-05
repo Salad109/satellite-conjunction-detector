@@ -17,8 +17,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +51,8 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
     @Override
     public void run(String @NonNull ... args) throws InterruptedException {
-        log.info("Starting conjunction detection benchmark");
+        log.info("Starting continuous conjunction detection benchmark");
+        log.info("Press Ctrl+C to terminate");
         log.info("");
 
         List<Satellite> satellites = satelliteService.getAll();
@@ -66,22 +69,28 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         int lookaheadHours = 6;
         double thresholdKm = 5.0;
+        int stepSecondRatio = 12;
 
-        List<BenchmarkResult> results = new ArrayList<>();
+        //noinspection InfiniteLoopStatement
+        while (true) {
+            log.info("===== NEW ITERATION =====");
+            List<BenchmarkResult> results = new ArrayList<>();
 
-        // Run benchmarks with various parameters
-        double toleranceKm = 105;
-        while (toleranceKm <= 600) {
-            int stepSeconds = (int) (toleranceKm / 12.0);
+            // Run benchmarks with various parameters
+            double toleranceKm = 180;
+            while (toleranceKm <= 384) {
+                int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
-            System.gc();
-            Thread.sleep(100);
-            results.add(runBenchmark(satellites, propagators, fixedStartTime, toleranceKm, stepSeconds, lookaheadHours, thresholdKm));
+                System.gc();
+                Thread.sleep(100);
+                results.add(runBenchmark(satellites, propagators, fixedStartTime, toleranceKm, stepSeconds, lookaheadHours, thresholdKm));
 
-            toleranceKm += 15;
+                toleranceKm += stepSecondRatio;
+            }
+
+            writeCsvResults(results);
+            log.info("");
         }
-
-        writeCsvResults(results);
     }
 
     private BenchmarkResult runBenchmark(
@@ -138,7 +147,10 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
-        Path outputPath = Paths.get("docs", "conjunction_benchmark.csv");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = LocalDateTime.now().format(formatter);
+        String filename = String.format("conjunction_benchmark_iter%s.csv", timestamp);
+        Path outputPath = Paths.get("docs", filename);
 
         try {
             Files.createDirectories(outputPath.getParent());

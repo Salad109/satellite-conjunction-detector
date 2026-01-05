@@ -1,7 +1,7 @@
 # Prepass Tolerance and Step Ratio Exploration
 
-Previous tuning (see `../2-conjunction-tolerance/`) coupled prepass distance and step ratio parameters to coarse scan
-tolerance as follows:
+Previous tuning (see `2-conjunction-tolerance-tuning.md`) coupled prepass distance and step ratio parameters to coarse 
+scan tolerance as follows:
 
 - **tolerance-km**: Coarse sweep detection threshold
 - **prepass-distance-km**: Filter tolerance in pair reduction (altitude shell overlap + orbital plane
@@ -56,12 +56,11 @@ Lower ratio = larger time steps = fewer coarse sweep iterations. Ratio 12 consis
 tolerance level. The constraint `step <= tolerance / 15` was conservative - ratio 12 maintains full conjunction
 detection (204-209 dedup across all runs).
 
-**3. Optimal tolerance is ~360 km**
+**3. Optimal tolerance is ~336-360 km**
 
-360 km balances both coarse sweep and refinement time. Although previous tuning (see `../2-conjunction-tolerance/`)
-found
-375 km optimal, it was not sampled in this grid (since step was 60 km). The optimal tolerance value appears to be
-between 300 and 420 km, with 360 km performing best in this grid.
+360 km balances both coarse sweep and refinement time. Previous tuning (see `2-conjunction-tolerance-tuning.md`) found
+336 km optimal with finer granularity (step 12 km). The optimal tolerance value appears to be between 300 and 420 km,
+with this grid's 360 km and fine-tuning's 336 km both performing well.
 
 **4. Step ratio 12 is safe in practice**
 
@@ -73,15 +72,15 @@ conjunctions (expected range), confirming no conjunctions are missed.
 ## Recommended Configuration
 
 ```properties
-conjunction.tolerance-km=375.0
-conjunction.step-seconds=32
+conjunction.tolerance-km=336.0
+conjunction.step-seconds=28
 ```
 
 `conjunction.prepass-distance-km` parameter was removed and now pair reduction tolerance is set equal to
 `tolerance-km` internally.
 
-Both values sit in the performance valley. 375 km was not sampled in this grid (step 60 km) but performs marginally
-better based on `../2-conjunction-tolerance/` results.
+Both values sit in the performance valley. Fine-grained tuning in `2-conjunction-tolerance-tuning.md` found 336 km and
+28s optimal (85.2s), which aligns with this grid's finding that tolerance around 300-420 km with ratio 12 performs best.
 
 ## Running the Benchmark
 
