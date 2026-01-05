@@ -28,7 +28,7 @@ public class ConjunctionService {
     private final PropagationService propagationService;
     private final ScanService scanService;
 
-    @Value("${conjunction.tolerance-km:50.0}")
+    @Value("${conjunction.tolerance-km:375.0}")
     private double toleranceKm;
 
     @Value("${conjunction.collision-threshold-km:5.0}")
@@ -37,7 +37,7 @@ public class ConjunctionService {
     @Value("${conjunction.lookahead-hours:24}")
     private int lookaheadHours;
 
-    @Value("${conjunction.step-seconds:3}")
+    @Value("${conjunction.step-seconds:32}")
     private int stepSeconds;
 
     public ConjunctionService(SatelliteService satelliteService,

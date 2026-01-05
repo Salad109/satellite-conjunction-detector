@@ -72,7 +72,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         // Run benchmarks with various parameters
         double toleranceKm = 105;
         while (toleranceKm <= 600) {
-            int stepSeconds = (int) (toleranceKm / 15.0);
+            int stepSeconds = (int) (toleranceKm / 12.0);
 
             System.gc();
             Thread.sleep(100);
@@ -138,7 +138,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
-        Path outputPath = Paths.get("docs", "conjunction-plots", "conjunction_benchmark.csv");
+        Path outputPath = Paths.get("docs", "conjunction_benchmark.csv");
 
         try {
             Files.createDirectories(outputPath.getParent());
