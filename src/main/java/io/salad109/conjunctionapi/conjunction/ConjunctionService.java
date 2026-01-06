@@ -28,6 +28,9 @@ public class ConjunctionService {
     private final PropagationService propagationService;
     private final ScanService scanService;
 
+    @Value("${conjunction.prepass-tolerance-km:12.5}")
+    private double prepassToleranceKm;
+
     @Value("${conjunction.tolerance-km:375.0}")
     private double toleranceKm;
 
@@ -71,7 +74,7 @@ public class ConjunctionService {
         log.debug("Loaded {} satellites", satellites.size());
 
         // Find and filter potential collision pairs
-        List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, toleranceKm);
+        List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, prepassToleranceKm);
         log.debug("Reduced to {} candidate pairs", pairs.size());
 
         // Build propagators

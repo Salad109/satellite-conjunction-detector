@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 public class PairReductionBenchmark implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PairReductionBenchmark.class);
-    private static final double DEFAULT_TOLERANCE_KM = 50.0;
+    private static final double DEFAULT_TOLERANCE_KM = 12.5;
 
     private final SatelliteRepository satelliteRepository;
     private final PairReductionService pairReductionService;

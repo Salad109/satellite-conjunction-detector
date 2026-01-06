@@ -7,11 +7,11 @@ several sequential filters to reduce computational load.
 
 | Strategy                        |   Unique Pairs | % of Original |      Time |  Throughput/sec |
 |---------------------------------|---------------:|--------------:|----------:|----------------:|
-| Full set (29,583 satellites)    |    437,562,153 |        100.0% |     664ms |     659,203,315 |
-| Skip debris on debris           |    190,915,570 |        43.63% |     1.76s |     248,887,321 |
-| Only overlapping apogee/perigee |     80,289,038 |        18.35% |     1.94s |     225,551,838 |
-| Intersecting orbital planes     |     22,813,396 |         5.21% |    23.84s |      18,350,901 |
-| **All strategies combined**     | **14,708,895** |     **3.36%** | **4.22s** | **103,802,524** |
+| Full set (29,583 satellites)    |    438,361,245 |        100.0% |         - |               - |
+| Skip debris on debris           |    191,756,736 |        43.74% |     1.84s |     237,664,556 |
+| Only overlapping apogee/perigee |     82,686,395 |        18.86% |     1.68s |     260,628,008 |
+| Intersecting orbital planes     |     26,804,778 |         6.11% |    23.01s |      19,052,274 |
+| **All strategies combined**     | **17,110,639** |     **3.90%** | **4.13s** | **106,042,788** |
 
 ## Filter Details
 

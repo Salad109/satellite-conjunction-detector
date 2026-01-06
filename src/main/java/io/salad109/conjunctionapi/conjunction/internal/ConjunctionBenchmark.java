@@ -69,23 +69,22 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         int lookaheadHours = 6;
         double thresholdKm = 5.0;
+        double prepassToleranceKm = 12.5;
         int stepSecondRatio = 12;
 
-        //noinspection InfiniteLoopStatement
         while (true) {
             log.info("===== NEW ITERATION =====");
             List<BenchmarkResult> results = new ArrayList<>();
 
-            // Run benchmarks with various parameters
-            double toleranceKm = 180;
-            while (toleranceKm <= 384) {
+            double toleranceKm = 120;
+            while (toleranceKm <= 1200) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
                 Thread.sleep(100);
-                results.add(runBenchmark(satellites, propagators, fixedStartTime, toleranceKm, stepSeconds, lookaheadHours, thresholdKm));
+                results.add(runBenchmark(satellites, propagators, fixedStartTime, toleranceKm, prepassToleranceKm, stepSeconds, lookaheadHours, thresholdKm));
 
-                toleranceKm += stepSecondRatio;
+                toleranceKm += 12;
             }
 
             writeCsvResults(results);
@@ -98,15 +97,16 @@ public class ConjunctionBenchmark implements CommandLineRunner {
             Map<Integer, TLEPropagator> propagators,
             OffsetDateTime startTime,
             double toleranceKm,
+            double prepassToleranceKm,
             int stepSeconds,
             int lookaheadHours,
             double thresholdKm
     ) {
-        String name = String.format("tol=%.0f, step=%d", toleranceKm, stepSeconds);
+        String name = String.format("tol=%.0f, prepass=%.1f, step=%d", toleranceKm, prepassToleranceKm, stepSeconds);
         log.info("Running: {}", name);
         long benchmarkStart = System.nanoTime();
 
-        List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, toleranceKm);
+        List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, prepassToleranceKm);
         log.info("{} candidate pairs", pairs.size());
 
         long coarseStart = System.nanoTime();
@@ -149,7 +149,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     private void writeCsvResults(List<BenchmarkResult> results) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
         String timestamp = LocalDateTime.now().format(formatter);
-        String filename = String.format("conjunction_benchmark_iter%s.csv", timestamp);
+        String filename = String.format("conjunction_benchmark_%s.csv", timestamp);
         Path outputPath = Paths.get("docs", filename);
 
         try {
