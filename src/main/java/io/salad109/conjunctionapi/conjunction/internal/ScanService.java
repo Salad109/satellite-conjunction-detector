@@ -91,16 +91,14 @@ public class ScanService {
             Map<Integer, PVCoordinates> positions = propagationService.propagateAll(propagators, time);
 
             List<CoarseDetection> stepDetections = pairs.parallelStream()
-                    .filter(pair -> {
+                    .<CoarseDetection>mapMulti((pair, consumer) -> {
                         PVCoordinates pvA = positions.get(pair.a().getNoradCatId());
                         PVCoordinates pvB = positions.get(pair.b().getNoradCatId());
-                        if (pvA == null || pvB == null) return false;
-                        return propagationService.calculateDistance(pvA, pvB) < toleranceKm;
-                    })
-                    .map(pair -> {
-                        PVCoordinates pvA = positions.get(pair.a().getNoradCatId());
-                        PVCoordinates pvB = positions.get(pair.b().getNoradCatId());
-                        return new CoarseDetection(pair, time, propagationService.calculateDistance(pvA, pvB));
+                        if (pvA == null || pvB == null) return;
+                        double distance = propagationService.calculateDistance(pvA, pvB);
+                        if (distance < toleranceKm) {
+                            consumer.accept(new CoarseDetection(pair, time, distance));
+                        }
                     })
                     .toList();
 
