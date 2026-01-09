@@ -228,10 +228,14 @@ public class ScanService {
 
         double relativeVelocity = propagationService.propagateAndMeasureVelocity(pair, propagators, tca);
 
+        // Ensure object 1 norad id < object 2 norad id
+        int object1 = Math.min(pair.a().getNoradCatId(), pair.b().getNoradCatId());
+        int object2 = Math.max(pair.a().getNoradCatId(), pair.b().getNoradCatId());
+
         return new Conjunction(
                 null,
-                pair.a().getNoradCatId(),
-                pair.b().getNoradCatId(),
+                object1,
+                object2,
                 minDistance,
                 tca,
                 relativeVelocity

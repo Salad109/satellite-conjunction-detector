@@ -164,8 +164,8 @@ public class PropagationService {
     }
 
     record PositionCache(Map<Integer, Integer> noradIdToArrayId, OffsetDateTime[] times,
-                                double[][] x, double[][] y, double[][] z,
-                                boolean[][] valid) {
+                         double[][] x, double[][] y, double[][] z,
+                         boolean[][] valid) {
         public double distanceSquaredAt(int a, int b, int step) {
             double dx = x[a][step] - x[b][step];
             double dy = y[a][step] - y[b][step];
