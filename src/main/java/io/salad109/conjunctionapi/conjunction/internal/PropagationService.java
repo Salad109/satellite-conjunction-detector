@@ -79,45 +79,56 @@ public class PropagationService {
     /**
      * Pre-compute positions for all satellites across all time steps.
      */
-    public PositionCache precomputePositions(Map<Integer, TLEPropagator> propagators,
-                                             OffsetDateTime startTime, int stepSeconds, int totalSteps) {
-        log.debug("Pre-computing positions for {} satellites across {} steps", propagators.size(), totalSteps);
+    PositionCache precomputePositions(Map<Integer, TLEPropagator> propagators,
+                                      OffsetDateTime startTime, int stepSeconds, int totalSteps,
+                                      int interpolationStride) {
+        int stride = Math.max(1, interpolationStride);
+        log.debug("Pre-computing positions: {} sats, {} steps, stride={}", propagators.size(), totalSteps, stride);
         long startMs = System.currentTimeMillis();
 
-        // Build time arrays
         OffsetDateTime[] times = new OffsetDateTime[totalSteps];
-        AbsoluteDate[] dates = new AbsoluteDate[totalSteps];
         for (int i = 0; i < totalSteps; i++) {
             times[i] = startTime.plusSeconds((long) i * stepSeconds);
-            dates[i] = toAbsoluteDate(times[i]);
         }
 
-        // Build satellite index mapping
         Integer[] satIds = propagators.keySet().toArray(Integer[]::new);
         Map<Integer, Integer> noradIdToArrayId = HashMap.newHashMap(satIds.length);
         for (int i = 0; i < satIds.length; i++) {
             noradIdToArrayId.put(satIds[i], i);
         }
 
-        // Allocate position arrays
         int numSats = satIds.length;
         double[][] x = new double[numSats][totalSteps];
         double[][] y = new double[numSats][totalSteps];
         double[][] z = new double[numSats][totalSteps];
         boolean[][] valid = new boolean[numSats][totalSteps];
 
-        // One thread per satellite's all positions
-        IntStream.range(0, numSats).parallel().forEach(satIndex -> {
-            TLEPropagator prop = propagators.get(satIds[satIndex]);
-            for (int step = 0; step < totalSteps; step++) {
+        IntStream.range(0, numSats).parallel().forEach(s -> {
+            TLEPropagator prop = propagators.get(satIds[s]);
+
+            // SGP4 at stride points
+            for (int step = 0; step < totalSteps; step += stride) {
                 try {
-                    PVCoordinates pv = prop.getPVCoordinates(dates[step], prop.getFrame());
-                    x[satIndex][step] = pv.getPosition().getX() / 1000.0;
-                    y[satIndex][step] = pv.getPosition().getY() / 1000.0;
-                    z[satIndex][step] = pv.getPosition().getZ() / 1000.0;
-                    valid[satIndex][step] = true;
+                    PVCoordinates pv = prop.getPVCoordinates(toAbsoluteDate(times[step]), prop.getFrame());
+                    x[s][step] = pv.getPosition().getX() / 1000.0;
+                    y[s][step] = pv.getPosition().getY() / 1000.0;
+                    z[s][step] = pv.getPosition().getZ() / 1000.0;
+                    valid[s][step] = true;
                 } catch (Exception e) {
-                    valid[satIndex][step] = false;
+                    valid[s][step] = false;
+                }
+            }
+
+            // Linear interpolation between strides
+            for (int a = 0; a + stride < totalSteps; a += stride) {
+                int b = a + stride;
+                if (!valid[s][a] || !valid[s][b]) continue;
+                for (int step = a + 1; step < b; step++) {
+                    double t = (double) (step - a) / stride;
+                    x[s][step] = x[s][a] + t * (x[s][b] - x[s][a]);
+                    y[s][step] = y[s][a] + t * (y[s][b] - y[s][a]);
+                    z[s][step] = z[s][a] + t * (z[s][b] - z[s][a]);
+                    valid[s][step] = true;
                 }
             }
         });

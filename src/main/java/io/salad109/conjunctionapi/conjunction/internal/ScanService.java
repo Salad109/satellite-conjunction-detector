@@ -27,11 +27,11 @@ public class ScanService {
         this.propagationService = propagationService;
     }
 
-    public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds) {
-        log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km)",
-                pairs.size(), lookaheadHours, toleranceKm, thresholdKm);
+    public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride) {
+        log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km, interpStride={})",
+                pairs.size(), lookaheadHours, toleranceKm, thresholdKm, interpolationStride);
         // Coarse sweep
-        List<CoarseDetection> coarseDetections = coarseSweep(pairs, propagators, OffsetDateTime.now(ZoneOffset.UTC), toleranceKm, stepSeconds, lookaheadHours);
+        List<CoarseDetection> coarseDetections = coarseSweep(pairs, propagators, OffsetDateTime.now(ZoneOffset.UTC), toleranceKm, stepSeconds, lookaheadHours, interpolationStride);
         log.info("Coarse sweep found {} detections", coarseDetections.size());
 
         if (coarseDetections.isEmpty()) {
@@ -79,15 +79,16 @@ public class ScanService {
      * Scan through lookahead window in large steps and record all detections within toleranceKm.
      */
     List<CoarseDetection> coarseSweep(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators,
-                                      OffsetDateTime startTime, double toleranceKm, int stepSeconds, int lookaheadHours) {
+                                      OffsetDateTime startTime, double toleranceKm, int stepSeconds, int lookaheadHours,
+                                      int interpolationStride) {
         long startMs = System.currentTimeMillis();
 
         int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
         log.debug("Coarse sweep: {} steps over {} hours at {}s intervals", totalSteps, lookaheadHours, stepSeconds);
 
-        // Pre-compute all satellite positions
+        // Pre-compute all satellite positions (with optional interpolation)
         PropagationService.PositionCache precomputedPositions = propagationService.precomputePositions(
-                propagators, startTime, stepSeconds, totalSteps);
+                propagators, startTime, stepSeconds, totalSteps, interpolationStride);
 
         // Check all pairs
         List<CoarseDetection> detections = checkPairs(pairs, precomputedPositions, toleranceKm);

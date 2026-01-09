@@ -43,6 +43,9 @@ public class ConjunctionService {
     @Value("${conjunction.step-seconds:32}")
     private int stepSeconds;
 
+    @Value("${conjunction.interpolation-stride:1}")
+    private int interpolationStride;
+
     public ConjunctionService(SatelliteService satelliteService,
                               ConjunctionRepository conjunctionRepository,
                               PairReductionService pairReductionService,
@@ -81,7 +84,7 @@ public class ConjunctionService {
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
 
         // Scan for conjunctions
-        List<Conjunction> conjunctions = scanService.scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds);
+        List<Conjunction> conjunctions = scanService.scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds, interpolationStride);
 
         // Save all conjunctions (upsert keeps closest per pair)
         if (!conjunctions.isEmpty()) {
