@@ -191,6 +191,8 @@ public class ScanService {
 
     /**
      * Refine an event (cluster of coarse detections) using Brent's method to find more accurate TCA and minimum distance.
+     * Uses linear interpolation during optimization to avoid expensive SGP4 calls, then does one final propagation
+     * at the found TCA for accurate distance measurement.
      */
     Conjunction refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
@@ -200,25 +202,49 @@ public class ScanService {
 
         // Search interval is stepSeconds/2 on each side of best detection
         long halfWindowNanos = (stepSeconds * 1_000_000_000L) / 2;
-        OffsetDateTime baseTime = best.time().minusNanos(halfWindowNanos);
+        long windowNanos = 2 * halfWindowNanos;
+        OffsetDateTime startTime = best.time().minusNanos(halfWindowNanos);
+        OffsetDateTime endTime = best.time().plusNanos(halfWindowNanos);
+
+        // Pre-compute positions at window endpoints (4 SGP4 calls total)
+        double[] startA = propagationService.propagateToPositionKm(pair.a(), propagators, startTime);
+        double[] endA = propagationService.propagateToPositionKm(pair.a(), propagators, endTime);
+        double[] startB = propagationService.propagateToPositionKm(pair.b(), propagators, startTime);
+        double[] endB = propagationService.propagateToPositionKm(pair.b(), propagators, endTime);
 
         // Use Brent's method from Apache Commons Math
-        // Only absolute tolerance matters. 0.17s = 2.5km@15km/s is sufficient precision
-        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 166_666_667);
+        // Only absolute tolerance matters. 0.017s = 0.25km@15km/s worst-case scenario is sufficient precision
+        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 16_666_667);
 
-        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(
-                offsetNanos -> propagationService.propagateAndMeasureDistance(pair, propagators, baseTime.plusNanos((long) offsetNanos))
-        );
+        // Minimize distance squared - same minimum location as with sqrt
+        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(offsetNanos -> {
+            double t = offsetNanos / windowNanos; // 0 to 1
+            // Linear interpolation for both satellites
+            double ax = startA[0] + t * (endA[0] - startA[0]);
+            double ay = startA[1] + t * (endA[1] - startA[1]);
+            double az = startA[2] + t * (endA[2] - startA[2]);
+            double bx = startB[0] + t * (endB[0] - startB[0]);
+            double by = startB[1] + t * (endB[1] - startB[1]);
+            double bz = startB[2] + t * (endB[2] - startB[2]);
+
+            double dx = ax - bx;
+            double dy = ay - by;
+            double dz = az - bz;
+
+            return dx * dx + dy * dy + dz * dz;
+        });
 
         UnivariatePointValuePair result = optimizer.optimize(
                 objectiveFunction,
                 GoalType.MINIMIZE,
-                new SearchInterval(0, 2.0 * halfWindowNanos),
+                new SearchInterval(0, windowNanos),
                 MaxEval.unlimited()
         );
 
-        OffsetDateTime tca = baseTime.plusNanos((long) result.getPoint());
-        double minDistance = result.getValue();
+        OffsetDateTime tca = startTime.plusNanos((long) result.getPoint());
+
+        // Final accurate propagation at TCA for real distance
+        double minDistance = propagationService.propagateAndMeasureDistance(pair, propagators, tca);
 
         // Only calculate velocity for conjunctions under threshold
         double relativeVelocity = minDistance <= thresholdKm

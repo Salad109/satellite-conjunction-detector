@@ -28,7 +28,7 @@ The application is organized into five modules:
 
 With ~30,000 tracked objects, the naive approach would check over 400 million satellite pairs. The system applies
 sequential geometric filters to reduce this to ~3.4% (14.7M pairs).
-See [docs/pair-reduction.md](docs/pair-reduction.md) for details.
+See [docs/1-pair-reduction.md](docs/1-pair-reduction.md) for details.
 
 ## Coarse and Fine Scanning
 
@@ -37,7 +37,7 @@ The detection algorithm uses a two-step approach:
 1. **Coarse sweep**: Steps through time at configurable intervals, flagging approximate conjunctions
 2. **Refinement**: Binary search around detected conjunction events to find precise TCA and miss distance
 
-See [docs/conjunction-tuning.md](docs/conjunction-tuning.md) for tuning experiments and optimal parameters.
+See docs for tuning experiments and optimal parameters.
 
 ## Setup
 

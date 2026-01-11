@@ -59,7 +59,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Loaded {} satellites", satellites.size());
 
         // Use fixed start time
-        OffsetDateTime fixedStartTime = OffsetDateTime.of(2025, 12, 31, 0, 0, 0, 0, ZoneOffset.UTC)
+        OffsetDateTime fixedStartTime = OffsetDateTime.now(ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS);
         log.info("Using fixed start time: {}", fixedStartTime);
 
@@ -76,7 +76,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         while (true) {
             List<BenchmarkResult> results = new ArrayList<>();
-            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += 12) {
+            for (double toleranceKm = 60; toleranceKm <= 600; toleranceKm += 12) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();

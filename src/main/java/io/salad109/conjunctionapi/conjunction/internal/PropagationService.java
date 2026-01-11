@@ -75,6 +75,24 @@ public class PropagationService {
         }
     }
 
+    /**
+     * Propagate a single satellite to a given time and return position in km as [x, y, z].
+     */
+    public double[] propagateToPositionKm(Satellite sat, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
+        AbsoluteDate date = toAbsoluteDate(time);
+        try {
+            TLEPropagator prop = propagators.get(sat.getNoradCatId());
+            PVCoordinates pv = prop.getPVCoordinates(date, prop.getFrame());
+            return new double[]{
+                    pv.getPosition().getX() / 1000.0,
+                    pv.getPosition().getY() / 1000.0,
+                    pv.getPosition().getZ() / 1000.0
+            };
+        } catch (Exception e) {
+            log.warn("Failed to propagate satellite {}: {}", sat.getNoradCatId(), e.getMessage());
+            return new double[]{0, 0, 0};
+        }
+    }
 
     /**
      * Pre-compute positions for all satellites across all time steps.
