@@ -76,7 +76,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         while (true) {
             List<BenchmarkResult> results = new ArrayList<>();
-            for (double toleranceKm = 60; toleranceKm <= 600; toleranceKm += 12) {
+            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += 12) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
