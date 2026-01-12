@@ -29,19 +29,19 @@ opposing effects balance.
 
 | Tolerance Range | Dominant Stage | Behavior                                 |
 |-----------------|----------------|------------------------------------------|
-| under 300 km    | Coarse         | Many time steps, few events to refine    |
-| 300-500 km      | **Balanced**   | Minimum total time                       |
-| 500+ km         | Refine         | Fewer coarse steps, many false positives |
+| under 200 km    | Coarse         | Many time steps, few events to refine    |
+| 200-300 km      | **Balanced**   | Minimum total time                       |
+| 300+ km         | Refine         | Fewer coarse steps, many false positives |
 
 ### Conjunction Stability
 
-Configurations up to ~800 km detect 200-207 deduplicated conjunctions consistently. Above 800 km, detection begins to
-drop off slightly. This is likely due to interpolation error at stride=6 compounding with large step sizes, but it's
-irrelevant in practice since optimal tolerance is well below this range.
+Configurations up to ~600 km detect similar amount of deduplicated conjunctions consistently. Above 600 km, detection
+begins to drop off slightly. This is likely due to interpolation error at stride=6 compounding with large step sizes,
+but it's irrelevant in practice since optimal tolerance is well below this range.
 
 ## Conclusion
 
-**Optimal tolerance is 420 km with step size of 35s**
+**Optimal tolerance is 24 km with step size of 20s**
 
 The optimal tolerance is where coarse and refine times are balanced. Going lower wastes time on excessive coarse
 iterations; going higher wastes time refining too many false positives.

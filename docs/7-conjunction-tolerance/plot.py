@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit, minimize_scalar
 import glob
 
 # Read all CSV files in the directory
@@ -17,12 +19,27 @@ all_data = pd.concat(dfs, ignore_index=True)
 # Group by tolerance_km and average all other numeric columns
 df = all_data.groupby('tolerance_km', as_index=False).mean(numeric_only=True)
 
-min_time_idx = df['total_s'].idxmin()
+def model(x, a, b, c):
+    return a / x + b * x + c
+
+x = df['tolerance_km'].values
+y = df['total_s'].values
+params, _ = curve_fit(model, x, y)
+a, b, c = params
+
+y_pred = model(x, *params)
+r2 = 1 - np.sum((y - y_pred)**2) / np.sum((y - np.mean(y))**2)
+
+result = minimize_scalar(lambda x: model(x, *params), bounds=(x.min(), x.max()), method='bounded')
+x_min, y_min = result.x, result.fun
 
 # Plot 1
 fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(df['tolerance_km'], df['total_s'], 'o-', color='#2E86AB', linewidth=2, markersize=8)
-ax.axvline(x=df.loc[min_time_idx, 'tolerance_km'], color='red', linestyle='--', linewidth=2, label=f"Optimal: {df.loc[min_time_idx, 'tolerance_km']} km")
+x_smooth = np.linspace(x.min(), x.max(), 500)
+ax.plot(x, y, 'o', color='#2E86AB', markersize=8, label='Data')
+ax.plot(x_smooth, model(x_smooth, *params), '-', color='red', linewidth=2, label=f'${a:.0f}/x + {b:.3f}x + {c:.1f}$')
+ax.axvline(x=x_min, color='red', linestyle='--', linewidth=2, alpha=0.5, label=f'Optimal: {x_min:.1f} km')
+ax.text(0.02, 0.98, f'$R^2 = {r2:.4f}$', transform=ax.transAxes, fontsize=11, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 ax.set_xlabel('Tolerance (km)', fontsize=12)
 ax.set_ylabel('Total Time (s)', fontsize=12)
 ax.set_title('Total Processing Time vs Tolerance', fontsize=14, fontweight='bold')
