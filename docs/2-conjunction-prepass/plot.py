@@ -42,7 +42,7 @@ plt.close()
 
 # Plot 3
 n_datasets = len(datasets)
-n_cols = 4
+n_cols = 3
 n_rows = math.ceil(n_datasets / n_cols)
 fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 6*n_rows))
 axes = axes.flatten()

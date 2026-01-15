@@ -36,10 +36,10 @@ public class PropagationService {
     }
 
     /**
-     * Propagate both satellites to a given time and return the distance between them.
-     * Thread-safe: synchronizes on propagator instances to prevent concurrent access.
+     * Propagate both satellites to a given time and return distance and relative velocity.
+     * Only calculates velocity if distance is below threshold to avoid unnecessary computation.
      */
-    public double propagateAndMeasureDistance(SatellitePair pair, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
+    DistanceAndVelocity propagateAndMeasure(SatellitePair pair, Map<Integer, TLEPropagator> propagators, OffsetDateTime time, double thresholdKm) {
         AbsoluteDate date = toAbsoluteDate(time);
 
         try {
@@ -55,43 +55,20 @@ public class PropagationService {
                 pvB = propB.getPVCoordinates(date, propB.getFrame());
             }
 
-            return calculateDistance(pvA, pvB);
+            double distance = calculateDistance(pvA, pvB);
+            double velocity = distance <= thresholdKm ? calculateRelativeVelocity(pvA, pvB) : 0.0;
+
+            return new DistanceAndVelocity(distance, velocity);
         } catch (Exception e) {
             log.warn("Failed to propagate for refinement: {}", e.getMessage());
-            return Double.MAX_VALUE;
-        }
-    }
-
-    /**
-     * Propagate both satellites to a given time and return the relative velocity.
-     */
-    public double propagateAndMeasureVelocity(SatellitePair pair, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
-        AbsoluteDate date = toAbsoluteDate(time);
-
-        try {
-            TLEPropagator propA = propagators.get(pair.a().getNoradCatId());
-            TLEPropagator propB = propagators.get(pair.b().getNoradCatId());
-
-            PVCoordinates pvA, pvB;
-
-            synchronized (propA) {
-                pvA = propA.getPVCoordinates(date, propA.getFrame());
-            }
-            synchronized (propB) {
-                pvB = propB.getPVCoordinates(date, propB.getFrame());
-            }
-
-            return calculateRelativeVelocity(pvA, pvB);
-        } catch (Exception e) {
-            log.warn("Failed to calculate velocity: {}", e.getMessage());
-            return 0.0;
+            return new DistanceAndVelocity(Double.MAX_VALUE, 0.0);
         }
     }
 
     /**
      * Propagate a single satellite to a given time and return position in km as [x, y, z].
      */
-    public double[] propagateToPositionKm(Satellite sat, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
+    double[] propagateToPositionKm(Satellite sat, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
         AbsoluteDate date = toAbsoluteDate(time);
         try {
             TLEPropagator prop = propagators.get(sat.getNoradCatId());
@@ -173,14 +150,14 @@ public class PropagationService {
         return new PositionCache(noradIdToArrayId, times, x, y, z, valid);
     }
 
-    public double calculateDistance(PVCoordinates pvA, PVCoordinates pvB) {
+    private double calculateDistance(PVCoordinates pvA, PVCoordinates pvB) {
         double dx = (pvA.getPosition().getX() - pvB.getPosition().getX()) / 1000.0;
         double dy = (pvA.getPosition().getY() - pvB.getPosition().getY()) / 1000.0;
         double dz = (pvA.getPosition().getZ() - pvB.getPosition().getZ()) / 1000.0;
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
-    public double calculateRelativeVelocity(PVCoordinates pvA, PVCoordinates pvB) {
+    private double calculateRelativeVelocity(PVCoordinates pvA, PVCoordinates pvB) {
         double dvx = pvA.getVelocity().getX() - pvB.getVelocity().getX();
         double dvy = pvA.getVelocity().getY() - pvB.getVelocity().getY();
         double dvz = pvA.getVelocity().getZ() - pvB.getVelocity().getZ();
@@ -218,5 +195,8 @@ public class PropagationService {
         public boolean validAt(int a, int b, int step) {
             return valid[a][step] && valid[b][step];
         }
+    }
+
+    record DistanceAndVelocity(double distanceKm, double velocityKmS) {
     }
 }

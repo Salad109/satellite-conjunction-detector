@@ -243,13 +243,10 @@ public class ScanService {
 
         OffsetDateTime tca = startTime.plusNanos((long) result.getPoint());
 
-        // Final accurate propagation at TCA for real distance
-        double minDistance = propagationService.propagateAndMeasureDistance(pair, propagators, tca);
-
-        // Only calculate velocity for conjunctions under threshold
-        double relativeVelocity = minDistance <= thresholdKm
-                ? propagationService.propagateAndMeasureVelocity(pair, propagators, tca)
-                : 0.0;
+        // Final accurate propagation at TCA
+        PropagationService.DistanceAndVelocity result2 = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
+        double minDistance = result2.distanceKm();
+        double relativeVelocity = result2.velocityKmS();
 
         // Ensure object 1 norad id < object 2 norad id
         int object1 = Math.min(pair.a().getNoradCatId(), pair.b().getNoradCatId());

@@ -10,59 +10,57 @@ interpolating between them.
     - `1` = all positions computed via SGP4 (no interpolation)
     - `2` = every 2nd position is SGP4, others linearly interpolated
     - `6` = every 6th position is SGP4, 5/6 interpolated
-- **prepass-tolerance-km**: Fixed at 12.5 km
-- **step-second-ratio**: Fixed at 12
-- **tolerance-km**: Swept from 120 to 600 km
-- **lookahead-hours**: Fixed at 6 hours
+- **prepass-tolerance-km**: Fixed at 15.0 km
+- **step-second-ratio**: Fixed at 14
+- **tolerance-km**: Swept from 120 to 1184 km
+- **lookahead-hours**: Fixed at 24 hours
 - **threshold-km**: Fixed at 5.0 km
-
-## Results
-
-Benchmark on 25% satellite sample (7,397 satellites). Selected data at tolerance=192 km.
-
-| Stride | Coarse | Refine | Total | Conj | Dedup | SGP4 Reduction |
-|--------|--------|--------|-------|------|-------|----------------|
-| 1      | 8.07s  | 1.81s  | 10.8s | 226  | 206   | 0%             |
-| 2      | 4.81s  | 1.91s  | 7.59s | 226  | 206   | 50%            |
-| 4      | 2.83s  | 1.95s  | 5.59s | 227  | 207   | 75%            |
-| 5      | 2.53s  | 1.79s  | 5.25s | 233  | 212   | 80%            |
-| 6      | 2.19s  | 1.81s  | 4.89s | 227  | 207   | 83%            |
-| 7      | 2.01s  | 1.76s  | 4.64s | 226  | 205   | 86%            |
-| 8      | 1.89s  | 1.92s  | 4.64s | 222  | 202   | 88%            |
-| 12     | 1.65s  | 1.91s  | 4.35s | 228  | 208   | 92%            |
-| 16     | 1.50s  | 1.99s  | 4.36s | 226  | 205   | 94%            |
 
 ## Analysis
 
-### Coarse Time Scaling
+### Speed vs Accuracy Trade-off
 
-Coarse sweep time scales inversely with stride. At stride=6, coarse time is reduced by ~73% compared to stride=1.
-The interpolation overhead (computing linear interpolations) is negligible compared to SGP4 savings.
+| Stride | Speed Gain | Miss Rate | Status       |
+|--------|------------|-----------|--------------|
+| 1      | 0.0%       | 0.0%      | Baseline     |
+| 2      | 38.1%      | 0.0%      | Complete     |
+| 4      | 54.3%      | 0.1%      | Complete     |
+| **6**  | **58.5%**  | **0.1%**  | **Complete** |
+| 7      | 58.0%      | 0.4%      | Missing ~5   |
+| 8      | 61.5%      | 0.5%      | Missing ~7   |
+| 10     | 63.0%      | 0.7%      | Missing ~10  |
+| 12     | 62.1%      | 1.5%      | Missing ~20  |
 
-### Conjunction Detection Accuracy
+### Convergence Behavior
 
-| Stride | Dedup Range | Status       |
-|--------|-------------|--------------|
-| 1      | 203-211     | Baseline     |
-| 2      | 203-211     | Complete     |
-| 4      | 202-212     | Complete     |
-| 5      | 203-212     | Complete     |
-| 6      | 202-211     | **Complete** |
-| 7      | 201-212     | Missing ~1   |
-| 8      | 198-209     | Missing ~3   |
-| 12     | 196-210     | Missing ~5   |
-| 16     | 182-206     | Missing ~15  |
+**Stride 1-4**: Perfect or near-perfect detection (99.9%+ accuracy)
 
-At stride=7 and above, conjunction detection begins to degrade. Linear interpolation introduces position error
-proportional to stride and orbital curvature. When the interpolated position deviates too far from reality, close
-approaches can be missed during the coarse sweep.
+- Interpolation error negligible for these stride values
+- Speed gains scale well
+
+**Stride 6**: Sweet spot (99.9% accuracy, 58.5% faster)
+
+- Coarse time reduced by 73.7% vs stride=1
+- Only 2 conjunctions missed on average (~0.1%)
+- SGP4 calls reduced by 83.3%
+
+**Stride 7-8**: Marginal gains not worth accuracy loss
+
+- Stride 7: 58.0% faster but 0.4% miss rate (not worth it over stride 6)
+- Stride 8: 61.5% faster but 0.5% miss rate (3% more speed, 4x worse accuracy than stride 6)
+- Diminishing returns begin here
+
+**Stride 10+**: Unacceptable accuracy degradation
+
+- Speed gains plateau
+- Miss rates increase exponentially
 
 ## Conclusion
 
 **Optimal interpolation stride is 6**
 
-This reduces SGP4 calls by 83% while preserving all conjunction detections. Higher strides offer diminishing returns
-(88% vs 83% at stride=8) while risking missed conjunctions.
+This reduces SGP4 calls by 83.3% and total runtime by 58.5% while preserving 99.9% of conjunctions. Stride 7-8 offer
+only 3% additional speed but degrade accuracy by 4-5x (0.4-0.5% miss vs 0.1%). Not worth the trade-off.
 
 ![Total Processing Time](4-conjunction-coarse-interpolation/1_total_time.png)
 

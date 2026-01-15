@@ -5,10 +5,10 @@ Final tuning of the coarse sweep tolerance parameter, with prepass, step ratio, 
 ## Parameters
 
 - **prepass-tolerance-km**: Fixed at 12.5 km (from prepass tuning)
-- **step-second-ratio**: Fixed at 12 (from step ratio tuning)
+- **step-second-ratio**: Fixed at 10 (from step ratio tuning)
 - **interpolation-stride**: Fixed at 6 (from interpolation tuning)
-- **tolerance-km**: Coarse detection threshold (swept from 60 to 1200 km in steps of 12)
-- **lookahead-hours**: Fixed at 6 hours
+- **tolerance-km**: Coarse detection threshold (swept from 60 to 1200 km in steps of 10)
+- **lookahead-hours**: Fixed at 24 hours
 - **threshold-km**: Final conjunction threshold (fixed at 5.0 km)
 
 ## Analysis
@@ -30,18 +30,18 @@ opposing effects balance.
 | Tolerance Range | Dominant Stage | Behavior                                 |
 |-----------------|----------------|------------------------------------------|
 | under 200 km    | Coarse         | Many time steps, few events to refine    |
-| 200-300 km      | **Balanced**   | Minimum total time                       |
-| 300+ km         | Refine         | Fewer coarse steps, many false positives |
+| 200-600 km      | **Balanced**   | Minimum total time                       |
+| 600+ km         | Refine         | Fewer coarse steps, many false positives |
 
 ### Conjunction Stability
 
-Configurations up to ~600 km detect similar amount of deduplicated conjunctions consistently. Above 600 km, detection
+Configurations up to ~400 km detect similar amount of deduplicated conjunctions consistently. Above 400 km, detection
 begins to drop off slightly. This is likely due to interpolation error at stride=6 compounding with large step sizes,
-but it's irrelevant in practice since optimal tolerance is well below this range.
+but it's irrelevant in practice since optimal tolerance is below this range.
 
 ## Conclusion
 
-**Optimal tolerance is 240 km with step size of 20s**
+**Optimal tolerance is 340 km with step size of 34s**
 
 The optimal tolerance is where coarse and refine times are balanced. Going lower wastes time on excessive coarse
 iterations; going higher wastes time refining too many false positives.

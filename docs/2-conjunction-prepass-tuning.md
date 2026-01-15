@@ -11,56 +11,41 @@ This experiment finds the minimum pre-pass tolerance that detects all conjunctio
 - **prepass-tolerance-km**: Tolerance passed to pair reduction (swept from 2.5 to 20.0 km)
 - **tolerance-km**: Coarse sweep detection threshold (swept from 120 to 1200 km)
 - **step-second-ratio**: Fixed at 12
-- **lookahead-hours**: Fixed at 6 hours
+- **lookahead-hours**: Fixed at 24 hours
 - **threshold-km**: Final conjunction threshold (fixed at 5.0 km)
-
-## Results
-
-Benchmark on 25% satellite sample (7,397 satellites) at tolerance=360 km.
-
-| Prepass (km) | Detections | Events | Conj | Dedup | Coarse | Refine | Total |
-|--------------|------------|--------|------|-------|--------|--------|-------|
-| 2.5          | 285K       | 69K    | 142  | 126   | 9.1s   | 2.2s   | 11.6s |
-| 5.0          | 329K       | 84K    | 187  | 169   | 9.6s   | 2.6s   | 12.5s |
-| 7.5          | 475K       | 126K   | 215  | 197   | 11.2s  | 4.0s   | 15.6s |
-| 10.0         | 534K       | 151K   | 222  | 204   | 11.9s  | 4.8s   | 17.2s |
-| 12.5         | 603K       | 174K   | 225  | 206   | 12.8s  | 5.4s   | 18.7s |
-| 15.0         | 632K       | 186K   | 224  | 204   | 13.2s  | 5.7s   | 19.3s |
-| 17.5         | 661K       | 196K   | 224  | 204   | 13.7s  | 6.3s   | 20.5s |
-| 20.0         | 741K       | 223K   | 225  | 204   | 15.0s  | 7.1s   | 22.7s |
 
 ## Analysis
 
 ### Conjunction Count by Prepass Tolerance
 
-| Prepass (km) | Conj Range | Dedup Range | Status       |
-|--------------|------------|-------------|--------------|
-| 2.5          | 138-143    | 123-126     | Missing ~80  |
-| 5.0          | 185-190    | 167-171     | Missing ~35  |
-| 7.5          | 214-219    | 196-201     | Missing ~8   |
-| 10.0         | 220-227    | 202-208     | Missing ~1   |
-| 12.5         | 223-228    | 203-208     | **Complete** |
-| 15.0         | 223-228    | 203-208     | Complete     |
-| 17.5         | 224-228    | 203-208     | Complete     |
-| 20.0         | 223-228    | 203-208     | Complete     |
+| Prepass (km) | Avg Dedup | Dedup Range   | Miss %   | Speed vs 17.5 |
+|--------------|-----------|---------------|----------|---------------|
+| 5.0          | 1160      | 1155-1162     | 13.2%    | +21.8%        |
+| 7.5          | 1286      | 1281-1288     | 3.8%     | +13.1%        |
+| **10.0**     | **1316**  | **1311-1318** | **1.6%** | **+8.4%**     |
+| 12.5         | 1326      | 1321-1328     | 0.8%     | +4.1%         |
+| 15.0         | 1333      | 1328-1335     | 0.3%     | +2.1%         |
+| 17.5         | 1337      | 1332-1339     | 0.0%     | baseline      |
 
-At prepass=2.5 km, we detect only ~126 deduplicated conjunctions versus ~206 at prepass=12.5 km. The pair reduction
-filter can be too aggressive and exclude satellite pairs that do have close approaches.
+At prepass=5.0 km, we detect only ~1160 deduplicated conjunctions versus ~1337 at prepass=17.5 km. The pair reduction
+filter is too aggressive and excludes satellite pairs that do have close approaches.
 
-### Convergence Point
+### Convergence Behavior
 
-Conjunction counts stabilize at **prepass=12.5 km**:
+Conjunction count shows gradual convergence as pre-pass tolerance increases:
 
-- Below 12.5 km: Missing conjunctions (pair reduction too aggressive)
-- At 12.5 km: All 205-208 deduplicated conjunctions detected
-- Above 12.5 km: Same detection count, but slower due to more candidate pairs
+- **5.0 km**: 13.2% miss rate - unacceptable for operational use
+- **7.5 km**: 3.8% miss rate - potentially useful for rapid screening, ~51 conjunctions missed
+- **10.0 km**: 1.6% miss rate - good balance, only ~21 conjunctions missed, 8.4% faster
+- **12.5 km**: 0.8% miss rate - high confidence, ~11 conjunctions missed, 4.1% faster
+- **15.0+ km**: <0.5% miss rate - essentially complete coverage
 
 ## Conclusion
 
-**Optimal pre-pass tolerance is 12.5 km (for 5.0 km conjunction threshold)**
+**Optimal pre-pass tolerance is 10.0 km (for 5.0 km conjunction threshold)**
 
-This is the minimum value that captures all conjunction events. The relation `prepass > final threshold tolerance` is
-expected, since reduction geometry is approximate, and extra margin is needed.
+This provides the best balance between detection completeness (98.4% accuracy) and performance (8.4% faster than full
+convergence). For applications requiring near-complete coverage, use higher values.
 
 ![Total Processing Time](2-conjunction-prepass/1_total_time.png)
 

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -51,8 +50,8 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
     @Override
     public void run(String @NonNull ... args) throws InterruptedException {
-        log.info("Starting continuous conjunction detection benchmark");
-        log.info("Press Ctrl+C to terminate");
+        log.info("");
+        log.info("Starting conjunction benchmark");
         log.info("");
 
         List<Satellite> satellites = satelliteService.getAll();
@@ -67,32 +66,25 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Built {} propagators", propagators.size());
         log.info("");
 
-        int lookaheadHours = 6;
+        // Benchmark parameters
+        int lookaheadHours = 24;
         double thresholdKm = 5.0;
         double prepassToleranceKm = 12.5;
-        int stepSecondRatio = 12;
-        int stride = 6;
+        int stepSecondRatio = 10;
+        int interpolationStride = 6;
 
+        List<BenchmarkResult> results = new ArrayList<>();
 
         while (true) {
-            List<BenchmarkResult> results = new ArrayList<>();
-            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += 12) {
+            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
                 Thread.sleep(100);
-                results.add(runBenchmark(satellites,
-                        propagators,
-                        fixedStartTime,
-                        toleranceKm,
-                        prepassToleranceKm,
-                        stepSeconds,
-                        stepSecondRatio,
-                        lookaheadHours,
-                        thresholdKm,
-                        stride));
+                results.add(runBenchmark(satellites, propagators, fixedStartTime,
+                        toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
+                        lookaheadHours, thresholdKm, interpolationStride));
             }
-
 
             writeCsvResults(results);
         }
@@ -114,27 +106,38 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Running: {}", name);
         long benchmarkStart = System.nanoTime();
 
+        // Step 1: Pair reduction
+        long pairReductionStart = System.nanoTime();
         List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, prepassToleranceKm);
-        log.info("{} candidate pairs", pairs.size());
+        long pairReductionTime = System.nanoTime() - pairReductionStart;
+        log.info("Pair reduction completed in {}ms - {} candidate pairs", pairReductionTime / 1_000_000, pairs.size());
 
+        // Step 2: Coarse sweep
         long coarseStart = System.nanoTime();
         List<ScanService.CoarseDetection> detections = scanService.coarseSweep(pairs, propagators, startTime, toleranceKm, stepSeconds, lookaheadHours, interpolationStride);
         long coarseTime = System.nanoTime() - coarseStart;
+        log.info("Coarse sweep completed in {}ms - {} detections", coarseTime / 1_000_000, detections.size());
 
+        // Step 3: Group into events
+        long groupingStart = System.nanoTime();
         Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections, stepSeconds);
         int totalEvents = eventsByPair.values().stream().mapToInt(List::size).sum();
-
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
                 .toList();
+        long groupingTime = System.nanoTime() - groupingStart;
+        log.info("Grouping completed in {}ms - {} events", groupingTime / 1_000_000, totalEvents);
 
+        // Step 4: Refinement
         long refineStart = System.nanoTime();
         List<Conjunction> refined = allEvents.parallelStream().map(event -> scanService.refineEvent(event, propagators, stepSeconds, thresholdKm))
                 .filter(c -> c.getMissDistanceKm() <= thresholdKm)
                 .toList();
         long refineTime = System.nanoTime() - refineStart;
-        log.info("Fine sweep completed in {}ms", refineTime / 1_000_000);
+        log.info("Refinement completed in {}ms - {} conjunctions", refineTime / 1_000_000, refined.size());
 
+        // Step 5: Deduplication
+        long deduplicationStart = System.nanoTime();
         List<Conjunction> deduplicated = refined.stream()
                 .collect(Collectors.toMap(
                         c -> c.getObject1NoradId() + ":" + c.getObject2NoradId(),
@@ -144,31 +147,31 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                 .values()
                 .stream()
                 .toList();
+        long deduplicationTime = System.nanoTime() - deduplicationStart;
+        log.info("Deduplication completed in {}ms - {} unique conjunctions", deduplicationTime / 1_000_000, deduplicated.size());
 
         long totalTime = System.nanoTime() - benchmarkStart;
 
-        log.info(" -> {} detections, {} events, {} conjunctions, {} dedup in {}ms",
-                detections.size(), totalEvents, refined.size(), deduplicated.size(), totalTime / 1_000_000);
+        log.info("Total time: {}ms", totalTime / 1_000_000);
+        log.info("");
 
         return new BenchmarkResult(name, toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
                 interpolationStride, detections.size(), totalEvents,
-                refined.size(), deduplicated.size(), coarseTime, refineTime, totalTime);
+                refined.size(), deduplicated.size(), pairReductionTime, coarseTime,
+                groupingTime, refineTime, deduplicationTime, totalTime);
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
-        String timestamp = LocalDateTime.now().format(formatter);
-        String filename = String.format("conjunction_benchmark_%s.csv", timestamp);
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String filename = "conjunction_benchmark_" + timestamp + ".csv";
         Path outputPath = Paths.get("docs", filename);
 
         try {
-            Files.createDirectories(outputPath.getParent());
-
             try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,dedup,coarse_s,refine_s,total_s\n");
+                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,dedup,pair_reduction_s,coarse_s,grouping_s,refine_s,dedup_s,total_s\n");
 
                 for (BenchmarkResult r : results) {
-                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f%n",
+                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f%n",
                             r.toleranceKm,
                             r.prepassToleranceKm,
                             r.stepSeconds,
@@ -178,13 +181,15 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                             r.events,
                             r.conjunctions,
                             r.deduplicated,
+                            r.pairReductionTime / 1_000_000_000.0,
                             r.coarseTimeMs / 1_000_000_000.0,
+                            r.groupingTime / 1_000_000_000.0,
                             r.refineTimeMs / 1_000_000_000.0,
+                            r.deduplicationTime / 1_000_000_000.0,
                             r.totalTimeMs / 1_000_000_000.0));
                 }
             }
 
-            log.info("");
             log.info("CSV results written to: {}", outputPath.toAbsolutePath());
 
         } catch (IOException e) {
@@ -195,6 +200,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     private record BenchmarkResult(String name, double toleranceKm, double prepassToleranceKm,
                                    int stepSeconds, int stepSecondRatio, int interpolationStride,
                                    long detections, int events, int conjunctions, int deduplicated,
-                                   long coarseTimeMs, long refineTimeMs, long totalTimeMs) {
+                                   long pairReductionTime, long coarseTimeMs, long groupingTime,
+                                   long refineTimeMs, long deduplicationTime, long totalTimeMs) {
     }
 }
