@@ -37,6 +37,7 @@ public class PropagationService {
 
     /**
      * Propagate both satellites to a given time and return the distance between them.
+     * Thread-safe: synchronizes on propagator instances to prevent concurrent access.
      */
     public double propagateAndMeasureDistance(SatellitePair pair, Map<Integer, TLEPropagator> propagators, OffsetDateTime time) {
         AbsoluteDate date = toAbsoluteDate(time);
@@ -45,8 +46,14 @@ public class PropagationService {
             TLEPropagator propA = propagators.get(pair.a().getNoradCatId());
             TLEPropagator propB = propagators.get(pair.b().getNoradCatId());
 
-            PVCoordinates pvA = propA.getPVCoordinates(date, propA.getFrame());
-            PVCoordinates pvB = propB.getPVCoordinates(date, propB.getFrame());
+            PVCoordinates pvA, pvB;
+
+            synchronized (propA) {
+                pvA = propA.getPVCoordinates(date, propA.getFrame());
+            }
+            synchronized (propB) {
+                pvB = propB.getPVCoordinates(date, propB.getFrame());
+            }
 
             return calculateDistance(pvA, pvB);
         } catch (Exception e) {
@@ -65,8 +72,14 @@ public class PropagationService {
             TLEPropagator propA = propagators.get(pair.a().getNoradCatId());
             TLEPropagator propB = propagators.get(pair.b().getNoradCatId());
 
-            PVCoordinates pvA = propA.getPVCoordinates(date, propA.getFrame());
-            PVCoordinates pvB = propB.getPVCoordinates(date, propB.getFrame());
+            PVCoordinates pvA, pvB;
+
+            synchronized (propA) {
+                pvA = propA.getPVCoordinates(date, propA.getFrame());
+            }
+            synchronized (propB) {
+                pvB = propB.getPVCoordinates(date, propB.getFrame());
+            }
 
             return calculateRelativeVelocity(pvA, pvB);
         } catch (Exception e) {
@@ -82,7 +95,12 @@ public class PropagationService {
         AbsoluteDate date = toAbsoluteDate(time);
         try {
             TLEPropagator prop = propagators.get(sat.getNoradCatId());
-            PVCoordinates pv = prop.getPVCoordinates(date, prop.getFrame());
+            PVCoordinates pv;
+
+            synchronized (prop) {
+                pv = prop.getPVCoordinates(date, prop.getFrame());
+            }
+
             return new double[]{
                     pv.getPosition().getX() / 1000.0,
                     pv.getPosition().getY() / 1000.0,

@@ -41,7 +41,7 @@ but it's irrelevant in practice since optimal tolerance is well below this range
 
 ## Conclusion
 
-**Optimal tolerance is 24 km with step size of 20s**
+**Optimal tolerance is 240 km with step size of 20s**
 
 The optimal tolerance is where coarse and refine times are balanced. Going lower wastes time on excessive coarse
 iterations; going higher wastes time refining too many false positives.
