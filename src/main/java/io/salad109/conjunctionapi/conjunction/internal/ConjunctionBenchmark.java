@@ -27,8 +27,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Run on Linux: ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction
- * Run on Windows: ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
+ * Linux:
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
+ * Windows:
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
  */
 @Component
 @Profile("benchmark-conjunction")
@@ -75,19 +77,17 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         List<BenchmarkResult> results = new ArrayList<>();
 
-        while (true) {
-            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio) {
-                int stepSeconds = (int) (toleranceKm / stepSecondRatio);
+        for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio * 4) {
+            int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
-                System.gc();
-                Thread.sleep(100);
-                results.add(runBenchmark(satellites, propagators, fixedStartTime,
-                        toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
-                        lookaheadHours, thresholdKm, interpolationStride));
-            }
-
-            writeCsvResults(results);
+            System.gc();
+            Thread.sleep(100);
+            results.add(runBenchmark(satellites, propagators, fixedStartTime,
+                    toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
+                    lookaheadHours, thresholdKm, interpolationStride));
         }
+
+        writeCsvResults(results);
     }
 
     private BenchmarkResult runBenchmark(

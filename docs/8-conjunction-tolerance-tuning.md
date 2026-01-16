@@ -46,10 +46,10 @@ but it's irrelevant in practice since optimal tolerance is below this range.
 The optimal tolerance is where coarse and refine times are balanced. Going lower wastes time on excessive coarse
 iterations; going higher wastes time refining too many false positives.
 
-![Total Processing Time](7-conjunction-tolerance/1_total_time.png)
+![Total Processing Time](8-conjunction-tolerance/1_total_time.png)
 
-![Coarse vs Refine Time](7-conjunction-tolerance/2_coarse_vs_refine.png)
+![Coarse vs Refine Time](8-conjunction-tolerance/2_coarse_vs_refine.png)
 
-![Time Breakdown](7-conjunction-tolerance/3_time_breakdown.png)
+![Time Breakdown](8-conjunction-tolerance/3_time_breakdown.png)
 
-![Conjunctions Detected](7-conjunction-tolerance/4_conjunctions.png)
+![Conjunctions Detected](8-conjunction-tolerance/4_conjunctions.png)
