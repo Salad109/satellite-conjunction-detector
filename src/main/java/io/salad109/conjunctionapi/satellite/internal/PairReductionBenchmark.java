@@ -2,6 +2,7 @@ package io.salad109.conjunctionapi.satellite.internal;
 
 import io.salad109.conjunctionapi.satellite.PairReductionService;
 import io.salad109.conjunctionapi.satellite.Satellite;
+import org.apache.commons.lang3.time.StopWatch;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +94,7 @@ public class PairReductionBenchmark implements CommandLineRunner {
 
         LongAdder passingPairs = new LongAdder();
 
-        long startTime = System.nanoTime();
+        StopWatch stopWatch = StopWatch.createStarted();
 
         IntStream.range(0, satelliteCount).parallel().forEach(i -> {
             Satellite a = satellites.get(i);
@@ -107,12 +108,12 @@ public class PairReductionBenchmark implements CommandLineRunner {
             passingPairs.add(localCount);
         });
 
-        long elapsedNanos = System.nanoTime() - startTime;
+        stopWatch.stop();
         long resultCount = passingPairs.sum();
 
-        log.info(" -> {} pairs in {}ms", String.format("%,d", resultCount), elapsedNanos / 1_000_000);
+        log.info(" -> {} pairs in {}ms", String.format("%,d", resultCount), stopWatch.getTime());
 
-        return new BenchmarkResult(name, resultCount, elapsedNanos, totalPairs);
+        return new BenchmarkResult(name, resultCount, stopWatch.getNanoTime(), totalPairs);
     }
 
     private void printResultsTable(long totalPairs, BenchmarkResult... results) {

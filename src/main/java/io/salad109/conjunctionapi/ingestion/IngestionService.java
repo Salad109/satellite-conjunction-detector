@@ -4,6 +4,7 @@ import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatelliteService;
 import io.salad109.conjunctionapi.spacetrack.OmmRecord;
 import io.salad109.conjunctionapi.spacetrack.SpaceTrackClient;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,7 @@ public class IngestionService {
     @Transactional
     public void sync() {
         log.info("Starting catalog sync...");
-        long startTime = System.currentTimeMillis();
+        StopWatch stopWatch = StopWatch.createStarted();
         OffsetDateTime startedAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         try {
@@ -48,8 +49,9 @@ public class IngestionService {
             SyncResult syncResult = new SyncResult(startedAt, processingResult.created(), processingResult.updated(), processingResult.skipped(), processingResult.deleted(), true);
             ingestionLogService.saveIngestionLog(syncResult, null);
 
+            stopWatch.stop();
             log.info("Sync completed in {}ms. {} created, {} updated, {} skipped, {} deleted",
-                    System.currentTimeMillis() - startTime, processingResult.created(), processingResult.updated(), processingResult.skipped(), processingResult.deleted());
+                    stopWatch.getTime(), processingResult.created(), processingResult.updated(), processingResult.skipped(), processingResult.deleted());
         } catch (IOException e) {
             SyncResult failedSyncResult = SyncResult.failed(startedAt);
             ingestionLogService.saveIngestionLog(failedSyncResult, e.getMessage());

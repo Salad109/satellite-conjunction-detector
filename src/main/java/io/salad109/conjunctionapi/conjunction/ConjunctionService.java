@@ -5,6 +5,7 @@ import io.salad109.conjunctionapi.satellite.PairReductionService;
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatellitePair;
 import io.salad109.conjunctionapi.satellite.SatelliteService;
+import org.apache.commons.lang3.time.StopWatch;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class ConjunctionService {
 
     @Transactional
     public void findConjunctions() {
-        long startMs = System.currentTimeMillis();
+        StopWatch stopWatch = StopWatch.createStarted();
         log.info("Starting conjunction screening...");
 
         // Load satellites
@@ -107,7 +108,8 @@ public class ConjunctionService {
             conjunctionRepository.batchUpsertIfCloser(conjunctions);
         }
 
+        stopWatch.stop();
         log.info("Conjunction screening completed in {}ms, found {} conjunctions",
-                System.currentTimeMillis() - startMs, conjunctions.size());
+                stopWatch.getTime(), conjunctions.size());
     }
 }

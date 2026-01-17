@@ -18,10 +18,9 @@ public class PairReductionService {
      * Uses orbital geometry filters to reduce the number of pairs for detailed analysis.
      */
     public List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites, double toleranceKm) {
-        long startMs = System.currentTimeMillis();
         int satelliteCount = satellites.size();
 
-        List<SatellitePair> pairs = IntStream.range(0, satelliteCount)
+        return IntStream.range(0, satelliteCount)
                 .parallel()
                 .boxed()
                 .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
@@ -34,9 +33,6 @@ public class PairReductionService {
                     }
                 })
                 .toList();
-
-        log.debug("Found {} potential collision pairs in {}ms", pairs.size(), System.currentTimeMillis() - startMs);
-        return pairs;
     }
 
     /**

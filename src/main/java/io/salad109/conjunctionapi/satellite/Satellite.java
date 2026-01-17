@@ -93,16 +93,13 @@ public class Satellite {
         this.noradCatId = noradCatId;
     }
 
-    @PrePersist
-    @PreUpdate
-    protected void recalculate() {
-        computeDerivedParameters();
-    }
 
     /**
      * Compute derived orbital parameters from mean motion and eccentricity.
      * Call this before persisting.
      */
+    @PrePersist
+    @PreUpdate
     public void computeDerivedParameters() {
         if (meanMotion == null || meanMotion <= 0 || eccentricity == null) {
             return;

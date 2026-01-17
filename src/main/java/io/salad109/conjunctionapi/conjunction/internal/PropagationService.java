@@ -23,7 +23,6 @@ public class PropagationService {
     private static final Logger log = LoggerFactory.getLogger(PropagationService.class);
 
     public Map<Integer, TLEPropagator> buildPropagators(List<Satellite> satellites) {
-        long startMs = System.currentTimeMillis();
         Map<Integer, TLEPropagator> propagators = new HashMap<>();
 
         for (Satellite sat : satellites) {
@@ -31,7 +30,6 @@ public class PropagationService {
             propagators.put(sat.getNoradCatId(), TLEPropagator.selectExtrapolator(tle));
         }
 
-        log.debug("Built {} propagators in {}ms", propagators.size(), System.currentTimeMillis() - startMs);
         return propagators;
     }
 
@@ -96,8 +94,6 @@ public class PropagationService {
                                       OffsetDateTime startTime, int stepSeconds, int totalSteps,
                                       int interpolationStride) {
         int stride = Math.max(1, interpolationStride);
-        log.debug("Pre-computing positions: {} sats, {} steps, stride={}", propagators.size(), totalSteps, stride);
-        long startMs = System.currentTimeMillis();
 
         OffsetDateTime[] times = new OffsetDateTime[totalSteps];
         for (int i = 0; i < totalSteps; i++) {
@@ -146,7 +142,6 @@ public class PropagationService {
             }
         });
 
-        log.debug("Position pre-computation completed in {}ms", System.currentTimeMillis() - startMs);
         return new PositionCache(noradIdToArrayId, times, x, y, z, valid);
     }
 
