@@ -4,6 +4,7 @@ import io.salad109.conjunctionapi.satellite.PairReductionService;
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatellitePair;
 import io.salad109.conjunctionapi.satellite.SatelliteService;
+import org.apache.commons.lang3.time.StopWatch;
 import org.jspecify.annotations.NonNull;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
@@ -21,9 +22,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +30,8 @@ import java.util.stream.Collectors;
  * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
  * Windows:
  * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
+ * <p>
+ * DELETE FROM satellite WHERE norad_cat_id IN (SELECT norad_cat_id FROM (SELECT norad_cat_id, ROW_NUMBER() OVER (ORDER BY norad_cat_id) as rn FROM satellite) AS numbered WHERE rn % 2 = 1 );
  */
 @Component
 @Profile("benchmark-conjunction")
@@ -60,13 +61,10 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Loaded {} satellites", satellites.size());
 
         // Use fixed start time
-        OffsetDateTime fixedStartTime = OffsetDateTime.now(ZoneOffset.UTC)
+        OffsetDateTime fixedStartTime = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)
                 .truncatedTo(ChronoUnit.DAYS);
         log.info("Using fixed start time: {}", fixedStartTime);
 
-        Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
-        log.info("Built {} propagators", propagators.size());
-        log.info("");
 
         // Benchmark parameters
         int lookaheadHours = 24;
@@ -77,22 +75,24 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         List<BenchmarkResult> results = new ArrayList<>();
 
-        for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio * 4) {
-            int stepSeconds = (int) (toleranceKm / stepSecondRatio);
+        while (true) {
+            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio) {
+                int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
-            System.gc();
-            Thread.sleep(100);
-            results.add(runBenchmark(satellites, propagators, fixedStartTime,
-                    toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
-                    lookaheadHours, thresholdKm, interpolationStride));
+                System.gc();
+                Thread.sleep(100);
+                results.add(runBenchmark(satellites, fixedStartTime,
+                        toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
+                        lookaheadHours, thresholdKm, interpolationStride));
+            }
+
+            writeCsvResults(results);
+            results.clear();
         }
-
-        writeCsvResults(results);
     }
 
     private BenchmarkResult runBenchmark(
             List<Satellite> satellites,
-            Map<Integer, TLEPropagator> propagators,
             OffsetDateTime startTime,
             double toleranceKm,
             double prepassToleranceKm,
@@ -102,42 +102,53 @@ public class ConjunctionBenchmark implements CommandLineRunner {
             double thresholdKm,
             int interpolationStride
     ) {
-        String name = String.format("tol=%.0f, prepass=%.1f, step=%d, stride=%d", toleranceKm, prepassToleranceKm, stepSeconds, interpolationStride);
-        log.info("Running: {}", name);
-        long benchmarkStart = System.nanoTime();
+        StopWatch total = StopWatch.createStarted();
 
-        // Step 1: Pair reduction
-        long pairReductionStart = System.nanoTime();
+        // Pair reduction
+        StopWatch pairReduction = StopWatch.createStarted();
         List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, prepassToleranceKm);
-        long pairReductionTime = System.nanoTime() - pairReductionStart;
-        log.info("Pair reduction completed in {}ms - {} candidate pairs", pairReductionTime / 1_000_000, pairs.size());
+        pairReduction.stop();
 
-        // Step 2: Coarse sweep
-        long coarseStart = System.nanoTime();
+        // Filter to only candidate satellites
+        StopWatch filter = StopWatch.createStarted();
+        Set<Integer> satellitesInPairs = new HashSet<>();
+        for (SatellitePair pair : pairs) {
+            satellitesInPairs.add(pair.a().getNoradCatId());
+            satellitesInPairs.add(pair.b().getNoradCatId());
+        }
+        List<Satellite> candidateSatellites = satellites.stream()
+                .filter(sat -> satellitesInPairs.contains(sat.getNoradCatId()))
+                .toList();
+        filter.stop();
+
+        // Build propagators
+        StopWatch propagator = StopWatch.createStarted();
+        Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(candidateSatellites);
+        propagator.stop();
+
+        // Coarse sweep
+        StopWatch coarse = StopWatch.createStarted();
         List<ScanService.CoarseDetection> detections = scanService.coarseSweep(pairs, propagators, startTime, toleranceKm, stepSeconds, lookaheadHours, interpolationStride);
-        long coarseTime = System.nanoTime() - coarseStart;
-        log.info("Coarse sweep completed in {}ms - {} detections", coarseTime / 1_000_000, detections.size());
+        coarse.stop();
 
-        // Step 3: Group into events
-        long groupingStart = System.nanoTime();
+        // Group into events
+        StopWatch grouping = StopWatch.createStarted();
         Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections, stepSeconds);
         int totalEvents = eventsByPair.values().stream().mapToInt(List::size).sum();
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
                 .toList();
-        long groupingTime = System.nanoTime() - groupingStart;
-        log.info("Grouping completed in {}ms - {} events", groupingTime / 1_000_000, totalEvents);
+        grouping.stop();
 
-        // Step 4: Refinement
-        long refineStart = System.nanoTime();
+        // Refinement
+        StopWatch refine = StopWatch.createStarted();
         List<Conjunction> refined = allEvents.parallelStream().map(event -> scanService.refineEvent(event, propagators, stepSeconds, thresholdKm))
                 .filter(c -> c.getMissDistanceKm() <= thresholdKm)
                 .toList();
-        long refineTime = System.nanoTime() - refineStart;
-        log.info("Refinement completed in {}ms - {} conjunctions", refineTime / 1_000_000, refined.size());
+        refine.stop();
 
-        // Step 5: Deduplication
-        long deduplicationStart = System.nanoTime();
+        // Deduplication
+        StopWatch deduplication = StopWatch.createStarted();
         List<Conjunction> deduplicated = refined.stream()
                 .collect(Collectors.toMap(
                         c -> c.getObject1NoradId() + ":" + c.getObject2NoradId(),
@@ -147,18 +158,22 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                 .values()
                 .stream()
                 .toList();
-        long deduplicationTime = System.nanoTime() - deduplicationStart;
-        log.info("Deduplication completed in {}ms - {} unique conjunctions", deduplicationTime / 1_000_000, deduplicated.size());
+        deduplication.stop();
 
-        long totalTime = System.nanoTime() - benchmarkStart;
+        total.stop();
 
-        log.info("Total time: {}ms", totalTime / 1_000_000);
-        log.info("");
+        String name = String.format("tol=%.0f, prepass=%.1f, step=%d, stride=%d", toleranceKm, prepassToleranceKm, stepSeconds, interpolationStride);
+        log.info("tol={}km step={}s | {}ms | pair={}ms filter={}ms prop={}ms coarse={}ms group={}ms refine={}ms dedup={}ms | {} pairs, {} events, {} conj",
+                (int) toleranceKm, stepSeconds,
+                total.getTime(),
+                pairReduction.getTime(), filter.getTime(), propagator.getTime(), coarse.getTime(),
+                grouping.getTime(), refine.getTime(), deduplication.getTime(),
+                pairs.size(), totalEvents, deduplicated.size());
 
         return new BenchmarkResult(name, toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
-                interpolationStride, detections.size(), totalEvents,
-                refined.size(), deduplicated.size(), pairReductionTime, coarseTime,
-                groupingTime, refineTime, deduplicationTime, totalTime);
+                interpolationStride, detections.size(), totalEvents, refined.size(), deduplicated.size(),
+                pairReduction.getTime(), filter.getTime(), propagator.getTime(), coarse.getTime(),
+                grouping.getTime(), refine.getTime(), deduplication.getTime(), total.getTime());
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
@@ -168,10 +183,10 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         try {
             try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,dedup,pair_reduction_s,coarse_s,grouping_s,refine_s,dedup_s,total_s\n");
+                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,dedup,pair_reduction_s,filter_s,propagator_s,coarse_s,grouping_s,refine_s,dedup_s,total_s\n");
 
                 for (BenchmarkResult r : results) {
-                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f%n",
+                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f%n",
                             r.toleranceKm,
                             r.prepassToleranceKm,
                             r.stepSeconds,
@@ -181,12 +196,14 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                             r.events,
                             r.conjunctions,
                             r.deduplicated,
-                            r.pairReductionTime / 1_000_000_000.0,
-                            r.coarseTimeMs / 1_000_000_000.0,
-                            r.groupingTime / 1_000_000_000.0,
-                            r.refineTimeMs / 1_000_000_000.0,
-                            r.deduplicationTime / 1_000_000_000.0,
-                            r.totalTimeMs / 1_000_000_000.0));
+                            r.pairReductionTime / 1000.0,
+                            r.filterTime / 1000.0,
+                            r.propagatorTime / 1000.0,
+                            r.coarseTimeMs / 1000.0,
+                            r.groupingTime / 1000.0,
+                            r.refineTimeMs / 1000.0,
+                            r.deduplicationTime / 1000.0,
+                            r.totalTimeMs / 1000.0));
                 }
             }
 
@@ -200,7 +217,8 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     private record BenchmarkResult(String name, double toleranceKm, double prepassToleranceKm,
                                    int stepSeconds, int stepSecondRatio, int interpolationStride,
                                    long detections, int events, int conjunctions, int deduplicated,
-                                   long pairReductionTime, long coarseTimeMs, long groupingTime,
+                                   long pairReductionTime, long filterTime, long propagatorTime, long coarseTimeMs,
+                                   long groupingTime,
                                    long refineTimeMs, long deduplicationTime, long totalTimeMs) {
     }
 }

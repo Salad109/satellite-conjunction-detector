@@ -14,8 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ConjunctionService {
@@ -80,8 +82,22 @@ public class ConjunctionService {
         List<SatellitePair> pairs = pairReductionService.findPotentialCollisionPairs(satellites, prepassToleranceKm);
         log.debug("Reduced to {} candidate pairs", pairs.size());
 
-        // Build propagators
-        Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
+        // Extract unique satellites involved in any pair
+        Set<Integer> satellitesInPairs = new HashSet<>();
+        for (SatellitePair pair : pairs) {
+            satellitesInPairs.add(pair.a().getNoradCatId());
+            satellitesInPairs.add(pair.b().getNoradCatId());
+        }
+
+        // Filter to only satellites in candidate pairs
+        List<Satellite> candidateSatellites = satellites.stream()
+                .filter(sat -> satellitesInPairs.contains(sat.getNoradCatId()))
+                .toList();
+
+        log.debug("Filtered from {} to {} candidate satellites", satellites.size(), candidateSatellites.size());
+
+        // Build propagators only for candidates
+        Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(candidateSatellites);
 
         // Scan for conjunctions
         List<Conjunction> conjunctions = scanService.scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds, interpolationStride);
