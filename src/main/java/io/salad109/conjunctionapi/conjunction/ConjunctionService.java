@@ -6,6 +6,8 @@ import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatellitePair;
 import io.salad109.conjunctionapi.satellite.SatelliteService;
 import org.apache.commons.lang3.time.StopWatch;
+import org.eclipse.collections.api.set.primitive.MutableIntSet;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 public class ConjunctionService {
@@ -84,7 +84,7 @@ public class ConjunctionService {
         log.debug("Reduced to {} candidate pairs", pairs.size());
 
         // Extract unique satellites involved in any pair
-        Set<Integer> satellitesInPairs = new HashSet<>();
+        MutableIntSet satellitesInPairs = new IntHashSet(pairs.size() * 2);
         for (SatellitePair pair : pairs) {
             satellitesInPairs.add(pair.a().getNoradCatId());
             satellitesInPairs.add(pair.b().getNoradCatId());

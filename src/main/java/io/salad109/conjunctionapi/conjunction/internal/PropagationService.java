@@ -2,6 +2,8 @@ package io.salad109.conjunctionapi.conjunction.internal;
 
 import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatellitePair;
+import org.eclipse.collections.api.map.primitive.MutableIntIntMap;
+import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -101,7 +103,7 @@ public class PropagationService {
         }
 
         Integer[] satIds = propagators.keySet().toArray(Integer[]::new);
-        Map<Integer, Integer> noradIdToArrayId = HashMap.newHashMap(satIds.length);
+        MutableIntIntMap noradIdToArrayId = new IntIntHashMap(satIds.length);
         for (int i = 0; i < satIds.length; i++) {
             noradIdToArrayId.put(satIds[i], i);
         }
@@ -171,7 +173,7 @@ public class PropagationService {
         );
     }
 
-    record PositionCache(Map<Integer, Integer> noradIdToArrayId, OffsetDateTime[] times,
+    record PositionCache(MutableIntIntMap noradIdToArrayId, OffsetDateTime[] times,
                          double[][] x, double[][] y, double[][] z,
                          boolean[][] valid) {
         public double distanceSquaredAt(int a, int b, int step, double tolSq) {

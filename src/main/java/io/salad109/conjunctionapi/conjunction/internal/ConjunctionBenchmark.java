@@ -5,6 +5,8 @@ import io.salad109.conjunctionapi.satellite.Satellite;
 import io.salad109.conjunctionapi.satellite.SatellitePair;
 import io.salad109.conjunctionapi.satellite.SatelliteService;
 import org.apache.commons.lang3.time.StopWatch;
+import org.eclipse.collections.api.set.primitive.MutableIntSet;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.jspecify.annotations.NonNull;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
@@ -22,7 +24,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -61,7 +65,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Loaded {} satellites", satellites.size());
 
         // Use fixed start time
-        OffsetDateTime fixedStartTime = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)
+        OffsetDateTime fixedStartTime = OffsetDateTime.of(2026, 1, 20, 0, 0, 0, 0, ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS);
         log.info("Using fixed start time: {}", fixedStartTime);
 
@@ -76,7 +80,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         List<BenchmarkResult> results = new ArrayList<>();
 
         while (true) {
-            for (double toleranceKm = 60; toleranceKm <= 1200; toleranceKm += stepSecondRatio) {
+            for (double toleranceKm = 50; toleranceKm <= 600; toleranceKm += 50) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
@@ -111,7 +115,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         // Filter to only candidate satellites
         StopWatch filter = StopWatch.createStarted();
-        Set<Integer> satellitesInPairs = new HashSet<>();
+        MutableIntSet satellitesInPairs = new IntHashSet(pairs.size() * 2);
         for (SatellitePair pair : pairs) {
             satellitesInPairs.add(pair.a().getNoradCatId());
             satellitesInPairs.add(pair.b().getNoradCatId());
@@ -151,7 +155,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         StopWatch deduplication = StopWatch.createStarted();
         List<Conjunction> deduplicated = refined.stream()
                 .collect(Collectors.toMap(
-                        c -> c.getObject1NoradId() + ":" + c.getObject2NoradId(),
+                        c -> new ScanService.IntPair(c.getObject1NoradId(), c.getObject2NoradId()),
                         c -> c,
                         (a, b) -> a.getMissDistanceKm() <= b.getMissDistanceKm() ? a : b
                 ))
@@ -163,12 +167,11 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         total.stop();
 
         String name = String.format("tol=%.0f, prepass=%.1f, step=%d, stride=%d", toleranceKm, prepassToleranceKm, stepSeconds, interpolationStride);
-        log.info("tol={}km step={}s | {}ms | pair={}ms filter={}ms prop={}ms coarse={}ms group={}ms refine={}ms dedup={}ms | {} pairs, {} events, {} conj",
+        log.info("tol={}km step={}s | {}ms | pair={}ms filter={}ms prop={}ms coarse={}ms group={}ms refine={}ms dedup={}ms | {} conj",
                 (int) toleranceKm, stepSeconds,
                 total.getTime(),
                 pairReduction.getTime(), filter.getTime(), propagator.getTime(), coarse.getTime(),
-                grouping.getTime(), refine.getTime(), deduplication.getTime(),
-                pairs.size(), totalEvents, deduplicated.size());
+                grouping.getTime(), refine.getTime(), deduplication.getTime(), deduplicated.size());
 
         return new BenchmarkResult(name, toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
                 interpolationStride, detections.size(), totalEvents, refined.size(), deduplicated.size(),
@@ -218,7 +221,6 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                                    int stepSeconds, int stepSecondRatio, int interpolationStride,
                                    long detections, int events, int conjunctions, int deduplicated,
                                    long pairReductionTime, long filterTime, long propagatorTime, long coarseTimeMs,
-                                   long groupingTime,
-                                   long refineTimeMs, long deduplicationTime, long totalTimeMs) {
+                                   long groupingTime, long refineTimeMs, long deduplicationTime, long totalTimeMs) {
     }
 }

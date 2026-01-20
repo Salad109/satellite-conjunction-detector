@@ -70,7 +70,7 @@ public class ScanService {
         // Deduplicate by pair, keeping the closest approach
         List<Conjunction> deduplicated = conjunctionsUnderThreshold.stream()
                 .collect(Collectors.toMap(
-                        c -> c.getObject1NoradId() + ":" + c.getObject2NoradId(),
+                        c -> new IntPair(c.getObject1NoradId(), c.getObject2NoradId()),
                         c -> c,
                         (a, b) -> a.getMissDistanceKm() <= b.getMissDistanceKm() ? a : b
                 ))
@@ -90,7 +90,7 @@ public class ScanService {
                                       int interpolationStride) {
         int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
 
-        // Pre-compute all satellite positions (with optional interpolation)
+        // Pre-compute all satellite positions
         PropagationService.PositionCache precomputedPositions = propagationService.precomputePositions(
                 propagators, startTime, stepSeconds, totalSteps, interpolationStride);
 
@@ -107,9 +107,8 @@ public class ScanService {
 
         return pairs.parallelStream()
                 .<CoarseDetection>mapMulti((pair, consumer) -> {
-                    Integer idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
-                    Integer idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
-                    if (idxA == null || idxB == null) return;
+                    int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
+                    int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
 
                     for (int step = 0; step < totalSteps; step++) {
                         if (!precomputedPositions.validAt(idxA, idxB, step)) continue;
@@ -249,5 +248,8 @@ public class ScanService {
     }
 
     record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distance) {
+    }
+
+    record IntPair(int a, int b) {
     }
 }
