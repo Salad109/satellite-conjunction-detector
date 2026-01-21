@@ -49,30 +49,43 @@ plt.tight_layout()
 plt.savefig('1_total_time.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-# Plot 2
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.plot(df['tolerance_km'], df['coarse_s'], 'o-', label='Coarse', color='#06A77D', linewidth=2, markersize=8)
-ax.plot(df['tolerance_km'], df['refine_s'], 's-', label='Refine', color='#D62839', linewidth=2, markersize=8)
+# Plot 2 - All timing components
+fig, ax = plt.subplots(figsize=(12, 7))
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'dedup_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#e377c2']
+markers = ['o', 's', '^', 'd', 'x', 'v', 'p', '*']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Dedup']
+
+for col, color, marker, label in zip(timing_columns, colors, markers, labels):
+    ax.plot(df['tolerance_km'], df[col], marker=marker, linestyle='-', label=label,
+            color=color, linewidth=2, markersize=8)
+
 ax.set_xlabel('Tolerance (km)', fontsize=12)
 ax.set_ylabel('Time (s)', fontsize=12)
-ax.set_title('Coarse vs Refine Processing Time', fontsize=14, fontweight='bold')
-ax.legend(fontsize=11)
+ax.set_title('Time Breakdown', fontsize=14, fontweight='bold')
+ax.legend(fontsize=10, ncol=2)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('2_coarse_vs_refine.png', dpi=300, bbox_inches='tight')
+plt.savefig('2_time_breakdown.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-# Plot 3
-fig, ax = plt.subplots(figsize=(10, 6))
-ax.fill_between(df['tolerance_km'], 0, df['coarse_s'], label='Coarse', alpha=0.7, color='#06A77D')
-ax.fill_between(df['tolerance_km'], df['coarse_s'], df['total_s'], label='Refine', alpha=0.7, color='#D62839')
+# Plot 3 - Stacked area chart with all components
+fig, ax = plt.subplots(figsize=(12, 7))
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'dedup_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#e377c2']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Dedup']
+
+# Prepare data for stacked area
+y_stack = np.vstack([df[col].values for col in timing_columns])
+ax.stackplot(df['tolerance_km'], y_stack, labels=labels, colors=colors, alpha=0.8)
+
 ax.set_xlabel('Tolerance (km)', fontsize=12)
 ax.set_ylabel('Time (s)', fontsize=12)
-ax.set_title('Processing Time Breakdown', fontsize=14, fontweight='bold')
-ax.legend(fontsize=11)
+ax.set_title('Time Breakdown Stacked', fontsize=14, fontweight='bold')
+ax.legend(fontsize=10, loc='upper left', ncol=2)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig('3_time_breakdown.png', dpi=300, bbox_inches='tight')
+plt.savefig('3_time_breakdown_stacked.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Plot 4

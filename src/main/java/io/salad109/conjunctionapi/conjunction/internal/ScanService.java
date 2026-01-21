@@ -36,8 +36,14 @@ public class ScanService {
     public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride) {
         log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km, interpStride={})",
                 pairs.size(), lookaheadHours, toleranceKm, thresholdKm, interpolationStride);
-        // Coarse sweep
-        List<CoarseDetection> coarseDetections = coarseSweep(pairs, propagators, OffsetDateTime.now(ZoneOffset.UTC), toleranceKm, stepSeconds, lookaheadHours, interpolationStride);
+
+        // Propagate all satellites
+        OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC);
+        PropagationService.PositionCache positionCache = propagationService.precomputePositions(
+                propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
+
+        // Check pairs against precomputed positions
+        List<CoarseDetection> coarseDetections = checkPairs(pairs, positionCache, toleranceKm);
         log.info("Coarse sweep found {} detections", coarseDetections.size());
 
         if (coarseDetections.isEmpty()) {
@@ -49,7 +55,6 @@ public class ScanService {
         Map<SatellitePair, List<List<CoarseDetection>>> eventsByPair = groupIntoEvents(coarseDetections, stepSeconds);
 
         // Refine each event
-        // Flatten for parallel processing
         List<List<CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
                 .toList();
@@ -83,25 +88,10 @@ public class ScanService {
     }
 
     /**
-     * Scan through lookahead window in large steps and record all detections within toleranceKm.
+     * Check all pairs against precomputed positions and return detections within toleranceKm.
      */
-    List<CoarseDetection> coarseSweep(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators,
-                                      OffsetDateTime startTime, double toleranceKm, int stepSeconds, int lookaheadHours,
-                                      int interpolationStride) {
-        int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
-
-        // Pre-compute all satellite positions
-        PropagationService.PositionCache precomputedPositions = propagationService.precomputePositions(
-                propagators, startTime, stepSeconds, totalSteps, interpolationStride);
-
-        // Check all pairs
-        List<CoarseDetection> detections = checkPairs(pairs, precomputedPositions, toleranceKm);
-
-        return detections;
-    }
-
-    private List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
-                                             double toleranceKm) {
+    List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
+                                     double toleranceKm) {
         double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
         int totalSteps = precomputedPositions.times().length;
 

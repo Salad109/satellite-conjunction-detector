@@ -93,8 +93,9 @@ public class PropagationService {
      * Pre-compute positions for all satellites across all time steps.
      */
     PositionCache precomputePositions(Map<Integer, TLEPropagator> propagators,
-                                      OffsetDateTime startTime, int stepSeconds, int totalSteps,
+                                      OffsetDateTime startTime, int stepSeconds, int lookaheadHours,
                                       int interpolationStride) {
+        int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
         int stride = Math.max(1, interpolationStride);
 
         OffsetDateTime[] times = new OffsetDateTime[totalSteps];
@@ -147,6 +148,9 @@ public class PropagationService {
         return new PositionCache(noradIdToArrayId, times, x, y, z, valid);
     }
 
+    /**
+     * Calculate distance in kilometers between two PVCoordinates.
+     */
     private double calculateDistance(PVCoordinates pvA, PVCoordinates pvB) {
         double dx = (pvA.getPosition().getX() - pvB.getPosition().getX()) / 1000.0;
         double dy = (pvA.getPosition().getY() - pvB.getPosition().getY()) / 1000.0;
@@ -154,6 +158,9 @@ public class PropagationService {
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
+    /**
+     * Calculate relative velocity in kilometers per second between two PVCoordinates.
+     */
     private double calculateRelativeVelocity(PVCoordinates pvA, PVCoordinates pvB) {
         double dvx = pvA.getVelocity().getX() - pvB.getVelocity().getX();
         double dvy = pvA.getVelocity().getY() - pvB.getVelocity().getY();
@@ -176,7 +183,7 @@ public class PropagationService {
     record PositionCache(MutableIntIntMap noradIdToArrayId, OffsetDateTime[] times,
                          double[][] x, double[][] y, double[][] z,
                          boolean[][] valid) {
-        public double distanceSquaredAt(int a, int b, int step, double tolSq) {
+        double distanceSquaredAt(int a, int b, int step, double tolSq) {
             double dx = x[a][step] - x[b][step];
             double dxSq = dx * dx;
             if (dxSq > tolSq) return dxSq;
@@ -189,7 +196,7 @@ public class PropagationService {
             return dySq + dz * dz;
         }
 
-        public boolean validAt(int a, int b, int step) {
+        boolean validAt(int a, int b, int step) {
             return valid[a][step] && valid[b][step];
         }
     }
