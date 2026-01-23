@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -65,7 +62,7 @@ public class ScanService {
         // Refine and filter by threshold
         List<Conjunction> conjunctionsUnderThreshold = allEvents.parallelStream()
                 .map(event -> refineEvent(event, propagators, stepSeconds, thresholdKm))
-                .filter(refined -> refined.getMissDistanceKm() <= thresholdKm)
+                .filter(Objects::nonNull)
                 .toList();
 
         refineWatch.stop();
@@ -168,6 +165,8 @@ public class ScanService {
      * Refine an event (cluster of coarse detections) using Brent's method to find more accurate TCA and minimum distance.
      * Uses linear interpolation during optimization to avoid expensive SGP4 calls, then does one final propagation
      * at the found TCA for accurate distance measurement.
+     *
+     * @return Conjunction if interpolated minimum distance is under threshold, null otherwise
      */
     Conjunction refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
@@ -216,9 +215,15 @@ public class ScanService {
                 MaxEval.unlimited()
         );
 
+        // Check if interpolated minimum distance is under threshold (compare squared to avoid sqrt)
+        double thresholdSq = thresholdKm * thresholdKm;
+        if (result.getValue() > thresholdSq) {
+            return null; // Skip expensive propagation for events that won't meet threshold
+        }
+
         OffsetDateTime tca = startTime.plusNanos((long) result.getPoint());
 
-        // Final accurate propagation at TCA
+        // Final accurate propagation at TCA (only for events likely under threshold)
         PropagationService.DistanceAndVelocity result2 = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
         double minDistance = result2.distanceKm();
         double relativeVelocity = result2.velocityKmS();

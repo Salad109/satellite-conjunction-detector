@@ -27,13 +27,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx12g -Xms12g -XX:+AlwaysPreTouch"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseParallelGC -Xmx8g -Xms8g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseZGC -Xmx12g -Xms12g -XX:+AlwaysPreTouch"
  * <p>
  * DELETE FROM satellite WHERE norad_cat_id IN (SELECT norad_cat_id FROM (SELECT norad_cat_id, ROW_NUMBER() OVER (ORDER BY norad_cat_id) as rn FROM satellite) AS numbered WHERE rn % 2 = 1 );
  */
@@ -153,7 +154,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         // Refinement
         StopWatch refine = StopWatch.createStarted();
         List<Conjunction> refined = allEvents.parallelStream().map(event -> scanService.refineEvent(event, propagators, stepSeconds, thresholdKm))
-                .filter(c -> c.getMissDistanceKm() <= thresholdKm)
+                .filter(Objects::nonNull)
                 .toList();
         refine.stop();
 

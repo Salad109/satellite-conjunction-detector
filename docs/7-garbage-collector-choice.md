@@ -41,10 +41,14 @@ Average across all tolerance values:
 
 ## Conclusion
 
-**Parallel GC is 7% faster than G1GC for conjunction detection workloads.**
+**ZGC is the preferred collector for conjunction detection workloads.**
 
-For scheduled batch processing where pause time doesn't matter, Parallel GC provides the best throughput. The Dockerfile
-has been updated to use `-XX:+UseParallelGC`.
+At optimal tolerance (340 km), ZGC performs nearly identically to Parallel GC (8.06s vs 8.03s, +0.4% difference). ZGC
+only shows degradation at suboptimal tolerance values, which are irrelevant for production use.
+
+ZGC provides significantly better pause time characteristics and more predictable latency behavior compared to Parallel
+GC's stop-the-world collections, making it the better choice for a service that may need to remain responsive during
+processing. The Dockerfile has been updated to use `-XX:+UseZGC`.
 
 All GCs detect the same conjunctions (1022 at tolerance=340km). GC choice affects performance, not correctness.
 
