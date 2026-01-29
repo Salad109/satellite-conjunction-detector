@@ -123,9 +123,6 @@ public class IngestionService {
         // Metadata
         sat.setObjectName(ommRecord.objectName());
         sat.setObjectType(ommRecord.objectType());
-        sat.setCountryCode(ommRecord.countryCode());
-        sat.setLaunchDate(ommRecord.launchDate());
-        sat.setDecayDate(ommRecord.decayDate());
 
         // TLE data
         sat.setEpoch(ommRecord.getEpochUtc());
@@ -138,8 +135,6 @@ public class IngestionService {
         sat.setInclination(ommRecord.inclination());
         sat.setRaan(ommRecord.raan());
         sat.setArgPerigee(ommRecord.argPerigee());
-        sat.setMeanAnomaly(ommRecord.meanAnomaly());
-        sat.setBstar(ommRecord.bstar() != null ? ommRecord.bstar() : 0.0);
 
         // Compute derived parameters
         sat.computeDerivedParameters();

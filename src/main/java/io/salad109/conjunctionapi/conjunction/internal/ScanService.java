@@ -31,11 +31,15 @@ public class ScanService {
     }
 
     public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride) {
+        return scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds, interpolationStride, OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    /**
+     * Scan from a specific time; for backtesting with historical data.
+     */
+    public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride, OffsetDateTime startTime) {
         log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km, interpStride={})",
                 pairs.size(), lookaheadHours, toleranceKm, thresholdKm, interpolationStride);
-
-        // Propagate all satellites
-        OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC);
         PropagationService.PositionCache positionCache = propagationService.precomputePositions(
                 propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
 

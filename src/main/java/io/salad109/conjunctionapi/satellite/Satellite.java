@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -27,15 +26,6 @@ public class Satellite {
 
     @Column(name = "object_type")
     private String objectType;
-
-    @Column(name = "country_code")
-    private String countryCode;
-
-    @Column(name = "launch_date")
-    private LocalDate launchDate;
-
-    @Column(name = "decay_date")
-    private LocalDate decayDate;
 
     // TLE data
     @Column(name = "epoch")
@@ -63,12 +53,6 @@ public class Satellite {
     @Column(name = "arg_perigee")
     private Double argPerigee;
 
-    @Column(name = "mean_anomaly")
-    private Double meanAnomaly;
-
-    @Column(name = "bstar")
-    private Double bstar;
-
     // Derived values for filtering
     @Column(name = "semi_major_axis_km")
     private Double semiMajorAxisKm;
@@ -78,9 +62,6 @@ public class Satellite {
 
     @Column(name = "apogee_km")
     private Double apogeeKm;
-
-    @Column(name = "orbital_period_min")
-    private Double orbitalPeriodMin;
 
     @Version
     @Column(name = "version")
@@ -96,7 +77,6 @@ public class Satellite {
 
     /**
      * Compute derived orbital parameters from mean motion and eccentricity.
-     * Call this before persisting.
      */
     @PrePersist
     @PreUpdate
@@ -114,9 +94,6 @@ public class Satellite {
         // Perigee and apogee altitudes
         this.perigeeKm = semiMajorAxisKm * (1 - eccentricity) - EARTH_RADIUS_KM;
         this.apogeeKm = semiMajorAxisKm * (1 + eccentricity) - EARTH_RADIUS_KM;
-
-        // Orbital period in minutes
-        this.orbitalPeriodMin = 1440.0 / meanMotion;
     }
 
     @Override
