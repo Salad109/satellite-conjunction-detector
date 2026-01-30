@@ -105,8 +105,10 @@ public class PropagationService {
 
         Integer[] satIds = propagators.keySet().toArray(Integer[]::new);
         MutableIntIntMap noradIdToArrayId = new IntIntHashMap(satIds.length);
+        int[] arrayIdToNoradId = new int[satIds.length];
         for (int i = 0; i < satIds.length; i++) {
             noradIdToArrayId.put(satIds[i], i);
+            arrayIdToNoradId[i] = satIds[i];
         }
 
         int numSats = satIds.length;
@@ -145,7 +147,7 @@ public class PropagationService {
             }
         });
 
-        return new PositionCache(noradIdToArrayId, times, x, y, z, valid);
+        return new PositionCache(noradIdToArrayId, arrayIdToNoradId, times, x, y, z, valid);
     }
 
     /**
@@ -180,24 +182,15 @@ public class PropagationService {
         );
     }
 
-    record PositionCache(MutableIntIntMap noradIdToArrayId, OffsetDateTime[] times,
+    record PositionCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId,
+                         OffsetDateTime[] times,
                          double[][] x, double[][] y, double[][] z,
                          boolean[][] valid) {
-        double distanceSquaredAt(int a, int b, int step, double tolSq) {
+        double distanceSquaredAt(int a, int b, int step) {
             double dx = x[a][step] - x[b][step];
-            double dxSq = dx * dx;
-            if (dxSq > tolSq) return dxSq;
-
             double dy = y[a][step] - y[b][step];
-            double dySq = dxSq + dy * dy;
-            if (dySq > tolSq) return dySq;
-
             double dz = z[a][step] - z[b][step];
-            return dySq + dz * dz;
-        }
-
-        boolean validAt(int a, int b, int step) {
-            return valid[a][step] && valid[b][step];
+            return dx * dx + dy * dy + dz * dz;
         }
     }
 

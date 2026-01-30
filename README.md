@@ -6,7 +6,7 @@ between satellites.
 
 ## Tech Stack
 
-- Java 21
+- Java 25
 - Spring Boot 4 / Spring Modulith
 - Orekit 13.1.2
 - PostgreSQL / Flyway

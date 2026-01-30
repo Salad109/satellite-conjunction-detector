@@ -52,11 +52,11 @@ processing. The Dockerfile has been updated to use `-XX:+UseZGC`.
 
 All GCs detect the same conjunctions (1022 at tolerance=340km). GC choice affects performance, not correctness.
 
-![Total Processing Time](7-gc/1_total_time.png)
+![Total Processing Time](6-gc/1_total_time.png)
 
-![Coarse vs Refine Time](7-gc/2_coarse_vs_refine.png)
+![Coarse vs Refine Time](6-gc/2_coarse_vs_refine.png)
 
-![Time Breakdown](7-gc/3_time_breakdown.png)
+![Time Breakdown](6-gc/3_time_breakdown.png)
 
-![Conjunctions Detected](7-gc/4_conjunctions.png)
+![Conjunctions Detected](6-gc/4_conjunctions.png)
 

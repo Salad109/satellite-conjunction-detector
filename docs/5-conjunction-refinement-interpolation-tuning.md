@@ -52,13 +52,13 @@ minimum shifting from ~228km to ~300km range.
 The ~1% difference is threshold boundary noise. Conjunctions hovering at 4.9-5.1km may land on either side depending on
 the exact TCA found. The final distance is still measured with full SGP4 precision.
 
-![Total Processing Time](6-conjunction-refinement-interpolation/1_total_time.png)
+![Total Processing Time](5-conjunction-refinement-interpolation/1_total_time.png)
 
-![Coarse vs Refine Time](6-conjunction-refinement-interpolation/2_coarse_vs_refine.png)
+![Coarse vs Refine Time](5-conjunction-refinement-interpolation/2_coarse_vs_refine.png)
 
-![Time Breakdown](6-conjunction-refinement-interpolation/3_time_breakdown.png)
+![Time Breakdown](5-conjunction-refinement-interpolation/3_time_breakdown.png)
 
-![Conjunctions Detected](6-conjunction-refinement-interpolation/4_conjunctions.png)
+![Conjunctions Detected](5-conjunction-refinement-interpolation/4_conjunctions.png)
 
 ## Conclusion
 

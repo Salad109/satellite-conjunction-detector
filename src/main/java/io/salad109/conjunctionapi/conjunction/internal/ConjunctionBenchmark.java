@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx12g -Xms12g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseZGC -Xmx12g -Xms12g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
  * <p>
  * DELETE FROM satellite WHERE norad_cat_id IN (SELECT norad_cat_id FROM (SELECT norad_cat_id, ROW_NUMBER() OVER (ORDER BY norad_cat_id) as rn FROM satellite) AS numbered WHERE rn % 2 = 1 );
  */
@@ -81,7 +81,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         List<BenchmarkResult> results = new ArrayList<>();
 
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 600; toleranceKm += 10) {
+            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 50) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
@@ -174,16 +174,15 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         total.stop();
 
         String name = String.format("tol=%.0f, prepass=%.1f, step=%d, stride=%d", toleranceKm, prepassToleranceKm, stepSeconds, interpolationStride);
-        log.info("tol={}km step={}s | {}ms | pair={}ms filter={}ms prop={}ms propagate={}ms check={}ms group={}ms refine={}ms dedup={}ms | {} conj",
-                (int) toleranceKm, stepSeconds,
-                total.getTime(),
-                pairReduction.getTime(), filter.getTime(), propagator.getTime(), propagateSweep.getTime(), checkPairs.getTime(),
-                grouping.getTime(), refine.getTime(), deduplication.getTime(), deduplicated.size());
+        log.info("tol={}km | {}ms | pair={}ms filter={}ms prop={}ms propagate={}ms check={}ms group={}ms refine={}ms dedup={}ms | {} conj",
+                (int) toleranceKm, total.getTime(), pairReduction.getTime(), filter.getTime(), propagator.getTime(),
+                propagateSweep.getTime(), checkPairs.getTime(), grouping.getTime(), refine.getTime(),
+                deduplication.getTime(), deduplicated.size());
 
         return new BenchmarkResult(name, toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
                 interpolationStride, detections.size(), totalEvents, refined.size(), deduplicated.size(),
-                pairReduction.getTime(), filter.getTime(), propagator.getTime(), propagateSweep.getTime(), checkPairs.getTime(),
-                grouping.getTime(), refine.getTime(), deduplication.getTime(), total.getTime());
+                pairReduction.getTime(), filter.getTime(), propagator.getTime(), propagateSweep.getTime(),
+                checkPairs.getTime(), grouping.getTime(), refine.getTime(), deduplication.getTime(), total.getTime());
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
@@ -225,11 +224,10 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         }
     }
 
-    private record BenchmarkResult(String name, double toleranceKm, double prepassToleranceKm,
-                                   int stepSeconds, int stepSecondRatio, int interpolationStride,
-                                   long detections, int events, int conjunctions, int deduplicated,
-                                   long pairReductionTime, long filterTime, long propagatorTime,
-                                   long propagateSweepTimeMs, long checkPairsTimeMs,
+    private record BenchmarkResult(String name, double toleranceKm, double prepassToleranceKm, int stepSeconds,
+                                   int stepSecondRatio, int interpolationStride, long detections, int events,
+                                   int conjunctions, int deduplicated, long pairReductionTime, long filterTime,
+                                   long propagatorTime, long propagateSweepTimeMs, long checkPairsTimeMs,
                                    long groupingTime, long refineTimeMs, long deduplicationTime, long totalTimeMs) {
     }
 }

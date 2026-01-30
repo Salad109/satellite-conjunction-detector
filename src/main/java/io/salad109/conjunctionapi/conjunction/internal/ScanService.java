@@ -18,6 +18,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class ScanService {
@@ -35,17 +36,19 @@ public class ScanService {
     }
 
     /**
-     * Scan from a specific time; for backtesting with historical data.
+     * Scan from a specific time; configurable start time for backtesting with historical data.
      */
     public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride, OffsetDateTime startTime) {
         log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km, interpStride={})",
                 pairs.size(), lookaheadHours, toleranceKm, thresholdKm, interpolationStride);
+
+        // Pre-compute positions
         PropagationService.PositionCache positionCache = propagationService.precomputePositions(
                 propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
 
         // Check pairs against precomputed positions
         List<CoarseDetection> coarseDetections = checkPairs(pairs, positionCache, toleranceKm);
-        log.info("Coarse sweep found {} detections", coarseDetections.size());
+        log.debug("Coarse sweep found {} detections", coarseDetections.size());
 
         if (coarseDetections.isEmpty()) {
             log.warn("No close approaches detected in lookahead window");
@@ -89,25 +92,40 @@ public class ScanService {
     }
 
     /**
-     * Check all pairs against precomputed positions and return detections within toleranceKm.
+     * Check for close approaches using spatial indexing.
      */
     List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
                                      double toleranceKm) {
-        double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
+        // Build bidirectional lookup for fast access in hot loop
+        int numSats = precomputedPositions.arrayIdToNoradId().length;
+        SatellitePair[][] allowedPairsByArrayId = new SatellitePair[numSats][numSats];
+        for (SatellitePair pair : pairs) {
+            int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
+            int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
+            allowedPairsByArrayId[idxA][idxB] = pair;
+            allowedPairsByArrayId[idxB][idxA] = pair;
+        }
+
         int totalSteps = precomputedPositions.times().length;
+        double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
 
-        return pairs.parallelStream()
-                .<CoarseDetection>mapMulti((pair, consumer) -> {
-                    int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
-                    int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
+        // Parallelize over time steps
+        return IntStream.range(0, totalSteps)
+                .parallel()
+                .boxed()
+                .<CoarseDetection>mapMulti((step, consumer) -> {
+                    SpatialGrid grid = new SpatialGrid(toleranceKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), precomputedPositions.valid(), step);
 
-                    for (int step = 0; step < totalSteps; step++) {
-                        if (!precomputedPositions.validAt(idxA, idxB, step)) continue;
-                        double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step, tolSq);
+                    grid.forEachCandidatePair((idxA, idxB) -> {
+                        // Filter by pair reduction
+                        SatellitePair pair = allowedPairsByArrayId[idxA][idxB];
+                        if (pair == null) return;
+
+                        double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);
                         if (distSq < tolSq) {
-                            consumer.accept(new CoarseDetection(pair, precomputedPositions.times()[step], Math.sqrt(distSq)));
+                            consumer.accept(new CoarseDetection(pair, precomputedPositions.times()[step], distSq));
                         }
-                    }
+                    });
                 })
                 .toList();
     }
@@ -174,7 +192,7 @@ public class ScanService {
      */
     Conjunction refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
-                .min(Comparator.comparing(CoarseDetection::distance))
+                .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
         SatellitePair pair = best.pair();
 
@@ -246,7 +264,7 @@ public class ScanService {
         );
     }
 
-    record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distance) {
+    record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq) {
     }
 
     record IntPair(int a, int b) {
