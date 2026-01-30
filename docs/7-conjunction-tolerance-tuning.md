@@ -13,7 +13,7 @@ Final tuning of the coarse sweep tolerance parameter, with prepass, step ratio, 
 
 ## Pipeline Stages
 
-The conjunction detection pipeline consists of 8 stages:
+The conjunction detection pipeline consists of 7 stages:
 
 1. **Pair Reduction**: Geometric filtering to reduce candidate pairs (~13s, constant)
 2. **Filter**: Rebuilding the catalog from reduced pairs (~0.6s, constant)
@@ -22,7 +22,6 @@ The conjunction detection pipeline consists of 8 stages:
 5. **Check Pairs**: Distance checking during coarse sweep (decreases with tolerance)
 6. **Grouping**: Clustering detections into events (increases with tolerance)
 7. **Refine**: Brent's method optimization for precise TCA (increases with tolerance)
-8. **Dedup**: Deduplication of conjunctions (~0.004s, negligible)
 
 ## Analysis
 
@@ -33,7 +32,7 @@ The pipeline stages have opposing time complexities with respect to tolerance:
 - **Propagate + Check Pairs - O(1/tolerance)**: Larger tolerance means larger step size, so fewer propagation calls and
   distance checks. Doubling tolerance roughly halves this time.
 - **Grouping + Refine - O(tolerance)**: Larger tolerance catches more events that need grouping and refinement.
-- **Pair Reduction, Filter, Propagator Build, Dedup**: Essentially constant regardless of tolerance.
+- **Pair Reduction, Filter, Propagator Build**: Essentially constant regardless of tolerance.
 
 The optimal tolerance minimizes total time. As tolerance increases, propagate/check time decreases but grouping/refine
 time increases. The U-shaped total time curve has its minimum where these opposing effects balance.
@@ -48,7 +47,7 @@ time increases. The U-shaped total time curve has its minimum where these opposi
 
 ### Conjunction Stability
 
-Configurations up to ~400 km detect ~13,940 deduplicated conjunctions consistently. Above 400 km, detection begins to
+Configurations up to ~400 km detect conjunctions consistently. Above 400 km, detection begins to
 drop off slightly. This is likely due to interpolation error at stride=6 compounding with large step sizes, but it's
 irrelevant in practice since optimal tolerance is well below this range.
 

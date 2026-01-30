@@ -103,10 +103,9 @@ public class ConjunctionService {
         // Scan for conjunctions
         List<Conjunction> conjunctions = scanService.scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds, interpolationStride);
 
-        // Save all conjunctions (upsert keeps closest per pair)
-        if (!conjunctions.isEmpty()) {
-            conjunctionRepository.batchUpsertIfCloser(conjunctions);
-        }
+        // Replace all conjunctions with new scan results
+        conjunctionRepository.truncate();
+        conjunctionRepository.saveAll(conjunctions);
 
         stopWatch.stop();
         log.info("Conjunction screening completed in {}ms, found {} conjunctions",

@@ -3,9 +3,14 @@ package io.salad109.conjunctionapi.conjunction.internal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-public interface ConjunctionRepository extends JpaRepository<Conjunction, Integer>, ConjunctionRepositoryCustom {
+public interface ConjunctionRepository extends JpaRepository<Conjunction, Integer> {
+
+    @Modifying
+    @Query(value = "TRUNCATE TABLE conjunction", nativeQuery = true)
+    void truncate();
 
     @Query("SELECT new io.salad109.conjunctionapi.conjunction.internal.ConjunctionInfo(" +
             "c.missDistanceKm, c.tca, c.relativeVelocityMS, " +

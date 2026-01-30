@@ -76,19 +76,7 @@ public class ScanService {
         log.info("Refined to {} conjunctions below {} km threshold in {}ms",
                 conjunctionsUnderThreshold.size(), thresholdKm, refineWatch.getTime());
 
-        // Deduplicate by pair, keeping the closest approach
-        List<Conjunction> deduplicated = conjunctionsUnderThreshold.stream()
-                .collect(Collectors.toMap(
-                        c -> new IntPair(c.getObject1NoradId(), c.getObject2NoradId()),
-                        c -> c,
-                        (a, b) -> a.getMissDistanceKm() <= b.getMissDistanceKm() ? a : b
-                ))
-                .values()
-                .stream()
-                .toList();
-
-        log.debug("Deduplicated to {} unique pairs", deduplicated.size());
-        return deduplicated;
+        return conjunctionsUnderThreshold;
     }
 
     /**
@@ -265,8 +253,5 @@ public class ScanService {
     }
 
     record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq) {
-    }
-
-    record IntPair(int a, int b) {
     }
 }

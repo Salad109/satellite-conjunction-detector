@@ -1,0 +1,1 @@
+ALTER TABLE conjunction DROP CONSTRAINT IF EXISTS conjunction_object1_norad_id_object2_norad_id_key;
