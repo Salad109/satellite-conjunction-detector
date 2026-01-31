@@ -63,4 +63,6 @@ convergence). For applications requiring near-complete coverage, use higher valu
 
 # Run on Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
+
+# *you must have a running PostgreSQL instance with the satellite catalog loaded, and orekit data files at src/main/resources/orekit-data
 ```

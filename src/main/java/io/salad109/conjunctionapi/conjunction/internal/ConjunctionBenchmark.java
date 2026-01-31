@@ -34,8 +34,6 @@ import java.util.Objects;
  * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
  * Windows:
  * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
- * <p>
- * DELETE FROM satellite WHERE norad_cat_id IN (SELECT norad_cat_id FROM (SELECT norad_cat_id, ROW_NUMBER() OVER (ORDER BY norad_cat_id) as rn FROM satellite) AS numbered WHERE rn % 2 = 1 );
  */
 @Component
 @Profile("benchmark-conjunction")

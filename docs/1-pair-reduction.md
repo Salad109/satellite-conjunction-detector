@@ -1,41 +1,56 @@
-# Pair Reduction Benchmark
+# Pair Reduction Filter Order
 
-With ~30,000 tracked objects, the naive approach would check over 400 million satellite pairs. The system applies
-several sequential filters to reduce computational load.
+With ~30,000 tracked objects, naive N^2 comparison requires checking 441 million satellite pairs. Three geometric
+filters reduce this to 4% of original pairs. This experiment determines the optimal filter ordering at 12.5 km
+tolerance.
 
-## Results
+## Filters
 
-| Strategy                        |   Unique Pairs | % of Original |      Time |  Throughput/sec |
-|---------------------------------|---------------:|--------------:|----------:|----------------:|
-| Full set (29,583 satellites)    |    438,361,245 |        100.0% |         - |               - |
-| Skip debris on debris           |    191,756,736 |        43.74% |     1.84s |     237,664,556 |
-| Only overlapping apogee/perigee |     82,686,395 |        18.86% |     1.68s |     260,628,008 |
-| Intersecting orbital planes     |     26,804,778 |         6.11% |    23.01s |      19,052,274 |
-| **All strategies combined**     | **17,110,639** |     **3.90%** | **4.13s** | **106,042,788** |
+Three filters eliminate pairs that cannot possibly collide:
 
-## Filter Details
+| Filter       | Description                               | Passthrough | Time (as first) |
+|--------------|-------------------------------------------|-------------|-----------------|
+| **Debris**   | Skip pairs where both objects are debris  | 43.9%       | 4.8s            |
+| **Altitude** | Require overlapping perigee/apogee ranges | 18.9%       | 9.6s            |
+| **Plane**    | Check orbital plane intersection geometry | 6.2%        | 86.6s           |
 
-### Skip debris on debris
+- **Debris** is cheapest but least selective - nearly half of pairs pass through
+- **Altitude** is 2x slower but 2.3x more selective than debris
+- **Plane** is the tightest filter but extremely expensive
 
-Excludes pairs where both objects are debris. Debris-on-debris conjunctions are of low importance since neither object
-can maneuver.
+## Filter Order Analysis
 
-### Only overlapping apogee/perigee
+All orderings produce identical final pair counts (17.6M pairs, 4.0% of original). Only execution time differs.
 
-Two satellites can only collide if their orbital altitude ranges overlap. Compares perigee/apogee of two satellites with
-a tolerance buffer.
+| Order | Time  | Relative |
+|-------|-------|----------|
+| DAP   | 13.5s | baseline |
+| ADP   | 16.9s | +25%     |
+| APD   | 29.5s | +119%    |
+| DPA   | 46.4s | +244%    |
+| PAD   | 86.4s | +541%    |
+| PDA   | 87.2s | +547%    |
 
-### Intersecting orbital planes
+## Conclusion
 
-Non-coplanar orbits only intersect at two points (the line of nodes). The filter checks if the orbital radii at these
-intersection points are within tolerance.
+**Optimal order: Debris, Altitude, Plane (DAP)**
+
+Filter ordering has massive impact - DAP is 6.5x faster than PDA despite identical output. Running cheap,
+moderately-selective filters before expensive, highly-selective ones is more efficient.
+
+![Total Time by Filter Order](1-pair-reduction/1_total_time.png)
+
+![Time Breakdown by Order](1-pair-reduction/2_time_breakdown_pie.png)
+
+![Pair Reduction Waterfall](1-pair-reduction/3_pair_reduction.png)
 
 ## Running the Benchmark
 
 ```bash
-# Run on Linux
+# Linux
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter
 
-# Run on Windows
+# Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter"
+# *you must have a running PostgreSQL instance with the satellite catalog loaded 
 ```

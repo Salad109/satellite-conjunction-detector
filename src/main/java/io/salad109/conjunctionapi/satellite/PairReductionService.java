@@ -1,7 +1,5 @@
 package io.salad109.conjunctionapi.satellite;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,8 +8,6 @@ import java.util.stream.IntStream;
 
 @Service
 public class PairReductionService {
-
-    private static final Logger log = LoggerFactory.getLogger(PairReductionService.class);
 
     /**
      * Finds all pairs of satellites that could potentially collide.
@@ -41,8 +37,8 @@ public class PairReductionService {
      */
     public boolean canCollide(Satellite a, Satellite b, double toleranceKm) {
         // Apply filters starting with computationally cheapest
-        return altitudeShellsOverlap(a, b, toleranceKm) &&
-                neitherAreDebris(a, b) &&
+        return neitherAreDebris(a, b) &&
+                altitudeShellsOverlap(a, b, toleranceKm) &&
                 orbitalPlanesIntersect(a, b, toleranceKm);
     }
 

@@ -34,8 +34,10 @@ See [docs/1-pair-reduction.md](docs/1-pair-reduction.md) for details.
 
 The detection algorithm uses a two-step approach:
 
-1. **Coarse sweep**: Steps through time at configurable intervals, flagging approximate conjunctions
-2. **Refinement**: Binary search around detected conjunction events to find precise TCA and miss distance
+1. **Coarse sweep**: Pre-computes satellite positions using SGP4 with linear interpolation, then uses spatial grid
+   indexing to efficiently find nearby satellites within tolerance
+2. **Refinement**: Brent's method optimization to find precise TCA and miss distance, filtering by 5 km collision
+   threshold
 
 See docs for tuning experiments and optimal parameters.
 
@@ -43,7 +45,7 @@ See docs for tuning experiments and optimal parameters.
 
 ### Prerequisites
 
-- Java 21+
+- Java 25
 - Docker & Docker Compose
 - [Space-Track.org](https://www.space-track.org) account (free registration)
 
@@ -62,7 +64,7 @@ src/main/resources/orekit-data/
 
 ### 2. Configure Environment
 
-Copy the example environment file and fill in your credentials:
+Copy the example environment file and fill in your Space-Track credentials:
 
 ```bash
 cp .env.example .env
@@ -74,7 +76,7 @@ cp .env.example .env
 docker-compose up
 ```
 
-This starts PostgreSQL and the application. The API will be available at `http://localhost:8080`.
+This starts PostgreSQL and the application. The app will be available at `http://localhost:8080`.
 
 ### Running Locally for Development
 
