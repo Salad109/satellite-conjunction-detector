@@ -37,8 +37,8 @@ public class PairReductionService {
      */
     public boolean canCollide(Satellite a, Satellite b, double toleranceKm) {
         // Apply filters starting with computationally cheapest
-        return neitherAreDebris(a, b) &&
-                altitudeShellsOverlap(a, b, toleranceKm) &&
+        return altitudeShellsOverlap(a, b, toleranceKm) &&
+                neitherAreDebris(a, b) &&
                 orbitalPlanesIntersect(a, b, toleranceKm);
     }
 

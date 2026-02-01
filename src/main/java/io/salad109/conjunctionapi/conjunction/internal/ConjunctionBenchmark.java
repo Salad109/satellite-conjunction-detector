@@ -71,14 +71,14 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         // Benchmark parameters
         int lookaheadHours = 24;
         double thresholdKm = 5.0;
-        double prepassToleranceKm = 12.5;
+        double prepassToleranceKm = 10.0;
         int stepSecondRatio = 10;
         int interpolationStride = 6;
 
         List<BenchmarkResult> results = new ArrayList<>();
 
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 50) {
+            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 10) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();

@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiPredicate;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -35,14 +35,44 @@ public class PairReductionBenchmark implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PairReductionBenchmark.class);
     private static final double DEFAULT_TOLERANCE_KM = 12.5;
-    private static final int ITERATIONS = 10;
+    private static final int ITERATIONS = 20;
 
     private final SatelliteRepository satelliteRepository;
     private final PairReductionService pairReductionService;
 
+    private final Map<String, PairFilter> orderings;
+
     public PairReductionBenchmark(SatelliteRepository satelliteRepository, PairReductionService pairReductionService) {
         this.satelliteRepository = satelliteRepository;
         this.pairReductionService = pairReductionService;
+
+        // A=altitude, D=debris, P=plane
+        this.orderings = Map.of(
+                "ADP", (a, b, tol) ->
+                        this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
+                                this.pairReductionService.neitherAreDebris(a, b) &&
+                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol),
+                "APD", (a, b, tol) ->
+                        this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
+                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
+                                this.pairReductionService.neitherAreDebris(a, b),
+                "DAP", (a, b, tol) ->
+                        this.pairReductionService.neitherAreDebris(a, b) &&
+                                this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
+                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol),
+                "DPA", (a, b, tol) ->
+                        this.pairReductionService.neitherAreDebris(a, b) &&
+                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
+                                this.pairReductionService.altitudeShellsOverlap(a, b, tol),
+                "PAD", (a, b, tol) ->
+                        this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
+                                this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
+                                this.pairReductionService.neitherAreDebris(a, b),
+                "PDA", (a, b, tol) ->
+                        this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
+                                this.pairReductionService.neitherAreDebris(a, b) &&
+                                this.pairReductionService.altitudeShellsOverlap(a, b, tol)
+        );
     }
 
     @Override
@@ -52,119 +82,51 @@ public class PairReductionBenchmark implements CommandLineRunner {
         long totalPairs = (long) n * (n - 1) / 2;
 
         log.info("Loaded {} satellites ({} total pairs)", n, String.format("%,d", totalPairs));
-
-        runOrderBenchmark(satellites, totalPairs);
-
-        log.info("Benchmark complete");
-    }
-
-
-    private void runOrderBenchmark(List<Satellite> satellites, long totalPairs) throws InterruptedException {
         log.info("");
         log.info("Starting pair reduction order benchmark");
         log.info("");
 
-        // A=altitude, D=debris, P=plane
-        String[][] orderings = {
-                {"A", "D", "P"},
-                {"A", "P", "D"},
-                {"D", "A", "P"},
-                {"D", "P", "A"},
-                {"P", "A", "D"},
-                {"P", "D", "A"},
-        };
-
+        List<String> orderNames = List.of("ADP", "APD", "DAP", "DPA", "PAD", "PDA");
         List<OrderResult> results = new ArrayList<>();
 
         for (int i = 0; i < ITERATIONS; i++) {
-            for (String[] order : orderings) {
+            log.info("Iteration {}/{}", i + 1, ITERATIONS);
+            for (String orderName : orderNames) {
                 System.gc();
                 Thread.sleep(100);
 
-                String orderName = String.join("", order);
-                results.add(runOrderedChain(satellites, totalPairs, order, orderName, i + 1));
+                results.add(runOrdering(satellites, totalPairs, orderName));
             }
         }
 
         writeCsv(results);
+        log.info("Benchmark complete");
     }
 
-    private OrderResult runOrderedChain(List<Satellite> satellites, long totalPairs,
-                                        String[] order, String orderName, int iteration) {
+    private OrderResult runOrdering(List<Satellite> satellites, long totalPairs,
+                                    String orderName) {
         int n = satellites.size();
+        PairFilter filter = orderings.get(orderName);
 
-        BiPredicate<Satellite, Satellite> altitudeFilter =
-                (a, b) -> pairReductionService.altitudeShellsOverlap(a, b, DEFAULT_TOLERANCE_KM);
-        BiPredicate<Satellite, Satellite> debrisFilter =
-                pairReductionService::neitherAreDebris;
-        BiPredicate<Satellite, Satellite> planeFilter =
-                (a, b) -> pairReductionService.orbitalPlanesIntersect(a, b, DEFAULT_TOLERANCE_KM);
-
-        List<BiPredicate<Satellite, Satellite>> filters = new ArrayList<>(3);
-        String[] filterNames = new String[3];
-
-        for (int i = 0; i < 3; i++) {
-            switch (order[i]) {
-                case "A" -> {
-                    filters.add(altitudeFilter);
-                    filterNames[i] = "altitude";
-                }
-                case "D" -> {
-                    filters.add(debrisFilter);
-                    filterNames[i] = "debris";
-                }
-                case "P" -> {
-                    filters.add(planeFilter);
-                    filterNames[i] = "plane";
-                }
-            }
-        }
-
-        // Stage 1 (from all pairs)
-        StopWatch watch1 = StopWatch.createStarted();
-        List<SatellitePair> after1 = IntStream.range(0, n)
+        StopWatch watch = StopWatch.createStarted();
+        List<SatellitePair> results = IntStream.range(0, n)
                 .parallel()
                 .boxed()
                 .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
                     Satellite a = satellites.get(i);
                     for (int j = i + 1; j < n; j++) {
                         Satellite b = satellites.get(j);
-                        if (filters.getFirst().test(a, b)) {
+                        if (filter.test(a, b, DEFAULT_TOLERANCE_KM)) {
                             consumer.accept(new SatellitePair(a, b));
                         }
                     }
                 })
                 .toList();
-        watch1.stop();
+        watch.stop();
 
-        // Stage 2
-        StopWatch watch2 = StopWatch.createStarted();
-        List<SatellitePair> after2 = after1.parallelStream()
-                .filter(pair -> filters.get(1).test(pair.a(), pair.b()))
-                .toList();
-        watch2.stop();
+        log.info("{} | {}ms | {} pairs", orderName, watch.getTime(), results.size());
 
-        // Stage 3
-        StopWatch watch3 = StopWatch.createStarted();
-        List<SatellitePair> after3 = after2.parallelStream()
-                .filter(pair -> filters.get(2).test(pair.a(), pair.b()))
-                .toList();
-        watch3.stop();
-
-        long totalMs = watch1.getTime() + watch2.getTime() + watch3.getTime();
-
-        log.info("{} | {}ms | {}={}ms {}={}ms {}={}ms | {} final",
-                orderName, totalMs,
-                filterNames[0], watch1.getTime(),
-                filterNames[1], watch2.getTime(),
-                filterNames[2], watch3.getTime(),
-                after3.size());
-
-        return new OrderResult(orderName, iteration, totalPairs,
-                filterNames[0], after1.size(), watch1.getTime(),
-                filterNames[1], after2.size(), watch2.getTime(),
-                filterNames[2], after3.size(), watch3.getTime(),
-                totalMs);
+        return new OrderResult(orderName, totalPairs, results.size(), watch.getTime());
     }
 
     private void writeCsv(List<OrderResult> results) {
@@ -172,18 +134,12 @@ public class PairReductionBenchmark implements CommandLineRunner {
         String filename = "pair_reduction_benchmark_" + timestamp + ".csv";
         Path outputPath = Paths.get("docs", filename);
 
-        try {
-            try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-                writer.write("order,iteration,total_pairs,filter1,after1,time1_ms,filter2,after2,time2_ms,filter3,after3,time3_ms,total_ms\n");
+        try (FileWriter writer = new FileWriter(outputPath.toFile())) {
+            writer.write("order,total_pairs,final_pairs,time_ms\n");
 
-                for (OrderResult r : results) {
-                    writer.write(String.format("%s,%d,%d,%s,%d,%d,%s,%d,%d,%s,%d,%d,%d%n",
-                            r.order, r.iteration, r.totalPairs,
-                            r.filter1, r.after1, r.time1Ms,
-                            r.filter2, r.after2, r.time2Ms,
-                            r.filter3, r.after3, r.time3Ms,
-                            r.totalMs));
-                }
+            for (OrderResult r : results) {
+                writer.write(String.format("%s,%d,%d,%d%n",
+                        r.order, r.totalPairs, r.finalPairs, r.timeMs));
             }
 
             log.info("CSV results written to: {}", outputPath.toAbsolutePath());
@@ -193,10 +149,11 @@ public class PairReductionBenchmark implements CommandLineRunner {
         }
     }
 
-    private record OrderResult(String order, int iteration, long totalPairs,
-                               String filter1, long after1, long time1Ms,
-                               String filter2, long after2, long time2Ms,
-                               String filter3, long after3, long time3Ms,
-                               long totalMs) {
+    @FunctionalInterface
+    interface PairFilter {
+        boolean test(Satellite a, Satellite b, double toleranceKm);
+    }
+
+    private record OrderResult(String order, long totalPairs, long finalPairs, long timeMs) {
     }
 }

@@ -8,15 +8,13 @@ tolerance.
 
 Three filters eliminate pairs that cannot possibly collide:
 
-| Filter       | Description                               | Passthrough | Time (as first) |
-|--------------|-------------------------------------------|-------------|-----------------|
-| **Debris**   | Skip pairs where both objects are debris  | 43.9%       | 4.8s            |
-| **Altitude** | Require overlapping perigee/apogee ranges | 18.9%       | 9.6s            |
-| **Plane**    | Check orbital plane intersection geometry | 6.2%        | 86.6s           |
+| Filter       | Description                               | Passthrough |
+|--------------|-------------------------------------------|-------------|
+| **Debris**   | Skip pairs where both objects are debris  | 43.9%       |
+| **Altitude** | Require overlapping perigee/apogee ranges | 18.9%       |
+| **Plane**    | Check orbital plane intersection geometry | 6.2%        |
 
-- **Debris** is cheapest but least selective - nearly half of pairs pass through
-- **Altitude** is 2x slower but 2.3x more selective than debris
-- **Plane** is the tightest filter but extremely expensive
+First filter runs on all pairs. Subsequent filters only run on pairs that passed previous filters.
 
 ## Filter Order Analysis
 
@@ -24,25 +22,14 @@ All orderings produce identical final pair counts (17.6M pairs, 4.0% of original
 
 | Order | Time  | Relative |
 |-------|-------|----------|
-| DAP   | 13.5s | baseline |
-| ADP   | 16.9s | +25%     |
-| APD   | 29.5s | +119%    |
-| DPA   | 46.4s | +244%    |
-| PAD   | 86.4s | +541%    |
-| PDA   | 87.2s | +547%    |
+| ADP   | 15.3s | baseline |
+| DAP   | 16.9s | +11%     |
+| APD   | 24.5s | +60%     |
+| DPA   | 44.9s | +194%    |
+| PDA   | 85.5s | +460%    |
+| PAD   | 86.0s | +463%    |
 
-## Conclusion
-
-**Optimal order: Debris, Altitude, Plane (DAP)**
-
-Filter ordering has massive impact - DAP is 6.5x faster than PDA despite identical output. Running cheap,
-moderately-selective filters before expensive, highly-selective ones is more efficient.
-
-![Total Time by Filter Order](1-pair-reduction/1_total_time.png)
-
-![Time Breakdown by Order](1-pair-reduction/2_time_breakdown_pie.png)
-
-![Pair Reduction Waterfall](1-pair-reduction/3_pair_reduction.png)
+**Optimal order: Altitude, Debris, Plane (ADP)** — 1.7s faster than DAP, 5.6× faster than worst ordering.
 
 ## Running the Benchmark
 
@@ -54,3 +41,7 @@ moderately-selective filters before expensive, highly-selective ones is more eff
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter"
 # *you must have a running PostgreSQL instance with the satellite catalog loaded 
 ```
+
+![Total Time by Filter Order](1-pair-reduction/1_total_time.png)
+
+![Time Comparison](1-pair-reduction/2_time_comparison.png)
