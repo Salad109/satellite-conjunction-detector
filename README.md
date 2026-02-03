@@ -1,4 +1,4 @@
-# Conjunction API
+# Conjunction Detector
 
 Satellite conjunction detection system that monitors orbital objects for potential collisions. Ingests data from
 [Space-Track.org](https://www.space-track.org), propagates orbits using Orekit, and identifies close approaches
@@ -18,7 +18,7 @@ between satellites.
 
 The application is organized into five modules:
 
-- **Api** - REST controllers and scheduled jobs
+- **Api** - UI controllers and scheduled jobs
 - **Conjunction** - Detection algorithms and conjunction storage
 - **Ingestion** - Orchestrates catalog synchronization from Space-Track
 - **Satellite** - Satellite entity, repository, and pair reduction logic

@@ -1,0 +1,46 @@
+package io.salad109.conjunctiondetector.conjunction.internal;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.Optional;
+
+public interface ConjunctionRepository extends JpaRepository<Conjunction, Long> {
+
+    @Modifying
+    @Query(value = "TRUNCATE TABLE conjunction", nativeQuery = true)
+    void truncate();
+
+    @Query("SELECT new io.salad109.conjunctiondetector.conjunction.internal.ConjunctionInfo(" +
+            "c.id, c.missDistanceKm, c.tca, c.relativeVelocityMS, " +
+            "c.object1NoradId, s1.objectName, s1.objectType, " +
+            "c.object2NoradId, s2.objectName, s2.objectType) " +
+            "FROM Conjunction c " +
+            "JOIN Satellite s1 ON c.object1NoradId = s1.noradCatId " +
+            "JOIN Satellite s2 ON c.object2NoradId = s2.noradCatId " +
+            "WHERE c.relativeVelocityMS > 10")
+    Page<ConjunctionInfo> getConjunctionInfos(Pageable pageable);
+
+
+    @Query("SELECT new io.salad109.conjunctiondetector.conjunction.internal.ConjunctionInfo(" +
+            "c.id, c.missDistanceKm, c.tca, c.relativeVelocityMS, " +
+            "c.object1NoradId, s1.objectName, s1.objectType, " +
+            "c.object2NoradId, s2.objectName, s2.objectType) " +
+            "FROM Conjunction c " +
+            "JOIN Satellite s1 ON c.object1NoradId = s1.noradCatId " +
+            "JOIN Satellite s2 ON c.object2NoradId = s2.noradCatId")
+    Page<ConjunctionInfo> getConjunctionInfosWithFormations(Pageable pageable);
+
+    @Query("SELECT new io.salad109.conjunctiondetector.conjunction.internal.VisualizationData(" +
+            "c.id, c.missDistanceKm, c.tca, c.relativeVelocityMS, " +
+            "c.object1NoradId, s1.objectName, s1.objectType, s1.tleLine1, s1.tleLine2, " +
+            "c.object2NoradId, s2.objectName, s2.objectType, s2.tleLine1, s2.tleLine2) " +
+            "FROM Conjunction c " +
+            "JOIN Satellite s1 ON c.object1NoradId = s1.noradCatId " +
+            "JOIN Satellite s2 ON c.object2NoradId = s2.noradCatId " +
+            "WHERE c.id = :id")
+    Optional<VisualizationData> getVisualizationData(Long id);
+}

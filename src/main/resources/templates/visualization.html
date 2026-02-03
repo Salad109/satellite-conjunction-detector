@@ -12,9 +12,15 @@
 <h1 class="text-2xl font-semibold mb-6" th:text="'Conjunction #' + ${visualization.get().id}"></h1>
 
 <div class="mb-6 text-sm">
-    <p><span class="text-gray-600">TCA:</span> <span class="font-mono" th:text="${#temporals.format(visualization.get().tca, 'yyyy-MM-dd HH:mm:ss')}"></span></p>
-    <p><span class="text-gray-600">Miss Distance:</span> <span class="font-mono" th:text="${#numbers.formatDecimal(visualization.get().missDistanceKm, 1, 3)} + ' km'"></span></p>
-    <p><span class="text-gray-600">Rel. Velocity:</span> <span class="font-mono" th:text="${#numbers.formatDecimal(visualization.get().relativeVelocityMS, 1, 1)} + ' m/s'"></span></p>
+    <p><span class="text-gray-600">TCA:</span> <span class="font-mono"
+                                                     th:text="${#temporals.format(visualization.get().tca, 'yyyy-MM-dd HH:mm:ss')}"></span>
+    </p>
+    <p><span class="text-gray-600">Miss Distance:</span> <span class="font-mono"
+                                                               th:text="${#numbers.formatDecimal(visualization.get().missDistanceKm, 1, 3)} + ' km'"></span>
+    </p>
+    <p><span class="text-gray-600">Rel. Velocity:</span> <span class="font-mono"
+                                                               th:text="${#numbers.formatDecimal(visualization.get().relativeVelocityMS, 1, 1)} + ' m/s'"></span>
+    </p>
 </div>
 
 <div class="mb-6 text-sm">
