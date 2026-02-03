@@ -49,20 +49,7 @@ See docs for tuning experiments and optimal parameters.
 - Docker & Docker Compose
 - [Space-Track.org](https://www.space-track.org) account (free registration)
 
-### 1. Get Orekit Data
-
-Orekit requires reference data for precise orbital calculations. Download the latest `orekit-data.zip` from
-https://www.orekit.org/download.html
-
-Extract to `src/main/resources/orekit-data/`:
-
-```
-src/main/resources/orekit-data/
-├── tai-utc.dat
-└── ...
-```
-
-### 2. Configure Environment
+### 1. Configure Environment
 
 Copy the example environment file and fill in your Space-Track credentials:
 
@@ -70,7 +57,7 @@ Copy the example environment file and fill in your Space-Track credentials:
 cp .env.example .env
 ```
 
-### 3. Run with Docker Compose
+### 2A. Run with Docker Compose
 
 ```bash
 docker-compose up
@@ -78,7 +65,7 @@ docker-compose up
 
 This starts PostgreSQL and the application. The app will be available at `http://localhost:8080`.
 
-### Running Locally for Development
+### 2B. Running Locally for Development
 
 ```bash
 docker-compose up postgres

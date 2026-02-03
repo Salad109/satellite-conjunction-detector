@@ -1,6 +1,7 @@
 package io.salad109.conjunctiondetector;
 
 import jakarta.annotation.PostConstruct;
+import org.orekit.data.ClasspathCrawler;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -26,15 +27,11 @@ public class ConjunctionDetectorApplication {
     public void initOrekit() {
         DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
 
-        // Try Docker path first, fall back to local development path
-        File dockerPath = new File("/app/orekit-data");
-        File localPath = new File("src/main/resources/orekit-data");
-
-        if (dockerPath.exists()) {
-            manager.addProvider(new DirectoryCrawler(dockerPath));
+        File devPath = new File("src/main/resources/orekit-data");
+        if (devPath.exists()) {
+            manager.addProvider(new DirectoryCrawler(devPath));
         } else {
-            manager.addProvider(new DirectoryCrawler(localPath));
+            manager.addProvider(new ClasspathCrawler("orekit-data/tai-utc.dat"));
         }
     }
-
 }

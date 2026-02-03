@@ -31,8 +31,6 @@ services:
       SPACETRACK_PASSWORD: ${SPACETRACK_PASSWORD}
     ports:
       - "${APP_PORT:-8080}:8080"
-    volumes:
-      - ./src/main/resources/orekit-data:/app/orekit-data
 
 volumes:
   postgres_data:
