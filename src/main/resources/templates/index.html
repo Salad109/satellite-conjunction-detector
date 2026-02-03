@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="https://unpkg.com/htmx.org"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>"
-          rel="icon">
     <title>Conjunction API</title>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
@@ -12,7 +10,7 @@
 
 <label class="flex items-center gap-2 text-sm cursor-pointer">
     <input class="rounded cursor-pointer"
-           hx-get="/ui/conjunctions"
+           hx-get="/hx/conjunctions"
            hx-include="this"
            hx-target="#results"
            hx-trigger="change"
@@ -21,8 +19,8 @@
     <span>Include formations (< 10 m/s)</span>
 </label>
 
-<div class="mt-6" hx-get="/ui/conjunctions" hx-trigger="load" id="results"></div>
+<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" id="results"></div>
 
-<div class="mt-8" hx-get="/ui/lastsync" hx-trigger="load" id="sync-info"></div>
+<div class="mt-8" hx-get="/hx/lastsync" hx-trigger="load" id="sync-info"></div>
 </body>
 </html>

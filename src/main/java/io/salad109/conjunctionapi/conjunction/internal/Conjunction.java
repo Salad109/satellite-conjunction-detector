@@ -17,7 +17,7 @@ import java.time.OffsetDateTime;
 public class Conjunction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "object1_norad_id")
     private Integer object1NoradId;

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ConjunctionService {
@@ -68,6 +69,12 @@ public class ConjunctionService {
         } else {
             return conjunctionRepository.getConjunctionInfos(pageable);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<VisualizationData> getVisualizationData(Long id) {
+        // todo error handling
+        return conjunctionRepository.getVisualizationData(id);
     }
 
     @Transactional

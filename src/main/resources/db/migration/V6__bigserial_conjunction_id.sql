@@ -1,0 +1,1 @@
+ALTER TABLE conjunction ALTER COLUMN id TYPE BIGINT;
