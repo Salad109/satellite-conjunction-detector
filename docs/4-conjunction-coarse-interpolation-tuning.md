@@ -61,5 +61,5 @@ Going beyond stride 6 provides minimal speed gains (just 6.7% at stride 14) whil
 # Run on Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
 
-# *you must have a running PostgreSQL instance with the satellite catalog loaded, and orekit data files at src/main/resources/orekit-data
+# *you must have a running PostgreSQL instance with the satellite catalog loaded
 ```

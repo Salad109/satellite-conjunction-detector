@@ -33,6 +33,14 @@
             <span th:if="${sortField == 'relativeVelocityMS' && sortDir == 'asc'}">&#9650;</span>
             <span th:if="${sortField == 'relativeVelocityMS' && sortDir == 'desc'}">&#9660;</span>
         </th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            rowspan="2"
+            th:hx-get="'/hx/conjunctions?sort=collisionProbability,' + (${sortField == 'collisionProbability' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
+            Pc
+            <span th:if="${sortField == 'collisionProbability' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'collisionProbability' && sortDir == 'desc'}">&#9660;</span>
+        </th>
         <th class="px-4 py-2 border-b border-l text-center" colspan="3">Object 1</th>
         <th class="px-4 py-2 border-b border-l text-center" colspan="3">Object 2</th>
     </tr>
@@ -56,6 +64,8 @@
         <td class="px-4 py-2 border-b font-mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}"></td>
         <td class="px-4 py-2 border-b font-mono"
             th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}"></td>
         <td class="px-4 py-2 border-b border-l font-mono" th:text="${c.object1NoradId}"></td>
         <td class="px-4 py-2 border-b" th:text="${c.object1Name}"></td>
         <td class="px-4 py-2 border-b" th:text="${c.object1Type}"></td>

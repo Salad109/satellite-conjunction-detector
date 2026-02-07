@@ -67,5 +67,5 @@ Going beyond ratio 10 provides zero detection benefit while making the scan slow
 # Run on Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
 
-# *you must have a running PostgreSQL instance with the satellite catalog loaded, and orekit data files at src/main/resources/orekit-data
+# *you must have a running PostgreSQL instance with the satellite catalog loaded
 ```

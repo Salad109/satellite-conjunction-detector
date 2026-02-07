@@ -64,7 +64,7 @@ public class Satellite {
     private Double apogeeKm;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
     public Satellite() {

@@ -60,5 +60,5 @@ Conjunction count shows rapid convergence as pre-pass tolerance increases:
 # Run on Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
 
-# *you must have a running PostgreSQL instance with the satellite catalog loaded, and orekit data files at src/main/resources/orekit-data
+# *you must have a running PostgreSQL instance with the satellite catalog loaded
 ```

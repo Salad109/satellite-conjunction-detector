@@ -19,18 +19,21 @@ public class Conjunction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "object1_norad_id")
+    @Column(name = "object1_norad_id", nullable = false)
     private Integer object1NoradId;
 
-    @Column(name = "object2_norad_id")
+    @Column(name = "object2_norad_id", nullable = false)
     private Integer object2NoradId;
 
-    @Column(name = "miss_distance_km")
+    @Column(name = "miss_distance_km", nullable = false)
     private double missDistanceKm;
 
-    @Column(name = "tca")
+    @Column(name = "tca", nullable = false)
     private OffsetDateTime tca;
 
-    @Column(name = "relative_velocity_m_s")
+    @Column(name = "relative_velocity_m_s", nullable = false)
     private double relativeVelocityMS;
+
+    @Column(name = "collision_probability", nullable = false)
+    private double collisionProbability;
 }
