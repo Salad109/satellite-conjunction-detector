@@ -69,5 +69,5 @@ excessive coarse iterations; going higher wastes time processing too many candid
 # Run on Windows
 ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction"
 
-# *you must have a running PostgreSQL instance with the satellite catalog loaded, and orekit data files at src/main/resources/orekit-data
+# *you must have a running PostgreSQL instance with the satellite catalog loaded
 ```

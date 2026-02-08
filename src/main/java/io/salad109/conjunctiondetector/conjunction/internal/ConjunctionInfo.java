@@ -7,6 +7,7 @@ public record ConjunctionInfo(
         double missDistanceKm,
         OffsetDateTime tca,
         double relativeVelocityMS,
+        double collisionProbability,
         int object1NoradId,
         String object1Name,
         String object1Type,

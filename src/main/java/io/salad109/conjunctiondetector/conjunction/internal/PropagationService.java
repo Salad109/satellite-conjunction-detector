@@ -4,6 +4,7 @@ import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
 import org.eclipse.collections.api.map.primitive.MutableIntIntMap;
 import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
+import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -36,10 +37,10 @@ public class PropagationService {
     }
 
     /**
-     * Propagate both satellites to a given time and return distance and relative velocity.
-     * Only calculates velocity if distance is below threshold to avoid unnecessary computation.
+     * Propagate both satellites to a given time and return distance, relative velocity, and PV coordinates.
      */
-    DistanceAndVelocity propagateAndMeasure(SatellitePair pair, Map<Integer, TLEPropagator> propagators, OffsetDateTime time, double thresholdKm) {
+    MeasurementResult propagateAndMeasure(SatellitePair pair, Map<Integer, TLEPropagator> propagators,
+                                          OffsetDateTime time, double thresholdKm) {
         AbsoluteDate date = toAbsoluteDate(time);
 
         try {
@@ -47,21 +48,23 @@ public class PropagationService {
             TLEPropagator propB = propagators.get(pair.b().getNoradCatId());
 
             PVCoordinates pvA, pvB;
+            Frame frame;
 
             synchronized (propA) {
-                pvA = propA.getPVCoordinates(date, propA.getFrame());
+                frame = propA.getFrame();
+                pvA = propA.getPVCoordinates(date, frame);
             }
             synchronized (propB) {
-                pvB = propB.getPVCoordinates(date, propB.getFrame());
+                pvB = propB.getPVCoordinates(date, frame);
             }
 
             double distance = calculateDistance(pvA, pvB);
             double velocity = distance <= thresholdKm ? calculateRelativeVelocity(pvA, pvB) : 0.0;
 
-            return new DistanceAndVelocity(distance, velocity);
+            return new MeasurementResult(distance, velocity, pvA, pvB, frame, date);
         } catch (Exception e) {
             log.warn("Failed to propagate for refinement: {}", e.getMessage());
-            return new DistanceAndVelocity(Double.MAX_VALUE, 0.0);
+            return new MeasurementResult(Double.MAX_VALUE, 0.0, null, null, null, null);
         }
     }
 
@@ -92,9 +95,8 @@ public class PropagationService {
     /**
      * Pre-compute positions for all satellites across all time steps.
      */
-    PositionCache precomputePositions(Map<Integer, TLEPropagator> propagators,
-                                      OffsetDateTime startTime, int stepSeconds, int lookaheadHours,
-                                      int interpolationStride) {
+    public PositionCache precomputePositions(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime,
+                                             int stepSeconds, int lookaheadHours, int interpolationStride) {
         int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
         int stride = Math.max(1, interpolationStride);
 
@@ -182,10 +184,8 @@ public class PropagationService {
         );
     }
 
-    record PositionCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId,
-                         OffsetDateTime[] times,
-                         double[][] x, double[][] y, double[][] z,
-                         boolean[][] valid) {
+    public record PositionCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,
+                                double[][] x, double[][] y, double[][] z, boolean[][] valid) {
         double distanceSquaredAt(int a, int b, int step) {
             double dx = x[a][step] - x[b][step];
             double dy = y[a][step] - y[b][step];
@@ -194,6 +194,7 @@ public class PropagationService {
         }
     }
 
-    record DistanceAndVelocity(double distanceKm, double velocityKmS) {
+    record MeasurementResult(double distanceKm, double velocityKmS, PVCoordinates pvA, PVCoordinates pvB, Frame frame,
+                             AbsoluteDate absoluteDate) {
     }
 }

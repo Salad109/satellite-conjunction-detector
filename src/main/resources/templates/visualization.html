@@ -21,6 +21,9 @@
     <p><span class="text-gray-600">Rel. Velocity:</span> <span class="font-mono"
                                                                th:text="${#numbers.formatDecimal(visualization.get().relativeVelocityMS, 1, 1)} + ' m/s'"></span>
     </p>
+    <p><span class="text-gray-600">Collision Probability:</span> <span class="font-mono"
+                                                                       th:text="${#numbers.formatDecimal(visualization.get().collisionProbability, 1, 10)}"></span>
+    </p>
 </div>
 
 <div class="mb-6 text-sm">

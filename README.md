@@ -8,7 +8,7 @@ between satellites.
 
 - Java 25
 - Spring Boot 4 / Spring Modulith
-- Orekit 13.1.2
+- Orekit 13
 - PostgreSQL / Flyway
 - HTMX / Thymeleaf
 
