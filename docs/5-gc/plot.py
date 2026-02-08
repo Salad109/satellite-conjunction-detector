@@ -13,9 +13,9 @@ datasets = [
     ('Shenandoah', df_shenandoah, '#F77F00')
 ]
 
-timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s']
-colors_stack = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839']
-labels_stack = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine']
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+colors_stack = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#8c564b']
+labels_stack = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
 
 # Plot 1 - Total time comparison
 fig, ax = plt.subplots(figsize=(10, 6))

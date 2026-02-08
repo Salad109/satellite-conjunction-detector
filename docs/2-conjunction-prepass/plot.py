@@ -20,9 +20,9 @@ plt.savefig('1_total_time.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Plot 2 - Stacked area per prepass
-timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s']
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839']
-labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine']
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#8c564b']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
 n_datasets = len(datasets)
 n_cols = 3
 n_rows = math.ceil(n_datasets / n_cols)

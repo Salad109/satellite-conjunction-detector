@@ -51,10 +51,10 @@ plt.close()
 
 # Plot 2 - All timing components
 fig, ax = plt.subplots(figsize=(12, 7))
-timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s']
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839']
-markers = ['o', 's', '^', 'd', 'x', 'v', 'p']
-labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine']
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#8c564b']
+markers = ['o', 's', '^', 'd', 'x', 'v', 'p', '*']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
 
 for col, color, marker, label in zip(timing_columns, colors, markers, labels):
     ax.plot(df['tolerance_km'], df[col], marker=marker, linestyle='-', label=label,
@@ -71,9 +71,9 @@ plt.close()
 
 # Plot 3 - Stacked area chart with all components
 fig, ax = plt.subplots(figsize=(12, 7))
-timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s']
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839']
-labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine']
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#8c564b']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
 
 # Prepare data for stacked area
 y_stack = np.vstack([df[col].values for col in timing_columns])

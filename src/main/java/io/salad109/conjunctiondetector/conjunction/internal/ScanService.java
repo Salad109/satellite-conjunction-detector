@@ -1,29 +1,29 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
-import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.PVCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
 public class ScanService {
-
-    private static final Logger log = LoggerFactory.getLogger(ScanService.class);
 
     private final PropagationService propagationService;
 
@@ -31,59 +31,11 @@ public class ScanService {
         this.propagationService = propagationService;
     }
 
-    public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride) {
-        return scanForConjunctions(pairs, propagators, toleranceKm, thresholdKm, lookaheadHours, stepSeconds, interpolationStride, OffsetDateTime.now(ZoneOffset.UTC));
-    }
-
-    /**
-     * Scan from a specific time; configurable start time for backtesting with historical data.
-     */
-    public List<Conjunction> scanForConjunctions(List<SatellitePair> pairs, Map<Integer, TLEPropagator> propagators, double toleranceKm, double thresholdKm, int lookaheadHours, int stepSeconds, int interpolationStride, OffsetDateTime startTime) {
-        log.debug("Starting conjunction scan for {} pairs over {} hours (tolerance={} km, threshold={} km, interpStride={})",
-                pairs.size(), lookaheadHours, toleranceKm, thresholdKm, interpolationStride);
-
-        // Pre-compute positions
-        PropagationService.PositionCache positionCache = propagationService.precomputePositions(
-                propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
-
-        // Check pairs against precomputed positions
-        List<CoarseDetection> coarseDetections = checkPairs(pairs, positionCache, toleranceKm);
-        log.debug("Coarse sweep found {} detections", coarseDetections.size());
-
-        if (coarseDetections.isEmpty()) {
-            log.warn("No close approaches detected in lookahead window");
-            return List.of();
-        }
-
-        // Group into events
-        Map<SatellitePair, List<List<CoarseDetection>>> eventsByPair = groupIntoEvents(coarseDetections, stepSeconds);
-
-        // Refine each event
-        List<List<CoarseDetection>> allEvents = eventsByPair.values().stream()
-                .flatMap(List::stream)
-                .toList();
-
-        log.debug("Refining {} events...", allEvents.size());
-        StopWatch refineWatch = StopWatch.createStarted();
-
-        // Refine and filter by threshold
-        List<Conjunction> conjunctionsUnderThreshold = allEvents.parallelStream()
-                .map(event -> refineEvent(event, propagators, stepSeconds, thresholdKm))
-                .filter(Objects::nonNull)
-                .toList();
-
-        refineWatch.stop();
-        log.info("Refined to {} conjunctions below {} km threshold in {}ms",
-                conjunctionsUnderThreshold.size(), thresholdKm, refineWatch.getTime());
-
-        return conjunctionsUnderThreshold;
-    }
-
     /**
      * Check for close approaches using spatial indexing.
      */
-    List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
-                                     double toleranceKm) {
+    public List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
+                                            double toleranceKm) {
         // Build bidirectional lookup for fast access in hot loop
         int numSats = precomputedPositions.arrayIdToNoradId().length;
         SatellitePair[][] allowedPairsByArrayId = new SatellitePair[numSats][numSats];
@@ -122,7 +74,7 @@ public class ScanService {
      * Group detections by pair, then cluster consecutive detections into events (orbital passes).
      * Two detections belong to the same event if they're within 3 steps of each other.
      */
-    Map<SatellitePair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections, int stepSeconds) {
+    public Map<SatellitePair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections, int stepSeconds) {
         // Group by pair
         Map<SatellitePair, List<CoarseDetection>> byPair = detections.stream()
                 .collect(Collectors.groupingBy(CoarseDetection::pair));
@@ -175,10 +127,8 @@ public class ScanService {
      * Refine an event (cluster of coarse detections) using Brent's method to find more accurate TCA and minimum distance.
      * Uses linear interpolation during optimization to avoid expensive SGP4 calls, then does one final propagation
      * at the found TCA for accurate distance measurement.
-     *
-     * @return Conjunction if interpolated minimum distance is under threshold, null otherwise
      */
-    Conjunction refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
+    public RefinedEvent refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
                 .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
@@ -234,24 +184,16 @@ public class ScanService {
         OffsetDateTime tca = startTime.plusNanos((long) result.getPoint());
 
         // Final accurate propagation at TCA (only for events likely under threshold)
-        PropagationService.DistanceAndVelocity result2 = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
-        double minDistance = result2.distanceKm();
-        double relativeVelocity = result2.velocityKmS();
+        PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
 
-        // Ensure object 1 norad id < object 2 norad id
-        int object1 = Math.min(pair.a().getNoradCatId(), pair.b().getNoradCatId());
-        int object2 = Math.max(pair.a().getNoradCatId(), pair.b().getNoradCatId());
-
-        return new Conjunction(
-                null,
-                object1,
-                object2,
-                minDistance,
-                tca,
-                relativeVelocity
-        );
+        return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityKmS(),
+                measurement.pvA(), measurement.pvB(), measurement.frame(), measurement.absoluteDate());
     }
 
-    record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq) {
+    public record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq) {
+    }
+
+    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityKmS,
+                               PVCoordinates pvA, PVCoordinates pvB, Frame frame, AbsoluteDate absoluteDate) {
     }
 }
