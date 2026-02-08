@@ -12,15 +12,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class ConjunctionService {
@@ -76,9 +77,14 @@ public class ConjunctionService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<VisualizationData> getVisualizationData(Long id) {
-        // todo error handling null case
-        return conjunctionRepository.getVisualizationData(id);
+    public VisualizationData getVisualizationData(Long id) {
+        return conjunctionRepository.getVisualizationData(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Conjunction with ID " + id + " not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConjunctionInfo> getConjunctionInfosByNoradId(int id) {
+        return conjunctionRepository.getConjunctionInfosByNoradId(id);
     }
 
     @Transactional

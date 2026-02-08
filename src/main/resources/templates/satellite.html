@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script src="https://unpkg.com/htmx.org"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title th:text="${satellite.objectName} + ' - Conjunction Detector'">Satellite</title>
+</head>
+<body class="bg-white text-gray-900 p-8 min-h-screen">
+<a class="text-blue-600 hover:underline text-sm" href="/">&larr; Back</a>
+
+<h1 class="text-2xl font-semibold mt-4 mb-6" th:text="${satellite.objectName}">Satellite Name</h1>
+
+<div class="text-sm mb-6">
+    <p>
+        <span class="text-gray-600">NORAD ID:</span>
+        <span class="font-mono" th:text="${satellite.noradCatId}"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Type:</span>
+        <span th:text="${satellite.objectType}"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Epoch:</span>
+        <span class="font-mono" th:text="${#temporals.format(satellite.epoch, 'yyyy-MM-dd HH:mm:ss')}"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Inclination:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.inclination, 1, 2)} + '&deg;'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Perigee:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Apogee:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Semi-Major Axis:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Eccentricity:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.eccentricity, 1, 7)}"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">RAAN:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.raan, 1, 2)} + '&deg;'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Arg. of Perigee:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.argPerigee, 1, 2)} + '&deg;'"></span>
+    </p>
+    <p>
+        <span class="text-gray-600">Mean Motion:</span>
+        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.meanMotion, 1, 4)} + ' rev/day'"></span>
+    </p>
+</div>
+
+<div class="mb-6 text-xs text-gray-500 border border-gray-200 rounded p-3 font-mono bg-gray-50 whitespace-pre"
+     th:text="${satellite.tleLine1} + '&#10;' + ${satellite.tleLine2}"></div>
+
+<h2 class="text-lg font-semibold mt-8 mb-4">Conjunctions
+    <span class="text-sm font-normal text-gray-500" th:text="'(' + ${#lists.size(conjunctions)} + ')'"></span>
+</h2>
+
+<div th:if="${#lists.isEmpty(conjunctions)}">
+    <p class="text-sm text-gray-500">No conjunctions detected.</p>
+</div>
+
+<table class="text-sm border border-gray-300" th:unless="${#lists.isEmpty(conjunctions)}">
+    <thead class="bg-gray-50 text-gray-700 text-xs uppercase">
+    <tr>
+        <th class="px-4 py-2 border-b">ID</th>
+        <th class="px-4 py-2 border-b">Miss Distance (km)</th>
+        <th class="px-4 py-2 border-b">TCA</th>
+        <th class="px-4 py-2 border-b">Rel. Velocity (m/s)</th>
+        <th class="px-4 py-2 border-b">Pc</th>
+        <th class="px-4 py-2 border-b border-l">Other Object</th>
+        <th class="px-4 py-2 border-b">Type</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:class="${iter.odd} ? 'bg-white' : 'bg-gray-50'" th:each="c, iter : ${conjunctions}">
+        <td class="px-4 py-2 border-b font-mono">
+            <a class="text-blue-600 hover:underline" th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}"></a>
+        </td>
+        <td class="px-4 py-2 border-b font-mono" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}"></td>
+        <td class="px-4 py-2 border-b font-mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}"></td>
+        <td class="px-4 py-2 border-b font-mono" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}"></td>
+        <td class="px-4 py-2 border-b border-l">
+            <a class="text-blue-600 hover:underline"
+               th:href="@{/satellites/{id}(id=${c.object1NoradId == satellite.noradCatId ? c.object2NoradId : c.object1NoradId})}"
+               th:text="(${c.object1NoradId == satellite.noradCatId} ? ${c.object2Name} : ${c.object1Name}) + ' (' + (${c.object1NoradId == satellite.noradCatId} ? ${c.object2NoradId} : ${c.object1NoradId}) + ')'"></a>
+        </td>
+        <td class="px-4 py-2 border-b"
+            th:text="${c.object1NoradId == satellite.noradCatId} ? ${c.object2Type} : ${c.object1Type}"></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -2,8 +2,10 @@ package io.salad109.conjunctiondetector.satellite;
 
 import io.salad109.conjunctiondetector.satellite.internal.SatelliteRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,6 +34,12 @@ public class SatelliteService {
     public Map<Integer, Satellite> getByCatalogIds(Iterable<Integer> catalogIds) {
         return satelliteRepository.findAllById(catalogIds).stream()
                 .collect(Collectors.toMap(Satellite::getNoradCatId, Function.identity()));
+    }
+
+    @Transactional(readOnly = true)
+    public SatelliteInfo getInfoByCatalogId(int catalogId) {
+        return satelliteRepository.findSatelliteInfoByNoradCatId(catalogId).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Satellite with NORAD ID " + catalogId + " not found"));
     }
 
     @Transactional

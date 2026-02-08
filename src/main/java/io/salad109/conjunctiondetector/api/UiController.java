@@ -2,6 +2,7 @@ package io.salad109.conjunctiondetector.api;
 
 import io.salad109.conjunctiondetector.conjunction.ConjunctionService;
 import io.salad109.conjunctiondetector.ingestion.IngestionLogService;
+import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -16,10 +17,12 @@ public class UiController {
 
     private final ConjunctionService conjunctionService;
     private final IngestionLogService ingestionLogService;
+    private final SatelliteService satelliteService;
 
-    public UiController(ConjunctionService conjunctionService, IngestionLogService ingestionLogService) {
+    public UiController(ConjunctionService conjunctionService, IngestionLogService ingestionLogService, SatelliteService satelliteService) {
         this.conjunctionService = conjunctionService;
         this.ingestionLogService = ingestionLogService;
+        this.satelliteService = satelliteService;
     }
 
     @GetMapping
@@ -31,6 +34,13 @@ public class UiController {
     public String conjunction(@PathVariable Long id, Model model) {
         model.addAttribute("visualization", conjunctionService.getVisualizationData(id));
         return "visualization";
+    }
+
+    @GetMapping("/satellites/{noradId}")
+    public String satellite(@PathVariable int noradId, Model model) {
+        model.addAttribute("satellite", satelliteService.getInfoByCatalogId(noradId));
+        model.addAttribute("conjunctions", conjunctionService.getConjunctionInfosByNoradId(noradId));
+        return "satellite";
     }
 
     @GetMapping("/hx/conjunctions")

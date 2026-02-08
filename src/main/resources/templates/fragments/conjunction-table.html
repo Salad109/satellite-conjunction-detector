@@ -66,10 +66,16 @@
             th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}"></td>
         <td class="px-4 py-2 border-b font-mono"
             th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}"></td>
-        <td class="px-4 py-2 border-b border-l font-mono" th:text="${c.object1NoradId}"></td>
+        <td class="px-4 py-2 border-b border-l font-mono">
+            <a class="text-blue-600 hover:underline" th:href="@{/satellites/{id}(id=${c.object1NoradId})}"
+               th:text="${c.object1NoradId}"></a>
+        </td>
         <td class="px-4 py-2 border-b" th:text="${c.object1Name}"></td>
         <td class="px-4 py-2 border-b" th:text="${c.object1Type}"></td>
-        <td class="px-4 py-2 border-b border-l font-mono" th:text="${c.object2NoradId}"></td>
+        <td class="px-4 py-2 border-b border-l font-mono">
+            <a class="text-blue-600 hover:underline" th:href="@{/satellites/{id}(id=${c.object2NoradId})}"
+               th:text="${c.object2NoradId}"></a>
+        </td>
         <td class="px-4 py-2 border-b" th:text="${c.object2Name}"></td>
         <td class="px-4 py-2 border-b" th:text="${c.object2Type}"></td>
     </tr>
