@@ -14,64 +14,78 @@ public class PairReductionService {
      * Uses orbital geometry filters to reduce the number of pairs for detailed analysis.
      */
     public List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites, double toleranceKm) {
-        int satelliteCount = satellites.size();
+        int n = satellites.size();
 
-        return IntStream.range(0, satelliteCount)
+        // Pre-extract fields into arrays
+        double[] perigees = new double[n];
+        double[] apogees = new double[n];
+        double[] inclinations = new double[n];
+        double[] raans = new double[n];
+        double[] argPerigees = new double[n];
+        double[] eccentricities = new double[n];
+        double[] semiMajorAxes = new double[n];
+        boolean[] isDebris = new boolean[n];
+
+        for (int i = 0; i < n; i++) {
+            Satellite s = satellites.get(i);
+            perigees[i] = s.getPerigeeKm();
+            apogees[i] = s.getApogeeKm();
+            inclinations[i] = Math.toRadians(s.getInclination());
+            raans[i] = Math.toRadians(s.getRaan());
+            argPerigees[i] = Math.toRadians(s.getArgPerigee());
+            eccentricities[i] = s.getEccentricity();
+            semiMajorAxes[i] = s.getSemiMajorAxisKm();
+            isDebris[i] = "DEBRIS".equals(s.getObjectType());
+        }
+
+        return IntStream.range(0, n)
                 .parallel()
                 .boxed()
                 .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
-                    Satellite a = satellites.get(i);
-                    for (int j = i + 1; j < satelliteCount; j++) {
-                        Satellite b = satellites.get(j);
-                        if (canCollide(a, b, toleranceKm)) {
-                            consumer.accept(new SatellitePair(a, b));
+                    double perigeeA = perigees[i];
+                    double apogeeA = apogees[i];
+                    boolean debrisA = isDebris[i];
+                    double iA = inclinations[i];
+                    double raanA = raans[i];
+                    double omegaA = argPerigees[i];
+                    double eA = eccentricities[i];
+                    double aA = semiMajorAxes[i];
+
+                    for (int j = i + 1; j < n; j++) {
+                        if (altitudeShellsMiss(perigeeA, apogeeA, perigees[j], apogees[j], toleranceKm)
+                                || bothDebris(debrisA, isDebris[j])
+                                || orbitalPlanesMiss(iA, raanA, omegaA, eA, aA,
+                                inclinations[j], raans[j], argPerigees[j],
+                                eccentricities[j], semiMajorAxes[j], toleranceKm)) {
+                            continue;
                         }
+
+                        consumer.accept(new SatellitePair(satellites.get(i), satellites.get(j)));
                     }
                 })
                 .toList();
     }
 
-    /**
-     * Determines if two satellites could possibly collide.
-     * Applies orbital geometry filters with mathematical certainty.
-     */
-    public boolean canCollide(Satellite a, Satellite b, double toleranceKm) {
-        // Apply filters starting with computationally cheapest
-        return altitudeShellsOverlap(a, b, toleranceKm) &&
-                neitherAreDebris(a, b) &&
-                orbitalPlanesIntersect(a, b, toleranceKm);
+    public boolean altitudeShellsMiss(double perigeeA, double apogeeA,
+                                      double perigeeB, double apogeeB, double toleranceKm) {
+        return apogeeA + toleranceKm < perigeeB || apogeeB + toleranceKm < perigeeA;
     }
 
-    public boolean altitudeShellsOverlap(Satellite a, Satellite b, double toleranceKm) {
-        double perigeeA = a.getPerigeeKm();
-        double apogeeA = a.getApogeeKm();
-        double perigeeB = b.getPerigeeKm();
-        double apogeeB = b.getApogeeKm();
-        return !(apogeeA + toleranceKm < perigeeB || apogeeB + toleranceKm < perigeeA);
+    public boolean bothDebris(boolean debrisA, boolean debrisB) {
+        return debrisA && debrisB;
     }
 
-    public boolean neitherAreDebris(Satellite a, Satellite b) {
-        return !"DEBRIS".equals(a.getObjectType()) && !"DEBRIS".equals(b.getObjectType());
-    }
-
-    public boolean orbitalPlanesIntersect(Satellite a, Satellite b, double toleranceKm) {
-        double iA = Math.toRadians(a.getInclination());
-        double iB = Math.toRadians(b.getInclination());
-        double raanA = Math.toRadians(a.getRaan());
-        double raanB = Math.toRadians(b.getRaan());
-        double omegaA = Math.toRadians(a.getArgPerigee());
-        double omegaB = Math.toRadians(b.getArgPerigee());
-        double eA = a.getEccentricity();
-        double eB = b.getEccentricity();
-        double aA = a.getSemiMajorAxisKm();
-        double aB = b.getSemiMajorAxisKm();
+    public boolean orbitalPlanesMiss(
+            double iA, double raanA, double omegaA, double eA, double aA,
+            double iB, double raanB, double omegaB, double eB, double aB,
+            double toleranceKm) {
 
         double deltaRaan = raanA - raanB;
 
         // Coplanar orbits can intersect anywhere
         double relativeInclination = computeRelativeInclination(iA, iB, deltaRaan);
         if (relativeInclination < Math.toRadians(0.1)) {
-            return true;
+            return false;
         }
 
         // Find where each orbit crosses the intersection line between orbital planes
@@ -97,7 +111,7 @@ public class PairReductionService {
         double diff4 = Math.abs(rA2 - rB2);
 
         double minDiff = Math.min(Math.min(diff1, diff2), Math.min(diff3, diff4));
-        return minDiff <= toleranceKm;
+        return minDiff > toleranceKm;
     }
 
     private double computeRelativeInclination(double iA, double iB, double deltaRaan) {

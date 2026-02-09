@@ -19,15 +19,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
  */
 @Component
 @Profile("benchmark-filter")
@@ -35,44 +34,14 @@ public class PairReductionBenchmark implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PairReductionBenchmark.class);
     private static final double DEFAULT_TOLERANCE_KM = 12.5;
-    private static final int ITERATIONS = 20;
+    private static final int ITERATIONS = 10;
 
     private final SatelliteRepository satelliteRepository;
     private final PairReductionService pairReductionService;
 
-    private final Map<String, PairFilter> orderings;
-
     public PairReductionBenchmark(SatelliteRepository satelliteRepository, PairReductionService pairReductionService) {
         this.satelliteRepository = satelliteRepository;
         this.pairReductionService = pairReductionService;
-
-        // A=altitude, D=debris, P=plane
-        this.orderings = Map.of(
-                "ADP", (a, b, tol) ->
-                        this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
-                                this.pairReductionService.neitherAreDebris(a, b) &&
-                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol),
-                "APD", (a, b, tol) ->
-                        this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
-                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
-                                this.pairReductionService.neitherAreDebris(a, b),
-                "DAP", (a, b, tol) ->
-                        this.pairReductionService.neitherAreDebris(a, b) &&
-                                this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
-                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol),
-                "DPA", (a, b, tol) ->
-                        this.pairReductionService.neitherAreDebris(a, b) &&
-                                this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
-                                this.pairReductionService.altitudeShellsOverlap(a, b, tol),
-                "PAD", (a, b, tol) ->
-                        this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
-                                this.pairReductionService.altitudeShellsOverlap(a, b, tol) &&
-                                this.pairReductionService.neitherAreDebris(a, b),
-                "PDA", (a, b, tol) ->
-                        this.pairReductionService.orbitalPlanesIntersect(a, b, tol) &&
-                                this.pairReductionService.neitherAreDebris(a, b) &&
-                                this.pairReductionService.altitudeShellsOverlap(a, b, tol)
-        );
     }
 
     @Override
@@ -86,6 +55,28 @@ public class PairReductionBenchmark implements CommandLineRunner {
         log.info("Starting pair reduction order benchmark");
         log.info("");
 
+        double[] perigees = new double[n];
+        double[] apogees = new double[n];
+        double[] inclinations = new double[n];
+        double[] raans = new double[n];
+        double[] argPerigees = new double[n];
+        double[] eccentricities = new double[n];
+        double[] semiMajorAxes = new double[n];
+        boolean[] isDebris = new boolean[n];
+
+        for (int i = 0; i < n; i++) {
+            Satellite s = satellites.get(i);
+            perigees[i] = s.getPerigeeKm();
+            apogees[i] = s.getApogeeKm();
+            inclinations[i] = Math.toRadians(s.getInclination());
+            raans[i] = Math.toRadians(s.getRaan());
+            argPerigees[i] = Math.toRadians(s.getArgPerigee());
+            eccentricities[i] = s.getEccentricity();
+            semiMajorAxes[i] = s.getSemiMajorAxisKm();
+            isDebris[i] = "DEBRIS".equals(s.getObjectType());
+        }
+
+        // A=altitude, D=debris, P=plane
         List<String> orderNames = List.of("ADP", "APD", "DAP", "DPA", "PAD", "PDA");
         List<OrderResult> results = new ArrayList<>();
 
@@ -95,7 +86,9 @@ public class PairReductionBenchmark implements CommandLineRunner {
                 System.gc();
                 Thread.sleep(100);
 
-                results.add(runOrdering(satellites, totalPairs, orderName));
+                results.add(runOrdering(satellites, totalPairs, orderName, n,
+                        perigees, apogees, inclinations, raans, argPerigees,
+                        eccentricities, semiMajorAxes, isDebris));
             }
         }
 
@@ -103,22 +96,34 @@ public class PairReductionBenchmark implements CommandLineRunner {
         log.info("Benchmark complete");
     }
 
-    private OrderResult runOrdering(List<Satellite> satellites, long totalPairs,
-                                    String orderName) {
-        int n = satellites.size();
-        PairFilter filter = orderings.get(orderName);
+    private OrderResult runOrdering(List<Satellite> satellites, long totalPairs, String orderName,
+                                    int n, double[] perigees, double[] apogees,
+                                    double[] inclinations, double[] raans, double[] argPerigees,
+                                    double[] eccentricities, double[] semiMajorAxes, boolean[] isDebris) {
 
         StopWatch watch = StopWatch.createStarted();
         List<SatellitePair> results = IntStream.range(0, n)
                 .parallel()
                 .boxed()
                 .mapMulti((Integer i, Consumer<SatellitePair> consumer) -> {
-                    Satellite a = satellites.get(i);
+                    double perigeeA = perigees[i];
+                    double apogeeA = apogees[i];
+                    boolean debrisA = isDebris[i];
+                    double iA = inclinations[i];
+                    double raanA = raans[i];
+                    double omegaA = argPerigees[i];
+                    double eA = eccentricities[i];
+                    double aA = semiMajorAxes[i];
+
                     for (int j = i + 1; j < n; j++) {
-                        Satellite b = satellites.get(j);
-                        if (filter.test(a, b, DEFAULT_TOLERANCE_KM)) {
-                            consumer.accept(new SatellitePair(a, b));
+                        if (shouldSkip(orderName, DEFAULT_TOLERANCE_KM,
+                                perigeeA, apogeeA, debrisA, iA, raanA, omegaA, eA, aA,
+                                perigees[j], apogees[j], isDebris[j],
+                                inclinations[j], raans[j], argPerigees[j],
+                                eccentricities[j], semiMajorAxes[j])) {
+                            continue;
                         }
+                        consumer.accept(new SatellitePair(satellites.get(i), satellites.get(j)));
                     }
                 })
                 .toList();
@@ -127,6 +132,36 @@ public class PairReductionBenchmark implements CommandLineRunner {
         log.info("{} | {}ms | {} pairs", orderName, watch.getTime(), results.size());
 
         return new OrderResult(orderName, totalPairs, results.size(), watch.getTime());
+    }
+
+    private boolean shouldSkip(String order, double tol,
+                               double perigeeA, double apogeeA, boolean debrisA,
+                               double iA, double raanA, double omegaA, double eA, double aA,
+                               double perigeeB, double apogeeB, boolean debrisB,
+                               double iB, double raanB, double omegaB, double eB, double aB) {
+        return switch (order) {
+            case "ADP" -> pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol)
+                    || pairReductionService.bothDebris(debrisA, debrisB)
+                    || pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol);
+            case "APD" -> pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol)
+                    || pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol)
+                    || pairReductionService.bothDebris(debrisA, debrisB);
+            case "DAP" -> pairReductionService.bothDebris(debrisA, debrisB)
+                    || pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol)
+                    || pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol);
+            case "DPA" -> pairReductionService.bothDebris(debrisA, debrisB)
+                    || pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol)
+                    || pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol);
+            case "PAD" ->
+                    pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol)
+                            || pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol)
+                            || pairReductionService.bothDebris(debrisA, debrisB);
+            case "PDA" ->
+                    pairReductionService.orbitalPlanesMiss(iA, raanA, omegaA, eA, aA, iB, raanB, omegaB, eB, aB, tol)
+                            || pairReductionService.bothDebris(debrisA, debrisB)
+                            || pairReductionService.altitudeShellsMiss(perigeeA, apogeeA, perigeeB, apogeeB, tol);
+            default -> throw new IllegalArgumentException("Unknown order: " + order);
+        };
     }
 
     private void writeCsv(List<OrderResult> results) {
@@ -147,11 +182,6 @@ public class PairReductionBenchmark implements CommandLineRunner {
         } catch (IOException e) {
             log.error("Failed to write CSV file", e);
         }
-    }
-
-    @FunctionalInterface
-    interface PairFilter {
-        boolean test(Satellite a, Satellite b, double toleranceKm);
     }
 
     private record OrderResult(String order, long totalPairs, long finalPairs, long timeMs) {
