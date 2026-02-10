@@ -24,9 +24,9 @@ import java.util.stream.IntStream;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-Xmx4g -Xms4g -XX:+AlwaysPreTouch"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-Xmx4g -Xms4g -XX:+AlwaysPreTouch"
  */
 @Component
 @Profile("benchmark-filter")

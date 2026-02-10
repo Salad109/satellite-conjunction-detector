@@ -29,9 +29,9 @@ import java.util.Objects;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx16g -Xms16g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx16g -Xms16g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx16g -Xms16g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
  */
 @Component
 @Profile("benchmark-conjunction")
@@ -79,7 +79,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         //noinspection InfiniteLoopStatement
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 10) {
+            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 50) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();

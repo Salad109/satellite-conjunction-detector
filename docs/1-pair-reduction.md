@@ -20,16 +20,16 @@ First filter runs on all pairs. Subsequent filters only run on pairs that passed
 
 All orderings produce identical final pair counts (22.5M pairs, 5.1% of original). Only execution time differs.
 
-| Order | Time   | Relative |
-|-------|--------|----------|
-| ADP   | 16.3s  | baseline |
-| DAP   | 16.5s  | +1%      |
-| APD   | 20.2s  | +24%     |
-| DPA   | 68.6s  | +320%    |
-| PAD   | 76.4s  | +368%    |
-| PDA   | 77.0s  | +372%    |
+| Order | Time  | Relative |
+|-------|-------|----------|
+| ADP   | 16.3s | baseline |
+| DAP   | 16.5s | +1%      |
+| APD   | 20.2s | +24%     |
+| DPA   | 68.6s | +320%    |
+| PAD   | 76.4s | +368%    |
+| PDA   | 77.0s | +372%    |
 
-**Optimal order: Altitude, Debris, Plane (ADP)** — nearly tied with DAP, 4.7x faster than worst ordering.
+**Optimal order: Altitude, Debris, Plane (ADP)** - nearly tied with DAP.
 
 ## Running the Benchmark
 

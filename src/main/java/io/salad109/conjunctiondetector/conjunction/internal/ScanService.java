@@ -1,6 +1,7 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
+import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
@@ -36,14 +37,13 @@ public class ScanService {
      */
     public List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
                                             double toleranceKm) {
-        // Build bidirectional lookup for fast access in hot loop
-        int numSats = precomputedPositions.arrayIdToNoradId().length;
-        SatellitePair[][] allowedPairsByArrayId = new SatellitePair[numSats][numSats];
+        // Build lookup for fast access in hot loop
+        LongObjectHashMap<SatellitePair> allowedPairs = new LongObjectHashMap<>(pairs.size());
         for (SatellitePair pair : pairs) {
             int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
             int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
-            allowedPairsByArrayId[idxA][idxB] = pair;
-            allowedPairsByArrayId[idxB][idxA] = pair;
+            long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
+            allowedPairs.put(key, pair);
         }
 
         int totalSteps = precomputedPositions.times().length;
@@ -58,7 +58,8 @@ public class ScanService {
 
                     grid.forEachCandidatePair((idxA, idxB) -> {
                         // Filter by pair reduction
-                        SatellitePair pair = allowedPairsByArrayId[idxA][idxB];
+                        long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
+                        SatellitePair pair = allowedPairs.get(key);
                         if (pair == null) return;
 
                         double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);

@@ -2,14 +2,6 @@
 
 This experiment compares G1GC (default), ZGC, Parallel GC, and Shenandoah for conjunction detection workloads.
 
-## Test Configuration
-
-All benchmarks run with fixed heap size to eliminate memory variability:
-
-```
--Xmx16g -Xms16g -XX:+AlwaysPreTouch
-```
-
 ## Parameters
 
 - **prepass-tolerance-km**: Fixed at 10.0 km
@@ -44,21 +36,3 @@ All GCs detect identical conjunctions. GC choice affects performance, not correc
 ![Time Breakdown Stacked](5-gc/2_time_breakdown_stacked.png)
 
 ![Conjunctions Detected](5-gc/3_conjunctions.png)
-
-## Running the Benchmark
-
-```bash
-# G1GC
-./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseG1GC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
-
-# ZGC
-./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseZGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
-
-# Parallel GC
-./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseParallelGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
-
-# Shenandoah GC
-./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-XX:+UseShenandoahGC -Xmx16g -Xms16g -XX:+AlwaysPreTouch"
-
-# *you must have a running PostgreSQL instance with the satellite catalog loaded
-```
