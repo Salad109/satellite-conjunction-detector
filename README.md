@@ -46,8 +46,8 @@ See docs for tuning experiments and optimal parameters.
 ### Prerequisites
 
 - Java 25
-- Docker & Docker Compose
-- [Space-Track.org](https://www.space-track.org) account (free registration)
+- Docker Compose
+- [Space-Track.org](https://www.space-track.org) account
 
 ### 1. Configure Environment
 
@@ -71,3 +71,18 @@ This starts PostgreSQL and the application. The app will be available at `http:/
 docker-compose up postgres
 ./mvnw spring-boot:run
 ```
+
+### 3. Native Pair Reduction (Optional)
+
+The pair reduction filter has a native C implementation using Panama FFM API that runs faster. If the native library is
+not
+available, the application automatically falls back to the Java implementation.
+
+**Local Linux Development:**
+
+```bash
+cd src/main/c
+make
+```
+
+**Docker:** The native library is compiled automatically.

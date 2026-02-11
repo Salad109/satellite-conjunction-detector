@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .env
+*.so
+docs/*.csv
 
 ### STS ###
 .apt_generated

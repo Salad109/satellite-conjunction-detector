@@ -15,9 +15,9 @@ Final tuning of the coarse sweep tolerance parameter, with prepass, step ratio, 
 
 The conjunction detection pipeline consists of 7 stages:
 
-1. **Pair Reduction**: Geometric filtering to reduce candidate pairs (~12s, constant)
-2. **Filter**: Rebuilding catalog from reduced pairs (~0.4s, constant)
-3. **Propagator Build**: Constructing TLE propagators (~0.08s, constant)
+1. **Pair Reduction**: Geometric filtering to reduce candidate pairs (~1.2s, constant)
+2. **Filter**: Rebuilding catalog from reduced pairs (~0.6s, constant)
+3. **Propagator Build**: Constructing TLE propagators (~0.13s, constant)
 4. **Propagate**: Pre-computing positions for coarse sweep (decreases with tolerance)
 5. **Check Pairs**: Distance checking during coarse sweep (decreases with tolerance)
 6. **Grouping**: Clustering detections into events (increases with tolerance)
@@ -41,16 +41,13 @@ time increases. The U-shaped total time curve has its minimum where these opposi
 
 | Tolerance | Coarse (Prop+Check) | Refine (Group+Refine) | Total  |
 |-----------|---------------------|-----------------------|--------|
-| 100 km    | 29.01s              | 9.04s                 | 50.91s |
-| 150 km    | 20.80s              | 14.25s                | 48.03s |
-| 300 km    | 12.58s              | 30.43s                | 55.95s |
+| 100 km    | 48.14s              | 12.14s                | 62.25s |
+| 160 km    | 32.71s              | 20.98s                | 55.63s |
+| 300 km    | 24.94s              | 42.11s                | 68.92s |
 
 ## Conclusion
 
-**Optimal tolerance is 150 km with step size of 15 seconds**
-
-This achieves lowest total time with balanced coarse and refine stages. Going lower wastes time on
-excessive coarse iterations; going higher wastes time processing too many candidate events.
+**Optimal tolerance is 160 km (step size 16s).** Fitted minimum at 157.9 km (R² = 0.9942), measured minimum at 160 km.
 
 ![Total Processing Time](6-conjunction-tolerance/1_total_time.png)
 

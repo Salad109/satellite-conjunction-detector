@@ -79,7 +79,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         //noinspection InfiniteLoopStatement
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += 50) {
+            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += stepSecondRatio) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();

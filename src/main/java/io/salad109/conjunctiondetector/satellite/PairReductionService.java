@@ -1,5 +1,8 @@
 package io.salad109.conjunctiondetector.satellite;
 
+import io.salad109.conjunctiondetector.satellite.internal.PairReductionNative;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,11 +12,37 @@ import java.util.stream.IntStream;
 @Service
 public class PairReductionService {
 
+    private static final Logger log = LoggerFactory.getLogger(PairReductionService.class);
+
+    private PairReductionNative nativeImpl;
+
+    public PairReductionService() {
+        try {
+            nativeImpl = new PairReductionNative();
+            log.info("Native pair reduction detected");
+        } catch (Throwable e) {
+            nativeImpl = null;
+            log.warn("Native pair reduction unavailable");
+        }
+    }
+
     /**
      * Finds all pairs of satellites that could potentially collide.
      * Uses orbital geometry filters to reduce the number of pairs for detailed analysis.
      */
     public List<SatellitePair> findPotentialCollisionPairs(List<Satellite> satellites, double toleranceKm) {
+        if (nativeImpl != null) {
+            try {
+                return nativeImpl.findPairs(satellites, toleranceKm);
+            } catch (Throwable e) {
+                log.warn("Native pair reduction failed, disabling", e);
+                nativeImpl = null;
+            }
+        }
+        return findPotentialCollisionPairsJava(satellites, toleranceKm);
+    }
+
+    public List<SatellitePair> findPotentialCollisionPairsJava(List<Satellite> satellites, double toleranceKm) {
         int n = satellites.size();
 
         // Pre-extract fields into arrays
