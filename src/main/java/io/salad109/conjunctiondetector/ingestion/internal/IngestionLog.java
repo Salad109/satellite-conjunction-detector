@@ -31,6 +31,9 @@ public class IngestionLog {
     @Column(name = "objects_updated")
     private int objectsUpdated;
 
+    @Column(name = "objects_unchanged")
+    private int objectsUnchanged;
+
     @Column(name = "objects_skipped")
     private int objectsSkipped;
 

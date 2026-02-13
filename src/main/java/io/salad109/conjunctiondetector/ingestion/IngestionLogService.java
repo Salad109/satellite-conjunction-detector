@@ -2,8 +2,6 @@ package io.salad109.conjunctiondetector.ingestion;
 
 import io.salad109.conjunctiondetector.ingestion.internal.IngestionLog;
 import io.salad109.conjunctiondetector.ingestion.internal.IngestionLogRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,19 +19,6 @@ public class IngestionLogService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SyncResult> getSyncHistory(Pageable pageable) {
-        Page<IngestionLog> page = ingestionLogRepository.findAllByOrderByStartedAtDesc(pageable);
-        return page.map(log -> new SyncResult(
-                log.getStartedAt(),
-                log.getObjectsInserted(),
-                log.getObjectsUpdated(),
-                log.getObjectsSkipped(),
-                log.getObjectsDeleted(),
-                log.isSuccessful()
-        ));
-    }
-
-    @Transactional(readOnly = true)
     public SyncResult getLatest() {
         IngestionLog log = ingestionLogRepository.findTopByOrderByStartedAtDesc();
         if (log == null)
@@ -43,6 +28,7 @@ public class IngestionLogService {
                     log.getStartedAt(),
                     log.getObjectsInserted(),
                     log.getObjectsUpdated(),
+                    log.getObjectsUnchanged(),
                     log.getObjectsSkipped(),
                     log.getObjectsDeleted(),
                     log.isSuccessful()
@@ -60,6 +46,7 @@ public class IngestionLogService {
                 OffsetDateTime.now(ZoneOffset.UTC),
                 syncResult.objectsInserted(),
                 syncResult.objectsUpdated(),
+                syncResult.objectsUnchanged(),
                 syncResult.objectsSkipped(),
                 syncResult.objectsDeleted(),
                 syncResult.successful(),

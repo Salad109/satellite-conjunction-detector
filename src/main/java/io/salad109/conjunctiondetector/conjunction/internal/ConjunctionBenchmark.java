@@ -63,7 +63,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         log.info("Loaded {} satellites", satellites.size());
 
         // Use fixed start time
-        OffsetDateTime fixedStartTime = OffsetDateTime.of(2026, 1, 20, 0, 0, 0, 0, ZoneOffset.UTC)
+        OffsetDateTime fixedStartTime = OffsetDateTime.of(2026, 1, 13, 19, 0, 0, 0, ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS);
         log.info("Using fixed start time: {}", fixedStartTime);
 

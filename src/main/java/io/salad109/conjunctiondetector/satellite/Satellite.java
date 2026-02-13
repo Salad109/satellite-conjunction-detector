@@ -3,6 +3,7 @@ package io.salad109.conjunctiondetector.satellite;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -11,7 +12,7 @@ import java.util.Objects;
 @Getter
 @Entity
 @Table(name = "satellite")
-public class Satellite {
+public class Satellite implements Persistable<Integer> {
 
     // Earth radius for TLE calculations (WGS72)
     private static final double EARTH_RADIUS_KM = 6378.135;
@@ -81,10 +82,6 @@ public class Satellite {
     @PrePersist
     @PreUpdate
     public void computeDerivedParameters() {
-        if (meanMotion == null || meanMotion <= 0 || eccentricity == null) {
-            return;
-        }
-
         // Convert mean motion from rev/day to rad/s
         double n = meanMotion * 2 * Math.PI / 86400.0;
 
@@ -94,6 +91,16 @@ public class Satellite {
         // Perigee and apogee altitudes
         this.perigeeKm = semiMajorAxisKm * (1 - eccentricity) - EARTH_RADIUS_KM;
         this.apogeeKm = semiMajorAxisKm * (1 + eccentricity) - EARTH_RADIUS_KM;
+    }
+
+    @Override
+    public Integer getId() {
+        return noradCatId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return version == null;
     }
 
     @Override

@@ -46,14 +46,25 @@ public class IngestionService {
         try {
             List<OmmRecord> records = spaceTrackClient.fetchCatalog();
             ProcessingResult processingResult = processRecords(records);
-            SyncResult syncResult = new SyncResult(startedAt, processingResult.created(), processingResult.updated(), processingResult.skipped(), processingResult.deleted(), true);
+            SyncResult syncResult = new SyncResult(startedAt,
+                    processingResult.created(),
+                    processingResult.updated(),
+                    processingResult.unchanged(),
+                    processingResult.skipped(),
+                    processingResult.deleted(),
+                    true);
             ingestionLogService.saveIngestionLog(syncResult, null);
 
             stopWatch.stop();
-            log.info("Sync completed in {}ms. {} created, {} updated, {} skipped, {} deleted",
-                    stopWatch.getTime(), processingResult.created(), processingResult.updated(), processingResult.skipped(), processingResult.deleted());
+            log.info("Sync completed in {}ms. {} created, {} updated, {} unchanged, {} skipped, {} deleted",
+                    stopWatch.getTime(),
+                    processingResult.created(),
+                    processingResult.updated(),
+                    processingResult.unchanged(),
+                    processingResult.skipped(),
+                    processingResult.deleted());
         } catch (IOException e) {
-            SyncResult failedSyncResult = SyncResult.failed(startedAt);
+            SyncResult failedSyncResult = new SyncResult(startedAt, 0, 0, 0, 0, 0, false);
             ingestionLogService.saveIngestionLog(failedSyncResult, e.getMessage());
 
             log.error("Failed synchronizing with Space-Track API", e);
@@ -90,20 +101,21 @@ public class IngestionService {
         // Categorize records
         List<Satellite> toCreate = new ArrayList<>();
         List<Satellite> toUpdate = new ArrayList<>();
+        int unchanged = 0;
 
-        for (OmmRecord ommRecord : validRecords) {
-            Satellite existing = existingById.get(ommRecord.noradCatId());
+        for (OmmRecord omm : validRecords) {
+            Satellite existing = existingById.get(omm.noradCatId());
 
             if (existing == null) {
                 // New satellite
-                toCreate.add(createSatellite(ommRecord));
-            } else if (hasChanged(existing, ommRecord)) {
+                toCreate.add(createSatellite(omm));
+            } else if (hasChanged(existing, omm)) {
                 // Existing satellite with changes
-                updateSatellite(existing, ommRecord);
+                updateSatellite(existing, omm);
                 toUpdate.add(existing);
             } else {
                 // Existing satellite without changes
-                skipped++;
+                unchanged++;
             }
         }
 
@@ -113,10 +125,10 @@ public class IngestionService {
         int updated = satelliteService.save(toUpdate);
         log.debug("Updated {} existing satellites", updated);
 
-        log.debug("Processing complete: {} created, {} updated, {} skipped, {} deleted",
-                created, updated, skipped, deleted);
+        log.debug("Processing complete: {} created, {} updated, {} unchanged, {} skipped, {} deleted",
+                created, updated, unchanged, skipped, deleted);
 
-        return new ProcessingResult(created, updated, skipped, deleted);
+        return new ProcessingResult(created, updated, unchanged, skipped, deleted);
     }
 
     private void updateSatellite(Satellite sat, OmmRecord ommRecord) {
@@ -150,6 +162,6 @@ public class IngestionService {
         return satellite.getEpoch() == null || !satellite.getEpoch().equals(ommRecord.getEpochUtc());
     }
 
-    private record ProcessingResult(int created, int updated, int skipped, int deleted) {
+    private record ProcessingResult(int created, int updated, int unchanged, int skipped, int deleted) {
     }
 }

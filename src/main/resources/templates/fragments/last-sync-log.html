@@ -4,6 +4,7 @@
     <span class="text-red-600 ml-1" th:unless="${log.successful}">FAILED</span>
     - <span th:text="${log.objectsInserted}"></span> inserted,
     <span th:text="${log.objectsUpdated}"></span> updated,
+    <span th:text="${log.objectsUnchanged}"></span> unchanged,
     <span th:text="${log.objectsSkipped}"></span> skipped<span th:if="${log.objectsDeleted > 0}">, <span
         th:text="${log.objectsDeleted}"></span> deleted</span>
 </p>

@@ -1,7 +1,6 @@
 package io.salad109.conjunctiondetector.satellite;
 
 import io.salad109.conjunctiondetector.satellite.internal.SatelliteRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,9 +16,6 @@ import java.util.stream.Collectors;
 public class SatelliteService {
 
     private final SatelliteRepository satelliteRepository;
-
-    @Value("${ingestion.batch-size:1000}")
-    private int batchSize;
 
     public SatelliteService(SatelliteRepository satelliteRepository) {
         this.satelliteRepository = satelliteRepository;
@@ -44,17 +40,7 @@ public class SatelliteService {
 
     @Transactional
     public int save(List<Satellite> satellites) {
-        if (satellites.isEmpty()) {
-            return 0;
-        }
-
-        for (int i = 0; i < satellites.size(); i += batchSize) {
-            List<Satellite> batch = satellites.subList(i, Math.min(i + batchSize, satellites.size()));
-            satelliteRepository.saveAll(batch);
-            satelliteRepository.flush();
-        }
-
-        return satellites.size();
+        return satelliteRepository.saveAll(satellites).size();
     }
 
     @Transactional
