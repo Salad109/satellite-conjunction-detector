@@ -126,7 +126,7 @@ public class ConjunctionService {
 
         // Refine
         List<ScanService.RefinedEvent> refined = allEvents.parallelStream()
-                .map(event -> scanService.refineEvent(event, propagators, stepSeconds, thresholdKm))
+                .map(event -> scanService.refineEvent(event, positionCache, propagators, stepSeconds, thresholdKm))
                 .filter(Objects::nonNull)
                 .toList();
 

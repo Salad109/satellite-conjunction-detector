@@ -2,12 +2,6 @@ package io.salad109.conjunctiondetector.conjunction.internal;
 
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
 import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -64,7 +58,7 @@ public class ScanService {
 
                         double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);
                         if (distSq < tolSq) {
-                            consumer.accept(new CoarseDetection(pair, precomputedPositions.times()[step], distSq));
+                            consumer.accept(new CoarseDetection(pair, precomputedPositions.times()[step], distSq, step));
                         }
                     });
                 })
@@ -125,73 +119,86 @@ public class ScanService {
     }
 
     /**
-     * Refine an event (cluster of coarse detections) using Brent's method to find more accurate TCA and minimum distance.
-     * Uses linear interpolation during optimization to avoid expensive SGP4 calls, then does one final propagation
-     * at the found TCA for accurate distance measurement.
+     * Refine an event to find more accurate TCA and minimum distance.
+     * Call SGP4 only for events that survive the threshold check.
      */
-    public RefinedEvent refineEvent(List<CoarseDetection> event, Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
+    public RefinedEvent refineEvent(List<CoarseDetection> event, PropagationService.PositionCache cache,
+                                    Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
                 .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
         SatellitePair pair = best.pair();
+        int step = best.stepIndex();
+        int totalSteps = cache.times().length;
 
-        // Search interval is stepSeconds/2 on each side of best detection
-        long halfWindowNanos = (stepSeconds * 1_000_000_000L) / 2;
-        long windowNanos = 2 * halfWindowNanos;
-        OffsetDateTime startTime = best.time().minusNanos(halfWindowNanos);
-        OffsetDateTime endTime = best.time().plusNanos(halfWindowNanos);
+        int idxA = cache.noradIdToArrayId().get(pair.a().getNoradCatId());
+        int idxB = cache.noradIdToArrayId().get(pair.b().getNoradCatId());
 
-        // Pre-compute positions at window endpoints (4 SGP4 calls total)
-        double[] startA = propagationService.propagateToPositionKm(pair.a(), propagators, startTime);
-        double[] endA = propagationService.propagateToPositionKm(pair.a(), propagators, endTime);
-        double[] startB = propagationService.propagateToPositionKm(pair.b(), propagators, startTime);
-        double[] endB = propagationService.propagateToPositionKm(pair.b(), propagators, endTime);
-
-        // Use Brent's method from Apache Commons Math
-        // Only absolute tolerance matters. 0.017s = 0.25km@15km/s worst-case scenario is sufficient precision
-        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 16_666_667);
-
-        // Minimize distance squared - same minimum location as with sqrt
-        UnivariateObjectiveFunction objectiveFunction = new UnivariateObjectiveFunction(offsetNanos -> {
-            double t = offsetNanos / windowNanos; // 0 to 1
-            // Linear interpolation for both satellites
-            double ax = startA[0] + t * (endA[0] - startA[0]);
-            double ay = startA[1] + t * (endA[1] - startA[1]);
-            double az = startA[2] + t * (endA[2] - startA[2]);
-            double bx = startB[0] + t * (endB[0] - startB[0]);
-            double by = startB[1] + t * (endB[1] - startB[1]);
-            double bz = startB[2] + t * (endB[2] - startB[2]);
-
-            double dx = ax - bx;
-            double dy = ay - by;
-            double dz = az - bz;
-
-            return dx * dx + dy * dy + dz * dz;
-        });
-
-        UnivariatePointValuePair result = optimizer.optimize(
-                objectiveFunction,
-                GoalType.MINIMIZE,
-                new SearchInterval(0, windowNanos),
-                MaxEval.unlimited()
-        );
-
-        // Check if interpolated minimum distance is under threshold (compare squared to avoid sqrt)
         double thresholdSq = thresholdKm * thresholdKm;
-        if (result.getValue() > thresholdSq) {
-            return null; // Skip expensive propagation for events that won't meet threshold
+        double bestDistSq = Double.MAX_VALUE;
+        double bestT = 0;
+        int bestIntervalStart = step;
+
+        // Check interval (step-1, step)
+        if (step > 0 && cache.valid()[idxA][step - 1] && cache.valid()[idxB][step - 1]
+                && cache.valid()[idxA][step] && cache.valid()[idxB][step]) {
+            double[] result = analyticalMin(cache, idxA, idxB, step - 1, step);
+            if (result[0] < bestDistSq) {
+                bestDistSq = result[0];
+                bestT = result[1];
+                bestIntervalStart = step - 1;
+            }
         }
 
-        OffsetDateTime tca = startTime.plusNanos((long) result.getPoint());
+        // Check interval (step, step+1)
+        if (step < totalSteps - 1 && cache.valid()[idxA][step] && cache.valid()[idxB][step]
+                && cache.valid()[idxA][step + 1] && cache.valid()[idxB][step + 1]) {
+            double[] result = analyticalMin(cache, idxA, idxB, step, step + 1);
+            if (result[0] < bestDistSq) {
+                bestDistSq = result[0];
+                bestT = result[1];
+                bestIntervalStart = step;
+            }
+        }
 
-        // Final accurate propagation at TCA (only for events likely under threshold)
+        // Early exit for events obviously above threshold
+        if (bestDistSq > thresholdSq) {
+            return null;
+        }
+
+        // Convert fractional t to absolute timestamp
+        long intervalNanos = stepSeconds * 1_000_000_000L;
+        OffsetDateTime tca = cache.times()[bestIntervalStart].plusNanos((long) (bestT * intervalNanos));
+
         PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
 
         return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityKmS(),
                 measurement.pvA(), measurement.pvB(), measurement.frame(), measurement.absoluteDate());
     }
 
-    public record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq) {
+    /**
+     * With linear interpolation between two positions, squared distance is a quadratic in t.
+     * Solve for the minimum analytically. Returns {minDistSq, t} where t in [0,1].
+     */
+    private double[] analyticalMin(PropagationService.PositionCache cache, int idxA, int idxB,
+                                   int s0, int s1) {
+        double sepX = cache.x()[idxA][s0] - cache.x()[idxB][s0];
+        double sepY = cache.y()[idxA][s0] - cache.y()[idxB][s0];
+        double sepZ = cache.z()[idxA][s0] - cache.z()[idxB][s0];
+        double deltaSepX = (cache.x()[idxA][s1] - cache.x()[idxA][s0]) - (cache.x()[idxB][s1] - cache.x()[idxB][s0]);
+        double deltaSepY = (cache.y()[idxA][s1] - cache.y()[idxA][s0]) - (cache.y()[idxB][s1] - cache.y()[idxB][s0]);
+        double deltaSepZ = (cache.z()[idxA][s1] - cache.z()[idxA][s0]) - (cache.z()[idxB][s1] - cache.z()[idxB][s0]);
+
+        double distSq0 = sepX * sepX + sepY * sepY + sepZ * sepZ;
+        double sepDotDelta = sepX * deltaSepX + sepY * deltaSepY + sepZ * deltaSepZ;
+        double deltaSepSq = deltaSepX * deltaSepX + deltaSepY * deltaSepY + deltaSepZ * deltaSepZ;
+
+        double t = deltaSepSq == 0 ? 0.5 : Math.clamp(-sepDotDelta / deltaSepSq, 0, 1);
+        return new double[]{distSq0 + (2 * sepDotDelta + deltaSepSq * t) * t, t};
+    }
+
+
+    public record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq, int stepIndex) {
     }
 
     public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityKmS,

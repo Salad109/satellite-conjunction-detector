@@ -79,7 +79,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         //noinspection InfiniteLoopStatement
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 400; toleranceKm += stepSecondRatio) {
+            for (double toleranceKm = 50; toleranceKm <= 800; toleranceKm += 10) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
@@ -145,7 +145,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         // Refinement
         StopWatch refine = StopWatch.createStarted();
-        List<ScanService.RefinedEvent> refined = allEvents.parallelStream().map(event -> scanService.refineEvent(event, propagators, stepSeconds, thresholdKm))
+        List<ScanService.RefinedEvent> refined = allEvents.parallelStream().map(event -> scanService.refineEvent(event, positionCache, propagators, stepSeconds, thresholdKm))
                 .filter(Objects::nonNull)
                 .toList();
         refine.stop();

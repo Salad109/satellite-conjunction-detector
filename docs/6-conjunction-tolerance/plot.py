@@ -19,13 +19,13 @@ all_data = pd.concat(dfs, ignore_index=True)
 # Group by tolerance_km and average all other numeric columns
 df = all_data.groupby('tolerance_km', as_index=False).mean(numeric_only=True)
 
-def model(x, a, b, c):
-    return a / x + b * x + c
+def model(x, a, b, c, d):
+    return a / x + b * x + c * x**2 + d
 
 x = df['tolerance_km'].values
 y = df['total_s'].values
 params, _ = curve_fit(model, x, y)
-a, b, c = params
+a, b, c, d = params
 
 y_pred = model(x, *params)
 r2 = 1 - np.sum((y - y_pred)**2) / np.sum((y - np.mean(y))**2)
@@ -37,7 +37,7 @@ x_min, y_min = result.x, result.fun
 fig, ax = plt.subplots(figsize=(10, 6))
 x_smooth = np.linspace(x.min(), x.max(), 500)
 ax.plot(x, y, 'o', color='#2E86AB', markersize=8, label='Data')
-ax.plot(x_smooth, model(x_smooth, *params), '-', color='red', linewidth=2, label=f'${a:.0f}/x + {b:.3f}x + {c:.1f}$')
+ax.plot(x_smooth, model(x_smooth, *params), '-', color='red', linewidth=2, label=f'${a:.0f}/x + {b:.3f}x + {c:.2e}x^2 + {d:.1f}$')
 ax.axvline(x=x_min, color='red', linestyle='--', linewidth=2, alpha=0.5, label=f'Optimal: {x_min:.1f} km')
 ax.text(0.02, 0.98, f'$R^2 = {r2:.4f}$', transform=ax.transAxes, fontsize=11, verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 ax.set_xlabel('Tolerance (km)', fontsize=12)

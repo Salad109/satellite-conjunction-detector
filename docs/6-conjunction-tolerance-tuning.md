@@ -7,47 +7,29 @@ Final tuning of the coarse sweep tolerance parameter, with prepass, step ratio, 
 - **prepass-tolerance-km**: Fixed at 10.0 km (from prepass tuning)
 - **step-second-ratio**: Fixed at 10 (from step ratio tuning)
 - **interpolation-stride**: Fixed at 6 (from interpolation tuning)
-- **tolerance-km**: Coarse detection threshold (swept from 50 to 400 km, incremented by 10)
+- **tolerance-km**: Coarse detection threshold (swept 50-1000 km)
 - **lookahead-hours**: Fixed at 24 hours
 - **threshold-km**: Final conjunction threshold (fixed at 5.0 km)
 
-## Pipeline Stages
-
-The conjunction detection pipeline consists of 7 stages:
-
-1. **Pair Reduction**: Geometric filtering to reduce candidate pairs (~1.2s, constant)
-2. **Filter**: Rebuilding catalog from reduced pairs (~0.6s, constant)
-3. **Propagator Build**: Constructing TLE propagators (~0.13s, constant)
-4. **Propagate**: Pre-computing positions for coarse sweep (decreases with tolerance)
-5. **Check Pairs**: Distance checking during coarse sweep (decreases with tolerance)
-6. **Grouping**: Clustering detections into events (increases with tolerance)
-7. **Refine**: Brent's method optimization for precise TCA (increases with tolerance)
-
 ## Analysis
 
-### Time Complexity Trade-off
+Tolerance controls the coarse sweep step size (step = tolerance / 10). Three stages dominate:
 
-The pipeline stages have opposing time complexities with respect to tolerance:
+- **Propagate** scales as 1/x - fewer steps at larger tolerance
+- **Check Pairs** scales as a/x + bx - fewer steps but more spatial grid cells per step
+- **Grouping** scales as x^2 - quadratically more detections to cluster
 
-- **Propagate + Check Pairs - O(1/tolerance)**: Larger tolerance means larger step size, so fewer propagation calls and
-  distance checks. Doubling tolerance roughly halves this time.
-- **Grouping + Refine - O(tolerance)**: Larger tolerance catches more events that need grouping and refinement.
-- **Pair Reduction, Filter, Propagator Build**: Essentially constant regardless of tolerance.
+The rest (pair reduction, filter, propagator build, refine) are roughly constant.
 
-The optimal tolerance minimizes total time. As tolerance increases, propagate/check time decreases but grouping/refine
-time increases. The U-shaped total time curve has its minimum where these opposing effects balance.
-
-### Performance Curve
-
-| Tolerance | Coarse (Prop+Check) | Refine (Group+Refine) | Total  |
-|-----------|---------------------|-----------------------|--------|
-| 100 km    | 48.14s              | 12.14s                | 62.25s |
-| 160 km    | 32.71s              | 20.98s                | 55.63s |
-| 300 km    | 24.94s              | 42.11s                | 68.92s |
+| Tolerance | Prop+Check | Grouping | Total  |
+|-----------|------------|----------|--------|
+| 100 km    | 51.93s     | 3.79s    | 59.10s |
+| 260 km    | 28.10s     | 9.43s    | 41.14s |
+| 500 km    | 26.25s     | 21.14s   | 52.10s |
 
 ## Conclusion
 
-**Optimal tolerance is 160 km (step size 16s).** Fitted minimum at 157.9 km (R² = 0.9942), measured minimum at 160 km.
+**Optimal tolerance is 260 km (step size 26s).**
 
 ![Total Processing Time](6-conjunction-tolerance/1_total_time.png)
 
