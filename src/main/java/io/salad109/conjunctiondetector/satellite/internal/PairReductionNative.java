@@ -2,6 +2,7 @@ package io.salad109.conjunctiondetector.satellite.internal;
 
 import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
+
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;

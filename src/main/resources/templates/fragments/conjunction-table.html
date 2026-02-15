@@ -83,7 +83,7 @@
 </table>
 
 <div class="flex items-center gap-4 mt-4">
-    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm"
+    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
             hx-target="#results"
             th:hx-get="'/hx/conjunctions?page=' + ${page.number - 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir} + '&amp;includeFormations=' + ${includeFormations}"
             th:if="${page.hasPrevious()}">
@@ -92,7 +92,7 @@
 
     <span class="text-sm text-gray-600" th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}"></span>
 
-    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm"
+    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
             hx-target="#results"
             th:hx-get="'/hx/conjunctions?page=' + ${page.number + 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir} + '&amp;includeFormations=' + ${includeFormations}"
             th:if="${page.hasNext()}">

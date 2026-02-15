@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <script src="https://unpkg.com/htmx.org"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title th:text="${satellite.objectName} + ' - Conjunction Detector'">Satellite</title>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
@@ -57,7 +57,7 @@
     </p>
 </div>
 
-<div class="mb-6 text-xs text-gray-500 border border-gray-200 rounded p-3 font-mono bg-gray-50 whitespace-pre"
+<div class="mb-6 text-xs text-gray-500 border border-gray-200 rounded-sm p-3 font-mono bg-gray-50 whitespace-pre"
      th:text="${satellite.tleLine1} + '&#10;' + ${satellite.tleLine2}"></div>
 
 <h2 class="text-lg font-semibold mt-8 mb-4">Conjunctions

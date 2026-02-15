@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://unpkg.com/htmx.org"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title>Conjunction Detector</title>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
 <h1 class="text-2xl font-semibold mb-6">Conjunction Detector</h1>
 
 <div class="flex items-center gap-2 text-sm">
-    <input class="rounded cursor-pointer"
+    <input class="rounded-sm cursor-pointer"
            hx-get="/hx/conjunctions"
            hx-include="this"
            hx-target="#results"
@@ -20,8 +20,12 @@
     <label class="cursor-pointer" for="includeFormations">Include formations (< 10 m/s)</label>
 </div>
 
-<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" id="results"></div>
+<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" id="results">
+    <p class="text-sm text-gray-400">Loading conjunctions...</p>
+</div>
 
-<div class="mt-8" hx-get="/hx/lastsync" hx-trigger="load" id="sync-info"></div>
+<div class="mt-8" hx-get="/hx/lastsync" hx-trigger="load" id="sync-info">
+    <p class="text-sm text-gray-400">Loading sync info...</p>
+</div>
 </body>
 </html>

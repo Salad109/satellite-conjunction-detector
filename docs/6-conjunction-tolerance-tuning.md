@@ -23,13 +23,13 @@ The rest (pair reduction, filter, propagator build, refine) are roughly constant
 
 | Tolerance | Prop+Check | Grouping | Total  |
 |-----------|------------|----------|--------|
-| 100 km    | 51.93s     | 3.79s    | 59.10s |
-| 260 km    | 28.10s     | 9.43s    | 41.14s |
-| 500 km    | 26.25s     | 21.14s   | 52.10s |
+| 90 km     | 58.35s     | 2.67s    | 63.91s |
+| 250 km    | 28.18s     | 8.62s    | 40.66s |
+| 490 km    | 25.19s     | 21.78s   | 51.74s |
 
 ## Conclusion
 
-**Optimal tolerance is 260 km (step size 26s).**
+**Optimal tolerance is 250 km (step size 25s).**
 
 ![Total Processing Time](6-conjunction-tolerance/1_total_time.png)
 
