@@ -19,7 +19,8 @@ import static org.springframework.data.web.config.EnableSpringDataWebSupport.Pag
 @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 public class ConjunctionDetectorApplication {
 
-    public static void main(String[] args) {
+    // todo add application.properties params validation
+    static void main(String[] args) {
         SpringApplication.run(ConjunctionDetectorApplication.class, args);
     }
 

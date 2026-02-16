@@ -29,9 +29,9 @@ import java.util.Objects;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx16g -Xms16g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx12g -Xms12g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx16g -Xms16g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx12g -Xms12g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
  */
 @Component
 @Profile("benchmark-conjunction")
@@ -123,11 +123,16 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(candidateSatellites);
         propagator.stop();
 
-        // Propagate satellites
+        // SGP4 at stride points
         StopWatch propagateSweep = StopWatch.createStarted();
-        PropagationService.PositionCache positionCache = propagationService.precomputePositions(
+        PropagationService.KnotCache knots = propagationService.computeKnots(
                 propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
         propagateSweep.stop();
+
+        // Interpolate to full position cache
+        StopWatch interpolation = StopWatch.createStarted();
+        PropagationService.PositionCache positionCache = propagationService.interpolate(knots);
+        interpolation.stop();
 
         // Check pairs against positions
         StopWatch checkPairs = StopWatch.createStarted();
@@ -160,15 +165,16 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         total.stop();
 
         String name = String.format("tol=%.0f, prepass=%.1f, step=%d, stride=%d", toleranceKm, prepassToleranceKm, stepSeconds, interpolationStride);
-        log.info("tol={}km | {}ms | pair={}ms filter={}ms prop={}ms propagate={}ms check={}ms group={}ms refine={}ms pc={}ms | {} conj",
+        log.info("tol={}km | {}ms | pair={}ms filter={}ms prop={}ms sgp4={}ms interp={}ms check={}ms group={}ms refine={}ms pc={}ms | {} conj",
                 (int) toleranceKm, total.getTime(), pairReduction.getTime(), filter.getTime(), propagator.getTime(),
-                propagateSweep.getTime(), checkPairs.getTime(), grouping.getTime(), refine.getTime(), probability.getTime(),
+                propagateSweep.getTime(), interpolation.getTime(), checkPairs.getTime(), grouping.getTime(), refine.getTime(), probability.getTime(),
                 conjunctions.size());
 
         return new BenchmarkResult(name, toleranceKm, prepassToleranceKm, stepSeconds, stepSecondRatio,
                 interpolationStride, detections.size(), totalEvents, conjunctions.size(),
                 pairReduction.getTime(), filter.getTime(), propagator.getTime(), propagateSweep.getTime(),
-                checkPairs.getTime(), grouping.getTime(), refine.getTime(), probability.getTime(), total.getTime());
+                interpolation.getTime(), checkPairs.getTime(), grouping.getTime(), refine.getTime(),
+                probability.getTime(), total.getTime());
     }
 
     private void writeCsvResults(List<BenchmarkResult> results) {
@@ -178,10 +184,10 @@ public class ConjunctionBenchmark implements CommandLineRunner {
 
         try {
             try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,pair_reduction_s,filter_s,propagator_s,propagate_s,check_s,grouping_s,refine_s,probability_s,total_s\n");
+                writer.write("tolerance_km,prepass_km,step_s,step_ratio,interp_stride,detections,events,conj,pair_reduction_s,filter_s,propagator_s,sgp4_s,interp_s,check_s,grouping_s,refine_s,probability_s,total_s\n");
 
                 for (BenchmarkResult r : results) {
-                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f%n",
+                    writer.write(String.format("%.0f,%.1f,%d,%d,%d,%d,%d,%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f%n",
                             r.toleranceKm,
                             r.prepassToleranceKm,
                             r.stepSeconds,
@@ -194,6 +200,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                             r.filterTime / 1000.0,
                             r.propagatorTime / 1000.0,
                             r.propagateSweepTimeMs / 1000.0,
+                            r.interpolationTimeMs / 1000.0,
                             r.checkPairsTimeMs / 1000.0,
                             r.groupingTime / 1000.0,
                             r.refineTimeMs / 1000.0,
@@ -213,7 +220,8 @@ public class ConjunctionBenchmark implements CommandLineRunner {
                                    int stepSecondRatio, int interpolationStride, long detections, int events,
                                    int conjunctions,
                                    long pairReductionTime, long filterTime,
-                                   long propagatorTime, long propagateSweepTimeMs, long checkPairsTimeMs,
+                                   long propagatorTime, long propagateSweepTimeMs, long interpolationTimeMs,
+                                   long checkPairsTimeMs,
                                    long groupingTime, long refineTimeMs, long probabilityTimeMs, long totalTimeMs) {
     }
 }

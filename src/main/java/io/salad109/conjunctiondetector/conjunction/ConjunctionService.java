@@ -109,9 +109,12 @@ public class ConjunctionService {
         // Build propagators
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(candidateSatellites);
 
-        // Precompute positions
-        PropagationService.PositionCache positionCache = propagationService.precomputePositions(
+        // SGP4 at stride points
+        PropagationService.KnotCache knots = propagationService.computeKnots(
                 propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
+
+        // Interpolate to full position cache
+        PropagationService.PositionCache positionCache = propagationService.interpolate(knots);
 
         // Coarse sweep
         List<ScanService.CoarseDetection> detections = scanService.checkPairs(pairs, positionCache, toleranceKm);
