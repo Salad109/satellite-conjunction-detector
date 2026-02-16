@@ -25,13 +25,13 @@ public class SpatialGrid {
     private final double cellSizeKm;
     private final IntObjectHashMap<MutableIntList> grid;
 
-    public SpatialGrid(double cellSizeKm, double[][] x, double[][] y, double[][] z, boolean[][] valid, int step) {
+    public SpatialGrid(double cellSizeKm, float[][] x, float[][] y, float[][] z, int step) {
         this.cellSizeKm = cellSizeKm;
         this.grid = new IntObjectHashMap<>();
 
         int numSatellites = x.length;
         for (int satIdx = 0; satIdx < numSatellites; satIdx++) {
-            if (!valid[satIdx][step]) continue;
+            if (Float.isNaN(x[satIdx][step])) continue;
 
             int cellKey = cellHash(x[satIdx][step], y[satIdx][step], z[satIdx][step]);
             MutableIntList satellites = grid.get(cellKey);

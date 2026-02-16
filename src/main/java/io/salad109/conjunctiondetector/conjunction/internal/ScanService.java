@@ -48,7 +48,7 @@ public class ScanService {
                 .parallel()
                 .boxed()
                 .<CoarseDetection>mapMulti((step, consumer) -> {
-                    SpatialGrid grid = new SpatialGrid(toleranceKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), precomputedPositions.valid(), step);
+                    SpatialGrid grid = new SpatialGrid(toleranceKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), step);
 
                     grid.forEachCandidatePair((idxA, idxB) -> {
                         // Filter by pair reduction
@@ -140,8 +140,8 @@ public class ScanService {
         int bestIntervalStart = step;
 
         // Check interval (step-1, step)
-        if (step > 0 && cache.valid()[idxA][step - 1] && cache.valid()[idxB][step - 1]
-                && cache.valid()[idxA][step] && cache.valid()[idxB][step]) {
+        if (step > 0 && cache.isValid(idxA, step - 1) && cache.isValid(idxB, step - 1)
+                && cache.isValid(idxA, step) && cache.isValid(idxB, step)) {
             double[] result = analyticalMin(cache, idxA, idxB, step - 1, step);
             if (result[0] < bestDistSq) {
                 bestDistSq = result[0];
@@ -151,8 +151,8 @@ public class ScanService {
         }
 
         // Check interval (step, step+1)
-        if (step < totalSteps - 1 && cache.valid()[idxA][step] && cache.valid()[idxB][step]
-                && cache.valid()[idxA][step + 1] && cache.valid()[idxB][step + 1]) {
+        if (step < totalSteps - 1 && cache.isValid(idxA, step) && cache.isValid(idxB, step)
+                && cache.isValid(idxA, step + 1) && cache.isValid(idxB, step + 1)) {
             double[] result = analyticalMin(cache, idxA, idxB, step, step + 1);
             if (result[0] < bestDistSq) {
                 bestDistSq = result[0];

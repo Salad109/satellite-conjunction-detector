@@ -21,4 +21,4 @@ COPY --from=builder /app/extracted/application/ ./
 COPY --from=builder /app/src/main/c/pair_reduction.so /app/lib/pair_reduction.so
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx10g", "--enable-native-access=ALL-UNNAMED", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-Xmx8g", "--enable-native-access=ALL-UNNAMED", "org.springframework.boot.loader.launch.JarLauncher"]

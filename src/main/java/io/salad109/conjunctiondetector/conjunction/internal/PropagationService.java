@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,10 +115,14 @@ public class PropagationService {
         }
 
         int numSats = satIds.length;
-        double[][] x = new double[numSats][totalSteps];
-        double[][] y = new double[numSats][totalSteps];
-        double[][] z = new double[numSats][totalSteps];
-        boolean[][] valid = new boolean[numSats][totalSteps];
+        float[][] x = new float[numSats][totalSteps];
+        float[][] y = new float[numSats][totalSteps];
+        float[][] z = new float[numSats][totalSteps];
+
+        // Fill with NaN - invalid until proven otherwise
+        for (int s = 0; s < numSats; s++) {
+            Arrays.fill(x[s], Float.NaN);
+        }
 
         IntStream.range(0, numSats).parallel().forEach(s -> {
             TLEPropagator prop = propagators.get(satIds[s]);
@@ -126,30 +131,28 @@ public class PropagationService {
             for (int step = 0; step < totalSteps; step += stride) {
                 try {
                     PVCoordinates pv = prop.getPVCoordinates(toAbsoluteDate(times[step]), prop.getFrame());
-                    x[s][step] = pv.getPosition().getX() / 1000.0;
-                    y[s][step] = pv.getPosition().getY() / 1000.0;
-                    z[s][step] = pv.getPosition().getZ() / 1000.0;
-                    valid[s][step] = true;
+                    x[s][step] = (float) (pv.getPosition().getX() / 1000.0);
+                    y[s][step] = (float) (pv.getPosition().getY() / 1000.0);
+                    z[s][step] = (float) (pv.getPosition().getZ() / 1000.0);
                 } catch (Exception e) {
-                    valid[s][step] = false;
+                    // x[s][step] stays NaN
                 }
             }
 
             // Linear interpolation between strides
             for (int a = 0; a + stride < totalSteps; a += stride) {
                 int b = a + stride;
-                if (!valid[s][a] || !valid[s][b]) continue;
+                if (Float.isNaN(x[s][a]) || Float.isNaN(x[s][b])) continue;
                 for (int step = a + 1; step < b; step++) {
-                    double t = (double) (step - a) / stride;
+                    float t = (float) (step - a) / stride;
                     x[s][step] = x[s][a] + t * (x[s][b] - x[s][a]);
                     y[s][step] = y[s][a] + t * (y[s][b] - y[s][a]);
                     z[s][step] = z[s][a] + t * (z[s][b] - z[s][a]);
-                    valid[s][step] = true;
                 }
             }
         });
 
-        return new PositionCache(noradIdToArrayId, arrayIdToNoradId, times, x, y, z, valid);
+        return new PositionCache(noradIdToArrayId, arrayIdToNoradId, times, x, y, z);
     }
 
     /**
@@ -185,11 +188,15 @@ public class PropagationService {
     }
 
     public record PositionCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,
-                                double[][] x, double[][] y, double[][] z, boolean[][] valid) {
+                                float[][] x, float[][] y, float[][] z) {
+        boolean isValid(int sat, int step) {
+            return !Float.isNaN(x[sat][step]);
+        }
+
         double distanceSquaredAt(int a, int b, int step) {
-            double dx = x[a][step] - x[b][step];
-            double dy = y[a][step] - y[b][step];
-            double dz = z[a][step] - z[b][step];
+            float dx = x[a][step] - x[b][step];
+            float dy = y[a][step] - y[b][step];
+            float dz = z[a][step] - z[b][step];
             return dx * dx + dy * dy + dz * dz;
         }
     }
