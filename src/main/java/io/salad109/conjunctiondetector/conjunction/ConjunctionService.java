@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.annotation.PostConstruct;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -52,6 +54,16 @@ public class ConjunctionService {
 
     @Value("${conjunction.interpolation-stride:1}")
     private int interpolationStride;
+
+    @PostConstruct
+    void validateProperties() {
+        if (toleranceKm <= 0) throw new IllegalStateException("conjunction.tolerance-km must be positive");
+        if (prepassToleranceKm <= 0) throw new IllegalStateException("conjunction.prepass-tolerance-km must be positive");
+        if (thresholdKm <= 0) throw new IllegalStateException("conjunction.collision-threshold-km must be positive");
+        if (lookaheadHours <= 0) throw new IllegalStateException("conjunction.lookahead-hours must be positive");
+        if (stepSeconds <= 0) throw new IllegalStateException("conjunction.step-seconds must be positive");
+        if (interpolationStride <= 0) throw new IllegalStateException("conjunction.interpolation-stride must be positive");
+    }
 
     public ConjunctionService(SatelliteService satelliteService,
                               ConjunctionRepository conjunctionRepository,
