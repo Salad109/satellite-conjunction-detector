@@ -9,12 +9,7 @@ import org.orekit.utils.PVCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @Service
@@ -58,7 +53,7 @@ public class ScanService {
 
                         double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);
                         if (distSq < tolSq) {
-                            consumer.accept(new CoarseDetection(pair, precomputedPositions.times()[step], distSq, step));
+                            consumer.accept(new CoarseDetection(pair, distSq, step));
                         }
                     });
                 })
@@ -69,53 +64,42 @@ public class ScanService {
      * Group detections by pair, then cluster consecutive detections into events (orbital passes).
      * Two detections belong to the same event if they're within 3 steps of each other.
      */
-    public Map<SatellitePair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections, int stepSeconds) {
-        // Group by pair
-        Map<SatellitePair, List<CoarseDetection>> byPair = detections.stream()
-                .collect(Collectors.groupingBy(CoarseDetection::pair));
+    public Map<SatellitePair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections) {
+        List<CoarseDetection> sorted = detections.parallelStream()
+                .sorted(Comparator
+                        .comparingInt((CoarseDetection d) -> d.pair().a().getNoradCatId())
+                        .thenComparingInt(d -> d.pair().b().getNoradCatId())
+                        .thenComparingInt(CoarseDetection::stepIndex))
+                .toList();
 
-        // Cluster each pair's detections by time gap
-        int gapThresholdSeconds = stepSeconds * 3;
+        Map<SatellitePair, List<List<CoarseDetection>>> result = new HashMap<>();
+        if (sorted.isEmpty()) return result;
 
-        return byPair.entrySet().parallelStream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> {
-                            List<CoarseDetection> sorted = entry.getValue().stream()
-                                    .sorted(Comparator.comparing(CoarseDetection::time))
-                                    .toList();
-                            return clusterByTimeGap(sorted, gapThresholdSeconds);
-                        }
-                ));
-    }
-
-    /**
-     * Cluster sorted detections into groups where consecutive items are within gapThresholdSeconds.
-     */
-    private List<List<CoarseDetection>> clusterByTimeGap(List<CoarseDetection> sorted, int gapThresholdSeconds) {
-        List<List<CoarseDetection>> clusters = new ArrayList<>();
-        if (sorted.isEmpty()) return clusters;
-
+        SatellitePair currentPair = sorted.getFirst().pair();
         List<CoarseDetection> currentCluster = new ArrayList<>();
+        List<List<CoarseDetection>> currentEvents = new ArrayList<>();
         currentCluster.add(sorted.getFirst());
 
         for (int i = 1; i < sorted.size(); i++) {
             CoarseDetection prev = sorted.get(i - 1);
             CoarseDetection curr = sorted.get(i);
 
-            long gapSeconds = ChronoUnit.SECONDS.between(prev.time(), curr.time());
-
-            if (gapSeconds <= gapThresholdSeconds) {
-                currentCluster.add(curr);
-            } else {
-                clusters.add(currentCluster);
+            if (!curr.pair().equals(currentPair)) {
+                currentEvents.add(currentCluster);
+                result.put(currentPair, currentEvents);
+                currentPair = curr.pair();
+                currentEvents = new ArrayList<>();
                 currentCluster = new ArrayList<>();
-                currentCluster.add(curr);
+            } else if (curr.stepIndex() - prev.stepIndex() > 3) {
+                currentEvents.add(currentCluster);
+                currentCluster = new ArrayList<>();
             }
+            currentCluster.add(curr);
         }
-        clusters.add(currentCluster);
+        currentEvents.add(currentCluster);
+        result.put(currentPair, currentEvents);
 
-        return clusters;
+        return result;
     }
 
     /**
@@ -198,7 +182,7 @@ public class ScanService {
     }
 
 
-    public record CoarseDetection(SatellitePair pair, OffsetDateTime time, double distanceSq, int stepIndex) {
+    public record CoarseDetection(SatellitePair pair, double distanceSq, int stepIndex) {
     }
 
     public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityKmS,

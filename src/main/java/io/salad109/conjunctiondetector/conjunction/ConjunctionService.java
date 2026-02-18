@@ -134,7 +134,7 @@ public class ConjunctionService {
         log.debug("Coarse sweep found {} detections", detections.size());
 
         // Group into events
-        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections, stepSeconds);
+        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
                 .toList();

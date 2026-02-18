@@ -12,15 +12,15 @@ detections. The optimum balances propagation cost against grouping cost.
 - **interpolation-stride**: Fixed at 24
 - **lookahead-hours**: Fixed at 24
 - **threshold-km**: Fixed at 5.0 km
-- **tolerance-km**: Swept 40-400 km (step 8 km)
+- **tolerance-km**: Swept 40-400 km
 - **iterations**: 1 per configuration
 
 ## Results
 
-Total time bottoms out around 150 km then rises steadily as grouping cost dominates. SGP4 cost
+Total time bottoms out around 157 km then rises steadily as grouping cost dominates. SGP4 cost
 drops with larger tolerance (fewer time steps) but grouping grows faster than SGP4 shrinks.
 
-Optimum is **152 km** - the coarse and refine stages of the pipeline are balanced.
+Optimum is **160 km** - the coarse and refine stages of the pipeline are balanced.
 
 ![Total Processing Time](1_total_time.png)
 

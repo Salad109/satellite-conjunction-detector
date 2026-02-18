@@ -170,7 +170,7 @@ public class AccuracyBenchmark implements CommandLineRunner {
         checkPairs.stop();
 
         StopWatch grouping = StopWatch.createStarted();
-        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections, stepSeconds);
+        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
         int totalEvents = eventsByPair.values().stream().mapToInt(List::size).sum();
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
