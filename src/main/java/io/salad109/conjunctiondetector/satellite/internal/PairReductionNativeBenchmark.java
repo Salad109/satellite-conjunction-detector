@@ -23,10 +23,10 @@ import java.util.List;
 /**
  * Linux:
  * cd src/main/c && make
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter-native -Dspring-boot.run.jvmArguments="-Xmx4g -Xms4g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter-native -Dspring-boot.run.jvmArguments="-Xmx4g -Xms4g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC --enable-native-access=ALL-UNNAMED"
  * Windows:
  * cd src/main/c && make
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter-native" "-Dspring-boot.run.jvmArguments=-Xmx4g -Xms4g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter-native" "-Dspring-boot.run.jvmArguments=-Xmx4g -Xms4g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC --enable-native-access=ALL-UNNAMED"
  */
 @Component
 @Profile("benchmark-filter-native")
@@ -105,6 +105,7 @@ public class PairReductionNativeBenchmark implements CommandLineRunner {
 
         writeCsv(results);
         log.info("Benchmark complete");
+        System.exit(0);
     }
 
     private void writeCsv(List<BenchmarkResult> results) {

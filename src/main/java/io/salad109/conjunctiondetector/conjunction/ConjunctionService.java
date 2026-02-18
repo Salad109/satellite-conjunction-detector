@@ -5,6 +5,7 @@ import io.salad109.conjunctiondetector.satellite.PairReductionService;
 import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.time.StopWatch;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
@@ -16,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import jakarta.annotation.PostConstruct;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -55,16 +54,6 @@ public class ConjunctionService {
     @Value("${conjunction.interpolation-stride:1}")
     private int interpolationStride;
 
-    @PostConstruct
-    void validateProperties() {
-        if (toleranceKm <= 0) throw new IllegalStateException("conjunction.tolerance-km must be positive");
-        if (prepassToleranceKm <= 0) throw new IllegalStateException("conjunction.prepass-tolerance-km must be positive");
-        if (thresholdKm <= 0) throw new IllegalStateException("conjunction.collision-threshold-km must be positive");
-        if (lookaheadHours <= 0) throw new IllegalStateException("conjunction.lookahead-hours must be positive");
-        if (stepSeconds <= 0) throw new IllegalStateException("conjunction.step-seconds must be positive");
-        if (interpolationStride <= 0) throw new IllegalStateException("conjunction.interpolation-stride must be positive");
-    }
-
     public ConjunctionService(SatelliteService satelliteService,
                               ConjunctionRepository conjunctionRepository,
                               PairReductionService pairReductionService,
@@ -77,6 +66,18 @@ public class ConjunctionService {
         this.propagationService = propagationService;
         this.scanService = scanService;
         this.collisionProbabilityService = collisionProbabilityService;
+    }
+
+    @PostConstruct
+    void validateProperties() {
+        if (toleranceKm <= 0) throw new IllegalStateException("conjunction.tolerance-km must be positive");
+        if (prepassToleranceKm <= 0)
+            throw new IllegalStateException("conjunction.prepass-tolerance-km must be positive");
+        if (thresholdKm <= 0) throw new IllegalStateException("conjunction.collision-threshold-km must be positive");
+        if (lookaheadHours <= 0) throw new IllegalStateException("conjunction.lookahead-hours must be positive");
+        if (stepSeconds <= 0) throw new IllegalStateException("conjunction.step-seconds must be positive");
+        if (interpolationStride <= 0)
+            throw new IllegalStateException("conjunction.interpolation-stride must be positive");
     }
 
     @Transactional(readOnly = true)

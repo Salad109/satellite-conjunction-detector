@@ -39,6 +39,7 @@ public class PropagationService {
 
     /**
      * Calculates SGP4 PV coordinates at stride points only. Returns SGP4 knot arrays sized [numSats][numKnots].
+     * Position in km, velocity in km/s.
      */
     public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime, int stepSeconds,
                                   int lookaheadHours, int interpolationStride) {
@@ -64,8 +65,10 @@ public class PropagationService {
         float[][] kx = new float[numSats][numKnots];
         float[][] ky = new float[numSats][numKnots];
         float[][] kz = new float[numSats][numKnots];
+        float[][] kvx = new float[numSats][numKnots];
+        float[][] kvy = new float[numSats][numKnots];
+        float[][] kvz = new float[numSats][numKnots];
 
-        // NaN - invalid until proven otherwise
         for (int s = 0; s < numSats; s++) {
             Arrays.fill(kx[s], Float.NaN);
         }
@@ -81,22 +84,35 @@ public class PropagationService {
                     kx[s][k] = (float) (pv.getPosition().getX() / 1000.0);
                     ky[s][k] = (float) (pv.getPosition().getY() / 1000.0);
                     kz[s][k] = (float) (pv.getPosition().getZ() / 1000.0);
+                    kvx[s][k] = (float) (pv.getVelocity().getX() / 1000.0);
+                    kvy[s][k] = (float) (pv.getVelocity().getY() / 1000.0);
+                    kvz[s][k] = (float) (pv.getVelocity().getZ() / 1000.0);
                 } catch (Exception e) {
                     break; // bad TLE
                 }
             }
         });
 
-        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stride, kx, ky, kz);
+        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stepSeconds, stride,
+                kx, ky, kz, kvx, kvy, kvz);
     }
 
     /**
-     * Linear interpolation from knot points to full position arrays.
+     * Hermite interpolation from knot points to full position arrays.
+     * H(t) = (2t^3 - 3t^2 + 1)*p0 + (t^3 - 2t^2 + t)*v0*dt + (-2t^3 + 3t^2)*p1 + (t^3 - t^2)*v1*dt
      */
     public PositionCache interpolate(KnotCache knots) {
         int numSats = knots.x.length;
         int totalSteps = knots.times.length;
         int stride = knots.stride;
+
+        if (stride == 1) {
+            // No interpolation
+            return new PositionCache(knots.noradIdToArrayId, knots.arrayIdToNoradId, knots.times,
+                    knots.x, knots.y, knots.z);
+        }
+
+        float dt = (float) knots.stepSeconds * stride; // seconds between knots
 
         float[][] x = new float[numSats][totalSteps];
         float[][] y = new float[numSats][totalSteps];
@@ -123,13 +139,19 @@ public class PropagationService {
                 y[s][stepEnd] = knots.y[s][k + 1];
                 z[s][stepEnd] = knots.z[s][k + 1];
 
-                // Linear interpolation for steps between knots
-                // todo replace with Hermite
                 for (int step = stepStart + 1; step < stepEnd; step++) {
                     float t = (float) (step - stepStart) / (stepEnd - stepStart);
-                    x[s][step] = knots.x[s][k] + t * (knots.x[s][k + 1] - knots.x[s][k]);
-                    y[s][step] = knots.y[s][k] + t * (knots.y[s][k + 1] - knots.y[s][k]);
-                    z[s][step] = knots.z[s][k] + t * (knots.z[s][k + 1] - knots.z[s][k]);
+                    float t2 = t * t;
+                    float t3 = t2 * t;
+
+                    float h00 = 2 * t3 - 3 * t2 + 1;  // p0
+                    float h10 = t3 - 2 * t2 + t;       // v0
+                    float h01 = -2 * t3 + 3 * t2;      // p1
+                    float h11 = t3 - t2;                // v1
+
+                    x[s][step] = h00 * knots.x[s][k] + h10 * knots.vx[s][k] * dt + h01 * knots.x[s][k + 1] + h11 * knots.vx[s][k + 1] * dt;
+                    y[s][step] = h00 * knots.y[s][k] + h10 * knots.vy[s][k] * dt + h01 * knots.y[s][k + 1] + h11 * knots.vy[s][k + 1] * dt;
+                    z[s][step] = h00 * knots.z[s][k] + h10 * knots.vz[s][k] * dt + h01 * knots.z[s][k + 1] + h11 * knots.vz[s][k + 1] * dt;
                 }
             }
         });
@@ -202,7 +224,9 @@ public class PropagationService {
     }
 
     public record KnotCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,
-                            int stride, float[][] x, float[][] y, float[][] z) {
+                            int stepSeconds, int stride,
+                            float[][] x, float[][] y, float[][] z,
+                            float[][] vx, float[][] vy, float[][] vz) {
     }
 
     public record PositionCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,

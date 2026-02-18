@@ -135,6 +135,7 @@ int filter_satellite_pairs(
         int tid = omp_get_thread_num();
         SatellitePair* local_buf = thread_buffers[tid];
         int local_count = 0;
+        int local_cap = per_thread_cap;
 
         #pragma omp for schedule(dynamic, 64) nowait
         for (int i = 0; i < n; i++) {
@@ -153,6 +154,12 @@ int filter_satellite_pairs(
                             eccentricities[j], semi_major_axes[j],
                             tolerance_km)) {
                     continue;
+                }
+
+                if (local_count >= local_cap) {
+                    local_cap *= 2;
+                    local_buf = (SatellitePair*) realloc(local_buf, local_cap * sizeof(SatellitePair));
+                    thread_buffers[tid] = local_buf;
                 }
 
                 local_buf[local_count].satellite_a_idx = i;

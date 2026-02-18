@@ -34,7 +34,7 @@ See [docs/1-pair-reduction.md](docs/1-pair-reduction.md) for details.
 
 The detection algorithm uses a two-step approach:
 
-1. **Coarse sweep**: Pre-computes satellite positions using SGP4 with linear interpolation, then uses spatial grid
+1. **Coarse sweep**: Pre-computes satellite positions using SGP4 with Hermite interpolation, then uses spatial grid
    indexing to efficiently find nearby satellites within tolerance
 2. **Refinement**: Solves quadratic equation to find precise TCA and miss distance, filtering by 5 km collision
    threshold
@@ -68,15 +68,14 @@ This starts PostgreSQL and the application. The app will be available at `http:/
 ### 2B. Running Locally for Development
 
 ```bash
-docker-compose up postgres
+docker-compose up postgres -d
 ./mvnw spring-boot:run
 ```
 
 ### 3. Native Pair Reduction (Optional)
 
 The pair reduction filter has a native C implementation using Panama FFM API that runs faster. If the native library is
-not
-available, the application automatically falls back to the Java implementation.
+not available, the application automatically falls back to the Java implementation.
 
 **Local Linux Development:**
 

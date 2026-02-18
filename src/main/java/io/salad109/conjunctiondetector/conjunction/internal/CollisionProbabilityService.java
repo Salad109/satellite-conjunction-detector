@@ -40,7 +40,7 @@ public class CollisionProbabilityService {
     private static final double LEO_RADIAL_GROWTH_M_PER_DAY = 125.0;
     private static final double LEO_INTRACK_GROWTH_M_PER_DAY = 392.0;
 
-    // Higher orbits (>2000 km) -- extrapolated 2x base 0.5x growth
+    // Higher orbits (>2000 km) - extrapolated 2x base 0.5x growth
     private static final double HIGH_RADIAL_BASE_M = LEO_RADIAL_BASE_M * 2.0;
     private static final double HIGH_INTRACK_BASE_M = LEO_INTRACK_BASE_M * 2.0;
     private static final double HIGH_CROSSTRACK_BASE_M = LEO_CROSSTRACK_BASE_M * 2.0;

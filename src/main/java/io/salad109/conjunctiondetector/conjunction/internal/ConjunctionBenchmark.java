@@ -29,9 +29,9 @@ import java.util.Objects;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx12g -Xms12g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-conjunction -Dspring-boot.run.jvmArguments="-Xmx12g -Xms12g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC --enable-native-access=ALL-UNNAMED"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx12g -Xms12g -XX:+AlwaysPreTouch --enable-native-access=ALL-UNNAMED"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-conjunction" "-Dspring-boot.run.jvmArguments=-Xmx12g -Xms12g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC --enable-native-access=ALL-UNNAMED"
  */
 @Component
 @Profile("benchmark-conjunction")
@@ -71,15 +71,15 @@ public class ConjunctionBenchmark implements CommandLineRunner {
         // Benchmark parameters
         int lookaheadHours = 24;
         double thresholdKm = 5.0;
-        double prepassToleranceKm = 10.0;
-        int stepSecondRatio = 10;
-        int interpolationStride = 6;
+        double prepassToleranceKm = 25.0;
+        int stepSecondRatio = 8;
+        int interpolationStride = 24;
 
         List<BenchmarkResult> results = new ArrayList<>();
 
         //noinspection InfiniteLoopStatement
         while (true) {
-            for (double toleranceKm = 50; toleranceKm <= 1000; toleranceKm += 2 * stepSecondRatio) {
+            for (double toleranceKm = 40; toleranceKm <= 400; toleranceKm += stepSecondRatio) {
                 int stepSeconds = (int) (toleranceKm / stepSecondRatio);
 
                 System.gc();
@@ -91,7 +91,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
             }
 
             writeCsvResults(results);
-            results.clear();
+            //System.exit(0);
         }
     }
 
@@ -180,7 +180,7 @@ public class ConjunctionBenchmark implements CommandLineRunner {
     private void writeCsvResults(List<BenchmarkResult> results) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String filename = "conjunction_benchmark_" + timestamp + ".csv";
-        Path outputPath = Paths.get("docs", filename);
+        Path outputPath = Paths.get("docs", "6-conjunction-tolerance", filename);
 
         try {
             try (FileWriter writer = new FileWriter(outputPath.toFile())) {

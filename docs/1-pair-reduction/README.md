@@ -42,6 +42,6 @@ All orderings produce identical final pair counts (22.5M pairs, 5.1% of original
 # *you must have a running PostgreSQL instance with the satellite catalog loaded 
 ```
 
-![Total Time by Filter Order](1-pair-reduction/1_total_time.png)
+![Total Time by Filter Order](1_total_time.png)
 
-![Time Comparison](1-pair-reduction/2_time_comparison.png)
+![Time Comparison](2_time_comparison.png)

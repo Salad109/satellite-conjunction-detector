@@ -24,9 +24,9 @@ import java.util.stream.IntStream;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-Xmx4g -Xms4g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-filter -Dspring-boot.run.jvmArguments="-Xmx4g -Xms4g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-Xmx4g -Xms4g -XX:+AlwaysPreTouch"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-filter" "-Dspring-boot.run.jvmArguments=-Xmx4g -Xms4g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC"
  */
 @Component
 @Profile("benchmark-filter")
@@ -94,6 +94,7 @@ public class PairReductionBenchmark implements CommandLineRunner {
 
         writeCsv(results);
         log.info("Benchmark complete");
+        System.exit(0);
     }
 
     private OrderResult runOrdering(List<Satellite> satellites, long totalPairs, String orderName,

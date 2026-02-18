@@ -71,9 +71,9 @@ plt.close()
 
 # Plot 3 - Stacked area chart with all components
 fig, ax = plt.subplots(figsize=(12, 7))
-timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'propagate_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#17becf', '#9467bd', '#D62839', '#8c564b']
-labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'Propagate', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
+timing_columns = ['pair_reduction_s', 'filter_s', 'propagator_s', 'sgp4_s', 'interp_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#06A77D', '#e377c2', '#17becf', '#9467bd', '#D62839', '#8c564b']
+labels = ['Pair Reduction', 'Filter', 'Propagator Build', 'SGP4', 'Interpolation', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
 
 # Prepare data for stacked area
 y_stack = np.vstack([df[col].values for col in timing_columns])
