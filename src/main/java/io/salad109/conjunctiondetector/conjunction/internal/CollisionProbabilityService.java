@@ -58,7 +58,7 @@ public class CollisionProbabilityService {
     public Conjunction computeProbabilityAndBuild(RefinedEvent event) {
         double pc = 0.0;
 
-        if (event.pvA() != null && event.relativeVelocityKmS() > 0.01) {
+        if (event.pvA() != null && event.relativeVelocityMS() > 10.0) {
             try {
                 pc = computePc(event);
             } catch (Exception e) {
@@ -71,7 +71,7 @@ public class CollisionProbabilityService {
         int object2 = Math.max(event.pair().a().getNoradCatId(), event.pair().b().getNoradCatId());
 
         return new Conjunction(null, object1, object2, event.distanceKm(),
-                event.tca(), event.relativeVelocityKmS(), pc);
+                event.tca(), event.relativeVelocityMS(), pc);
     }
 
     private double computePc(RefinedEvent event) {

@@ -156,7 +156,7 @@ public class ScanService {
 
         PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
 
-        return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityKmS(),
+        return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityMS(),
                 measurement.pvA(), measurement.pvB(), measurement.frame(), measurement.absoluteDate());
     }
 
@@ -185,7 +185,7 @@ public class ScanService {
     public record CoarseDetection(SatellitePair pair, double distanceSq, int stepIndex) {
     }
 
-    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityKmS,
+    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityMS,
                                PVCoordinates pvA, PVCoordinates pvB, Frame frame, AbsoluteDate absoluteDate) {
     }
 }

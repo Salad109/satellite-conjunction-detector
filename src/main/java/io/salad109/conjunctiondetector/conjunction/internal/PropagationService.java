@@ -202,7 +202,7 @@ public class PropagationService {
     }
 
     /**
-     * Calculate relative velocity in kilometers per second between two PVCoordinates.
+     * Calculate relative velocity in meters per second between two PVCoordinates.
      */
     private double calculateRelativeVelocity(PVCoordinates pvA, PVCoordinates pvB) {
         double dvx = pvA.getVelocity().getX() - pvB.getVelocity().getX();
@@ -243,7 +243,7 @@ public class PropagationService {
         }
     }
 
-    record MeasurementResult(double distanceKm, double velocityKmS, PVCoordinates pvA, PVCoordinates pvB, Frame frame,
+    record MeasurementResult(double distanceKm, double velocityMS, PVCoordinates pvA, PVCoordinates pvB, Frame frame,
                              AbsoluteDate absoluteDate) {
     }
 }
