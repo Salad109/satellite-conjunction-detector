@@ -1,7 +1,7 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
+import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -22,19 +22,11 @@ public class ScanService {
     }
 
     /**
-     * Check for close approaches using spatial indexing.
+     * Check for close approaches using spatial indexing only -- no pair pre-filter.
      */
-    public List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
-                                            double toleranceKm) {
-        // Build lookup for fast access in hot loop
-        LongObjectHashMap<SatellitePair> allowedPairs = new LongObjectHashMap<>(pairs.size());
-        for (SatellitePair pair : pairs) {
-            int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
-            int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
-            long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
-            allowedPairs.put(key, pair);
-        }
-
+    public List<CoarseDetection> checkPairs(Map<Integer, Satellite> satelliteById,
+                                            PropagationService.PositionCache precomputedPositions,
+                                            double toleranceKm, double cellSizeKm) {
         int totalSteps = precomputedPositions.times().length;
         double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
 
@@ -43,16 +35,18 @@ public class ScanService {
                 .parallel()
                 .boxed()
                 .<CoarseDetection>mapMulti((step, consumer) -> {
-                    SpatialGrid grid = new SpatialGrid(toleranceKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), step);
+                    SpatialGrid grid = new SpatialGrid(cellSizeKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), step);
 
                     grid.forEachCandidatePair((idxA, idxB) -> {
-                        // Filter by pair reduction
-                        long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
-                        SatellitePair pair = allowedPairs.get(key);
-                        if (pair == null) return;
-
                         double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);
                         if (distSq < tolSq) {
+                            int noradA = precomputedPositions.arrayIdToNoradId()[idxA];
+                            int noradB = precomputedPositions.arrayIdToNoradId()[idxB];
+                            Satellite satA = satelliteById.get(noradA);
+                            Satellite satB = satelliteById.get(noradB);
+                            SatellitePair pair = noradA < noradB
+                                    ? new SatellitePair(satA, satB)
+                                    : new SatellitePair(satB, satA);
                             consumer.accept(new CoarseDetection(pair, distSq, step));
                         }
                     });
