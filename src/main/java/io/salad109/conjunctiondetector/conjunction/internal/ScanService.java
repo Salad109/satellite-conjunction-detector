@@ -1,7 +1,7 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
+import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatellitePair;
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -22,19 +22,11 @@ public class ScanService {
     }
 
     /**
-     * Check for close approaches using spatial indexing.
+     * Check for close approaches using spatial indexing only -- no pair pre-filter.
      */
-    public List<CoarseDetection> checkPairs(List<SatellitePair> pairs, PropagationService.PositionCache precomputedPositions,
-                                            double toleranceKm) {
-        // Build lookup for fast access in hot loop
-        LongObjectHashMap<SatellitePair> allowedPairs = new LongObjectHashMap<>(pairs.size());
-        for (SatellitePair pair : pairs) {
-            int idxA = precomputedPositions.noradIdToArrayId().get(pair.a().getNoradCatId());
-            int idxB = precomputedPositions.noradIdToArrayId().get(pair.b().getNoradCatId());
-            long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
-            allowedPairs.put(key, pair);
-        }
-
+    public List<CoarseDetection> checkPairs(Map<Integer, Satellite> satelliteById,
+                                            PropagationService.PositionCache precomputedPositions,
+                                            double toleranceKm, double cellSizeKm) {
         int totalSteps = precomputedPositions.times().length;
         double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
 
@@ -43,16 +35,18 @@ public class ScanService {
                 .parallel()
                 .boxed()
                 .<CoarseDetection>mapMulti((step, consumer) -> {
-                    SpatialGrid grid = new SpatialGrid(toleranceKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), step);
+                    SpatialGrid grid = new SpatialGrid(cellSizeKm, precomputedPositions.x(), precomputedPositions.y(), precomputedPositions.z(), step);
 
                     grid.forEachCandidatePair((idxA, idxB) -> {
-                        // Filter by pair reduction
-                        long key = idxA < idxB ? ((long) idxA << 32) | idxB : ((long) idxB << 32) | idxA;
-                        SatellitePair pair = allowedPairs.get(key);
-                        if (pair == null) return;
-
                         double distSq = precomputedPositions.distanceSquaredAt(idxA, idxB, step);
                         if (distSq < tolSq) {
+                            int noradA = precomputedPositions.arrayIdToNoradId()[idxA];
+                            int noradB = precomputedPositions.arrayIdToNoradId()[idxB];
+                            Satellite satA = satelliteById.get(noradA);
+                            Satellite satB = satelliteById.get(noradB);
+                            SatellitePair pair = noradA < noradB
+                                    ? new SatellitePair(satA, satB)
+                                    : new SatellitePair(satB, satA);
                             consumer.accept(new CoarseDetection(pair, distSq, step));
                         }
                     });
@@ -107,7 +101,7 @@ public class ScanService {
      * Call SGP4 only for events that survive the threshold check.
      */
     public RefinedEvent refineEvent(List<CoarseDetection> event, PropagationService.PositionCache cache,
-                                    Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
+                                    Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
                 .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
@@ -151,12 +145,12 @@ public class ScanService {
         }
 
         // Convert fractional t to absolute timestamp
-        long intervalNanos = stepSeconds * 1_000_000_000L;
+        long intervalNanos = Math.round(stepSeconds * 1_000_000_000.0);
         OffsetDateTime tca = cache.times()[bestIntervalStart].plusNanos((long) (bestT * intervalNanos));
 
         PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
 
-        return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityKmS(),
+        return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityMS(),
                 measurement.pvA(), measurement.pvB(), measurement.frame(), measurement.absoluteDate());
     }
 
@@ -185,7 +179,7 @@ public class ScanService {
     public record CoarseDetection(SatellitePair pair, double distanceSq, int stepIndex) {
     }
 
-    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityKmS,
+    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityMS,
                                PVCoordinates pvA, PVCoordinates pvB, Frame frame, AbsoluteDate absoluteDate) {
     }
 }
