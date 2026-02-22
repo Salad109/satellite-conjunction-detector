@@ -38,7 +38,7 @@ public class ConjunctionService {
     @Value("${conjunction.tolerance-km:64.0}")
     private double toleranceKm;
 
-    @Value("${conjunction.cell-size-km:${conjunction.tolerance-km:64.0}}")
+    @Value("${conjunction.cell-size-km:40.0}")
     private double cellSizeKm;
 
     @Value("${conjunction.collision-threshold-km:5.0}")
