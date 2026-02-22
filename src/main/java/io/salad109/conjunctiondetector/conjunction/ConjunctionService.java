@@ -48,7 +48,7 @@ public class ConjunctionService {
     private int lookaheadHours;
 
     @Value("${conjunction.step-seconds:8}")
-    private int stepSeconds;
+    private double stepSeconds;
 
     @Value("${conjunction.interpolation-stride:24}")
     private int interpolationStride;

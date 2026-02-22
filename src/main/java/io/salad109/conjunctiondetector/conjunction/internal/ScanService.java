@@ -101,7 +101,7 @@ public class ScanService {
      * Call SGP4 only for events that survive the threshold check.
      */
     public RefinedEvent refineEvent(List<CoarseDetection> event, PropagationService.PositionCache cache,
-                                    Map<Integer, TLEPropagator> propagators, int stepSeconds, double thresholdKm) {
+                                    Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
         CoarseDetection best = event.stream()
                 .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
@@ -145,7 +145,7 @@ public class ScanService {
         }
 
         // Convert fractional t to absolute timestamp
-        long intervalNanos = stepSeconds * 1_000_000_000L;
+        long intervalNanos = Math.round(stepSeconds * 1_000_000_000.0);
         OffsetDateTime tca = cache.times()[bestIntervalStart].plusNanos((long) (bestT * intervalNanos));
 
         PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);

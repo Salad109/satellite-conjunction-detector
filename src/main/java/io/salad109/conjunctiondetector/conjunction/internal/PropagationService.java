@@ -41,14 +41,15 @@ public class PropagationService {
      * Calculates SGP4 PV coordinates at stride points only. Returns SGP4 knot arrays sized [numSats][numKnots].
      * Position in km, velocity in km/s.
      */
-    public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime, int stepSeconds,
+    public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime, double stepSeconds,
                                   int lookaheadHours, int interpolationStride) {
-        int totalSteps = (lookaheadHours * 3600) / stepSeconds + 1;
+        int totalSteps = (int) Math.round((lookaheadHours * 3600.0) / stepSeconds) + 1;
         int stride = Math.max(1, interpolationStride);
 
+        long stepNanos = Math.round(stepSeconds * 1_000_000_000L);
         OffsetDateTime[] times = new OffsetDateTime[totalSteps];
         for (int i = 0; i < totalSteps; i++) {
-            times[i] = startTime.plusSeconds((long) i * stepSeconds);
+            times[i] = startTime.plusNanos(i * stepNanos);
         }
 
         Integer[] satIds = propagators.keySet().toArray(Integer[]::new);
@@ -93,7 +94,7 @@ public class PropagationService {
             }
         });
 
-        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stepSeconds, stride,
+        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stepNanos, stride,
                 kx, ky, kz, kvx, kvy, kvz);
     }
 
@@ -112,7 +113,7 @@ public class PropagationService {
                     knots.x, knots.y, knots.z);
         }
 
-        float dt = (float) knots.stepSeconds * stride; // seconds between knots
+        float dt = (float) (knots.stepNanos * stride / 1e9); // seconds between knots
 
         float[][] x = new float[numSats][totalSteps];
         float[][] y = new float[numSats][totalSteps];
@@ -224,7 +225,7 @@ public class PropagationService {
     }
 
     public record KnotCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,
-                            int stepSeconds, int stride,
+                            long stepNanos, int stride,
                             float[][] x, float[][] y, float[][] z,
                             float[][] vx, float[][] vy, float[][] vz) {
     }
