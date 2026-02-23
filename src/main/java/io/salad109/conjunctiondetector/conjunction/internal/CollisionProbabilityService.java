@@ -1,7 +1,7 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
 import io.salad109.conjunctiondetector.conjunction.internal.ScanService.RefinedEvent;
-import io.salad109.conjunctiondetector.satellite.Satellite;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
 import org.hipparchus.linear.Array2DRowRealMatrix;
 import org.hipparchus.linear.RealMatrix;
 import org.orekit.frames.LOFType;
@@ -63,26 +63,26 @@ public class CollisionProbabilityService {
                 pc = computePc(event);
             } catch (Exception e) {
                 log.debug("Pc computation failed for pair ({}, {}): {}",
-                        event.pair().a().getNoradCatId(), event.pair().b().getNoradCatId(), e.getMessage());
+                        event.pair().a().noradCatId(), event.pair().b().noradCatId(), e.getMessage());
             }
         }
 
-        int object1 = Math.min(event.pair().a().getNoradCatId(), event.pair().b().getNoradCatId());
-        int object2 = Math.max(event.pair().a().getNoradCatId(), event.pair().b().getNoradCatId());
+        int object1 = Math.min(event.pair().a().noradCatId(), event.pair().b().noradCatId());
+        int object2 = Math.max(event.pair().a().noradCatId(), event.pair().b().noradCatId());
 
         return new Conjunction(null, object1, object2, event.distanceKm(),
                 event.tca(), event.relativeVelocityMS(), pc);
     }
 
     private double computePc(RefinedEvent event) {
-        Satellite satA = event.pair().a();
-        Satellite satB = event.pair().b();
+        SatelliteScanInfo satA = event.pair().a();
+        SatelliteScanInfo satB = event.pair().b();
 
         Orbit orbitA = new CartesianOrbit(event.pvA(), event.frame(), event.absoluteDate(), MU);
         Orbit orbitB = new CartesianOrbit(event.pvB(), event.frame(), event.absoluteDate(), MU);
 
-        StateCovariance covA = buildCovariance(satA, tleAgeDays(satA.getEpoch(), event.tca()), event);
-        StateCovariance covB = buildCovariance(satB, tleAgeDays(satB.getEpoch(), event.tca()), event);
+        StateCovariance covA = buildCovariance(satA, tleAgeDays(satA.epoch(), event.tca()), event);
+        StateCovariance covB = buildCovariance(satB, tleAgeDays(satB.epoch(), event.tca()), event);
 
         double combinedRadius = estimateRadius(satA) + estimateRadius(satB);
 
@@ -91,9 +91,8 @@ public class CollisionProbabilityService {
         return Math.clamp(result.getValue(), 0.0, 1.0);
     }
 
-    private StateCovariance buildCovariance(Satellite sat, double tleAgeDays, RefinedEvent event) {
-        double altitudeKm = sat.getPerigeeKm() != null ? sat.getPerigeeKm() : 500.0;
-        boolean isLeo = altitudeKm < LEO_ALTITUDE_THRESHOLD_KM;
+    private StateCovariance buildCovariance(SatelliteScanInfo sat, double tleAgeDays, RefinedEvent event) {
+        boolean isLeo = sat.perigeeKm() < LEO_ALTITUDE_THRESHOLD_KM;
 
         double radialBase = isLeo ? LEO_RADIAL_BASE_M : HIGH_RADIAL_BASE_M;
         double intrackBase = isLeo ? LEO_INTRACK_BASE_M : HIGH_INTRACK_BASE_M;
@@ -116,8 +115,8 @@ public class CollisionProbabilityService {
         return new StateCovariance(cov, event.absoluteDate(), LOFType.QSW);
     }
 
-    private double estimateRadius(Satellite sat) {
-        String type = sat.getObjectType();
+    private double estimateRadius(SatelliteScanInfo sat) {
+        String type = sat.objectType();
         if (type == null) return RADIUS_UNKNOWN_M;
         return switch (type) {
             case "PAYLOAD" -> RADIUS_PAYLOAD_M;

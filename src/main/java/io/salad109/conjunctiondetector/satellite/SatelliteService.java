@@ -22,9 +22,10 @@ public class SatelliteService {
     }
 
     @Transactional(readOnly = true)
-    public List<Satellite> getAll() {
-        return satelliteRepository.findAll();
+    public List<SatelliteScanInfo> getAllScanInfo() {
+        return satelliteRepository.findAllSatelliteScanInfo();
     }
+
 
     @Transactional(readOnly = true)
     public Map<Integer, Satellite> getByCatalogIds(Iterable<Integer> catalogIds) {

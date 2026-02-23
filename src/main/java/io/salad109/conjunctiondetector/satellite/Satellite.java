@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.Persistable;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -14,10 +17,6 @@ import java.util.Objects;
 @Table(name = "satellite")
 public class Satellite implements Persistable<Integer> {
 
-    // Earth radius for TLE calculations (WGS72)
-    private static final double EARTH_RADIUS_KM = 6378.135;
-    private static final double MU = 398600.4418; // Earth gravitational parameter km^3/s^2
-
     @Id
     @Column(name = "norad_cat_id")
     private Integer noradCatId;
@@ -25,12 +24,35 @@ public class Satellite implements Persistable<Integer> {
     @Column(name = "object_name")
     private String objectName;
 
+    @Column(name = "object_id")
+    private String objectId;
+
     @Column(name = "object_type")
     private String objectType;
 
-    // TLE data
+    @Column(name = "classification_type")
+    private String classificationType;
+
+    @Column(name = "country_code")
+    private String countryCode;
+
+    @Column(name = "launch_date")
+    private LocalDate launchDate;
+
+    @Column(name = "site")
+    private String site;
+
+    @Column(name = "decay_date")
+    private LocalDate decayDate;
+
     @Column(name = "epoch")
     private OffsetDateTime epoch;
+
+    @Column(name = "creation_date")
+    private LocalDateTime creationDate;
+
+    @Column(name = "tle_line0")
+    private String tleLine0;
 
     @Column(name = "tle_line1")
     private String tleLine1;
@@ -40,29 +62,61 @@ public class Satellite implements Persistable<Integer> {
 
     // Orbital elements
     @Column(name = "mean_motion")
-    private Double meanMotion;
+    private BigDecimal meanMotion;
+
+    @Column(name = "mean_motion_dot")
+    private BigDecimal meanMotionDot;
+
+    @Column(name = "mean_motion_ddot")
+    private BigDecimal meanMotionDdot;
 
     @Column(name = "eccentricity")
-    private Double eccentricity;
+    private BigDecimal eccentricity;
 
     @Column(name = "inclination")
-    private Double inclination;
+    private BigDecimal inclination;
 
     @Column(name = "raan")
-    private Double raan;
+    private BigDecimal raan;
 
     @Column(name = "arg_perigee")
-    private Double argPerigee;
+    private BigDecimal argPerigee;
 
-    // Derived values for filtering
+    @Column(name = "mean_anomaly")
+    private BigDecimal meanAnomaly;
+
+    @Column(name = "ephemeris_type")
+    private Integer ephemerisType;
+
+    @Column(name = "bstar")
+    private BigDecimal bstar;
+
+    @Column(name = "rcs_size")
+    private String rcsSize;
+
+    @Column(name = "element_set_no")
+    private Integer elementSetNo;
+
+    @Column(name = "rev_at_epoch")
+    private Integer revAtEpoch;
+
     @Column(name = "semi_major_axis_km")
     private Double semiMajorAxisKm;
+
+    @Column(name = "period")
+    private Double period;
 
     @Column(name = "perigee_km")
     private Double perigeeKm;
 
     @Column(name = "apogee_km")
     private Double apogeeKm;
+
+    @Column(name = "file_number")
+    private Long fileNumber;
+
+    @Column(name = "gp_id")
+    private Integer gpId;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -73,24 +127,6 @@ public class Satellite implements Persistable<Integer> {
 
     public Satellite(Integer noradCatId) {
         this.noradCatId = noradCatId;
-    }
-
-
-    /**
-     * Compute derived orbital parameters from mean motion and eccentricity.
-     */
-    @PrePersist
-    @PreUpdate
-    public void computeDerivedParameters() {
-        // Convert mean motion from rev/day to rad/s
-        double n = meanMotion * 2 * Math.PI / 86400.0;
-
-        // Semi-major axis from Kepler's third law: a = (mu/n^2)^(1/3)
-        this.semiMajorAxisKm = Math.pow(MU / (n * n), 1.0 / 3.0);
-
-        // Perigee and apogee altitudes
-        this.perigeeKm = semiMajorAxisKm * (1 - eccentricity) - EARTH_RADIUS_KM;
-        this.apogeeKm = semiMajorAxisKm * (1 + eccentricity) - EARTH_RADIUS_KM;
     }
 
     @Override

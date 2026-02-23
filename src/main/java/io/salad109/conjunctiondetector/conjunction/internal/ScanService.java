@@ -1,7 +1,8 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
-import io.salad109.conjunctiondetector.satellite.Satellite;
-import io.salad109.conjunctiondetector.satellite.SatellitePair;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -22,11 +23,13 @@ public class ScanService {
     }
 
     /**
-     * Check for close approaches using spatial indexing only -- no pair pre-filter.
+     * Check for close approaches using spatial indexing
      */
-    public List<CoarseDetection> checkPairs(Map<Integer, Satellite> satelliteById,
+    public List<CoarseDetection> checkPairs(List<SatelliteScanInfo> satellites,
                                             PropagationService.PositionCache precomputedPositions,
                                             double toleranceKm, double cellSizeKm) {
+        IntObjectHashMap<SatelliteScanInfo> satelliteById = new IntObjectHashMap<>(satellites.size());
+        for (SatelliteScanInfo s : satellites) satelliteById.put(s.noradCatId(), s);
         int totalSteps = precomputedPositions.times().length;
         double tolSq = toleranceKm * toleranceKm; // skip sqrt by comparing squared distances
 
@@ -42,11 +45,11 @@ public class ScanService {
                         if (distSq < tolSq) {
                             int noradA = precomputedPositions.arrayIdToNoradId()[idxA];
                             int noradB = precomputedPositions.arrayIdToNoradId()[idxB];
-                            Satellite satA = satelliteById.get(noradA);
-                            Satellite satB = satelliteById.get(noradB);
-                            SatellitePair pair = noradA < noradB
-                                    ? new SatellitePair(satA, satB)
-                                    : new SatellitePair(satB, satA);
+                            SatelliteScanInfo satA = satelliteById.get(noradA);
+                            SatelliteScanInfo satB = satelliteById.get(noradB);
+                            SatelliteScanInfoPair pair = noradA < noradB
+                                    ? new SatelliteScanInfoPair(satA, satB)
+                                    : new SatelliteScanInfoPair(satB, satA);
                             consumer.accept(new CoarseDetection(pair, distSq, step));
                         }
                     });
@@ -58,18 +61,18 @@ public class ScanService {
      * Group detections by pair, then cluster consecutive detections into events (orbital passes).
      * Two detections belong to the same event if they're within 3 steps of each other.
      */
-    public Map<SatellitePair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections) {
+    public Map<SatelliteScanInfoPair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections) {
         List<CoarseDetection> sorted = detections.parallelStream()
                 .sorted(Comparator
-                        .comparingInt((CoarseDetection d) -> d.pair().a().getNoradCatId())
-                        .thenComparingInt(d -> d.pair().b().getNoradCatId())
+                        .comparingInt((CoarseDetection d) -> d.pair().a().noradCatId())
+                        .thenComparingInt(d -> d.pair().b().noradCatId())
                         .thenComparingInt(CoarseDetection::stepIndex))
                 .toList();
 
-        Map<SatellitePair, List<List<CoarseDetection>>> result = new HashMap<>();
+        Map<SatelliteScanInfoPair, List<List<CoarseDetection>>> result = new HashMap<>();
         if (sorted.isEmpty()) return result;
 
-        SatellitePair currentPair = sorted.getFirst().pair();
+        SatelliteScanInfoPair currentPair = sorted.getFirst().pair();
         List<CoarseDetection> currentCluster = new ArrayList<>();
         List<List<CoarseDetection>> currentEvents = new ArrayList<>();
         currentCluster.add(sorted.getFirst());
@@ -105,12 +108,12 @@ public class ScanService {
         CoarseDetection best = event.stream()
                 .min(Comparator.comparing(CoarseDetection::distanceSq))
                 .orElseThrow();
-        SatellitePair pair = best.pair();
+        SatelliteScanInfoPair pair = best.pair();
         int step = best.stepIndex();
         int totalSteps = cache.times().length;
 
-        int idxA = cache.noradIdToArrayId().get(pair.a().getNoradCatId());
-        int idxB = cache.noradIdToArrayId().get(pair.b().getNoradCatId());
+        int idxA = cache.noradIdToArrayId().get(pair.a().noradCatId());
+        int idxB = cache.noradIdToArrayId().get(pair.b().noradCatId());
 
         double thresholdSq = thresholdKm * thresholdKm;
         double bestDistSq = Double.MAX_VALUE;
@@ -176,10 +179,11 @@ public class ScanService {
     }
 
 
-    public record CoarseDetection(SatellitePair pair, double distanceSq, int stepIndex) {
+    public record CoarseDetection(SatelliteScanInfoPair pair, double distanceSq, int stepIndex) {
     }
 
-    public record RefinedEvent(SatellitePair pair, double distanceKm, OffsetDateTime tca, double relativeVelocityMS,
+    public record RefinedEvent(SatelliteScanInfoPair pair, double distanceKm, OffsetDateTime tca,
+                               double relativeVelocityMS,
                                PVCoordinates pvA, PVCoordinates pvB, Frame frame, AbsoluteDate absoluteDate) {
     }
 }

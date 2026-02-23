@@ -3,7 +3,7 @@ package io.salad109.conjunctiondetector.conjunction.internal.benchmark;
 import io.salad109.conjunctiondetector.conjunction.internal.CollisionProbabilityService;
 import io.salad109.conjunctiondetector.conjunction.internal.PropagationService;
 import io.salad109.conjunctiondetector.conjunction.internal.ScanService;
-import io.salad109.conjunctiondetector.satellite.Satellite;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class ConjunctionBenchmark extends BenchmarkRunner implements CommandLine
         log.info("Starting conjunction benchmark");
         log.info("");
 
-        List<Satellite> satellites = satelliteService.getAll();
+        List<SatelliteScanInfo> satellites = satelliteService.getAllScanInfo();
         log.info("Loaded {} satellites", satellites.size());
 
         log.info("Using fixed start time: {}", FIXED_START_TIME);

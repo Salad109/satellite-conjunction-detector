@@ -1,8 +1,8 @@
 package io.salad109.conjunctiondetector.conjunction;
 
 import io.salad109.conjunctiondetector.conjunction.internal.*;
-import io.salad109.conjunctiondetector.satellite.Satellite;
-import io.salad109.conjunctiondetector.satellite.SatellitePair;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.time.StopWatch;
@@ -22,7 +22,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class ConjunctionService {
@@ -35,10 +34,10 @@ public class ConjunctionService {
     private final ScanService scanService;
     private final CollisionProbabilityService collisionProbabilityService;
 
-    @Value("${conjunction.tolerance-km:64.0}")
+    @Value("${conjunction.tolerance-km:72.0}")
     private double toleranceKm;
 
-    @Value("${conjunction.cell-size-km:40.0}")
+    @Value("${conjunction.cell-size-km:46.875}")
     private double cellSizeKm;
 
     @Value("${conjunction.collision-threshold-km:5.0}")
@@ -47,10 +46,10 @@ public class ConjunctionService {
     @Value("${conjunction.lookahead-hours:24}")
     private int lookaheadHours;
 
-    @Value("${conjunction.step-seconds:8}")
+    @Value("${conjunction.step-seconds:9.375}")
     private double stepSeconds;
 
-    @Value("${conjunction.interpolation-stride:24}")
+    @Value("${conjunction.interpolation-stride:130}")
     private int interpolationStride;
 
     public ConjunctionService(SatelliteService satelliteService,
@@ -104,11 +103,8 @@ public class ConjunctionService {
         OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Load satellites
-        List<Satellite> satellites = satelliteService.getAll();
+        List<SatelliteScanInfo> satellites = satelliteService.getAllScanInfo();
         log.debug("Loaded {} satellites", satellites.size());
-
-        Map<Integer, Satellite> satelliteById = satellites.stream()
-                .collect(Collectors.toMap(Satellite::getNoradCatId, s -> s));
 
         // Build propagators
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
@@ -121,11 +117,11 @@ public class ConjunctionService {
         PropagationService.PositionCache positionCache = propagationService.interpolate(knots);
 
         // Coarse sweep
-        List<ScanService.CoarseDetection> detections = scanService.checkPairs(satelliteById, positionCache, toleranceKm, cellSizeKm);
+        List<ScanService.CoarseDetection> detections = scanService.checkPairs(satellites, positionCache, toleranceKm, cellSizeKm);
         log.debug("Coarse sweep found {} detections", detections.size());
 
         // Group into events
-        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
+        Map<SatelliteScanInfoPair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
                 .toList();

@@ -4,8 +4,8 @@ import io.salad109.conjunctiondetector.conjunction.internal.CollisionProbability
 import io.salad109.conjunctiondetector.conjunction.internal.Conjunction;
 import io.salad109.conjunctiondetector.conjunction.internal.PropagationService;
 import io.salad109.conjunctiondetector.conjunction.internal.ScanService;
-import io.salad109.conjunctiondetector.satellite.Satellite;
-import io.salad109.conjunctiondetector.satellite.SatellitePair;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
@@ -21,14 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public abstract class BenchmarkRunner {
 
     protected static final int LOOKAHEAD_HOURS = 24;
     protected static final double THRESHOLD_KM = 5.0;
     protected static final OffsetDateTime FIXED_START_TIME = OffsetDateTime
-            .of(2026, 2, 15, 19, 35, 0, 0, ZoneOffset.UTC);
+            .of(2026, 2, 22, 23, 13, 0, 0, ZoneOffset.UTC);
     private static final Logger log = LoggerFactory.getLogger(BenchmarkRunner.class);
     protected final SatelliteService satelliteService;
     protected final PropagationService propagationService;
@@ -43,14 +42,11 @@ public abstract class BenchmarkRunner {
         this.collisionProbabilityService = collisionProbabilityService;
     }
 
-    protected BenchmarkResult runBenchmark(List<Satellite> satellites,
+    protected BenchmarkResult runBenchmark(List<SatelliteScanInfo> satellites,
                                            double toleranceKm, int stepRatio, double stepSeconds,
                                            int stride, double cellRatio) {
         double cellSizeKm = toleranceKm / cellRatio;
         StopWatch total = StopWatch.createStarted();
-
-        Map<Integer, Satellite> satelliteById = satellites.stream()
-                .collect(Collectors.toMap(Satellite::getNoradCatId, s -> s));
 
         StopWatch propagator = StopWatch.createStarted();
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
@@ -66,11 +62,11 @@ public abstract class BenchmarkRunner {
         interpolation.stop();
 
         StopWatch checkPairs = StopWatch.createStarted();
-        List<ScanService.CoarseDetection> detections = scanService.checkPairs(satelliteById, positionCache, toleranceKm, cellSizeKm);
+        List<ScanService.CoarseDetection> detections = scanService.checkPairs(satellites, positionCache, toleranceKm, cellSizeKm);
         checkPairs.stop();
 
         StopWatch grouping = StopWatch.createStarted();
-        Map<SatellitePair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
+        Map<SatelliteScanInfoPair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
         int totalEvents = eventsByPair.values().stream().mapToInt(List::size).sum();
         List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
                 .flatMap(List::stream)
@@ -105,9 +101,9 @@ public abstract class BenchmarkRunner {
                 probability.getTime(), total.getTime());
     }
 
-    protected List<BenchmarkResult> runIterations(List<Satellite> satellites,
+    protected List<BenchmarkResult> runIterations(List<SatelliteScanInfo> satellites,
                                                   double toleranceKm, int stepRatio, double stepSeconds,
-                                                   int stride, double cellRatio, int iterations) throws InterruptedException {
+                                                  int stride, double cellRatio, int iterations) throws InterruptedException {
         List<BenchmarkResult> results = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
             System.gc();

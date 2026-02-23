@@ -1,7 +1,7 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
-import io.salad109.conjunctiondetector.satellite.Satellite;
-import io.salad109.conjunctiondetector.satellite.SatellitePair;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
+import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
 import org.eclipse.collections.api.map.primitive.MutableIntIntMap;
 import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
 import org.orekit.frames.Frame;
@@ -26,12 +26,12 @@ public class PropagationService {
 
     private static final Logger log = LoggerFactory.getLogger(PropagationService.class);
 
-    public Map<Integer, TLEPropagator> buildPropagators(List<Satellite> satellites) {
+    public Map<Integer, TLEPropagator> buildPropagators(List<SatelliteScanInfo> satellites) {
         Map<Integer, TLEPropagator> propagators = new HashMap<>();
 
-        for (Satellite sat : satellites) {
-            TLE tle = new TLE(sat.getTleLine1(), sat.getTleLine2());
-            propagators.put(sat.getNoradCatId(), TLEPropagator.selectExtrapolator(tle));
+        for (SatelliteScanInfo sat : satellites) {
+            TLE tle = new TLE(sat.tleLine1(), sat.tleLine2());
+            propagators.put(sat.noradCatId(), TLEPropagator.selectExtrapolator(tle));
         }
 
         return propagators;
@@ -163,13 +163,13 @@ public class PropagationService {
     /**
      * Propagate both satellites to a given time and return distance, relative velocity, and PV coordinates.
      */
-    MeasurementResult propagateAndMeasure(SatellitePair pair, Map<Integer, TLEPropagator> propagators,
+    MeasurementResult propagateAndMeasure(SatelliteScanInfoPair pair, Map<Integer, TLEPropagator> propagators,
                                           OffsetDateTime time, double thresholdKm) {
         AbsoluteDate date = toAbsoluteDate(time);
 
         try {
-            TLEPropagator propA = propagators.get(pair.a().getNoradCatId());
-            TLEPropagator propB = propagators.get(pair.b().getNoradCatId());
+            TLEPropagator propA = propagators.get(pair.a().noradCatId());
+            TLEPropagator propB = propagators.get(pair.b().noradCatId());
 
             PVCoordinates pvA, pvB;
             Frame frame;

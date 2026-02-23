@@ -131,25 +131,39 @@ public class IngestionService {
         return new ProcessingResult(created, updated, unchanged, skipped, deleted);
     }
 
-    private void updateSatellite(Satellite sat, OmmRecord ommRecord) {
-        // Metadata
-        sat.setObjectName(ommRecord.objectName());
-        sat.setObjectType(ommRecord.objectType());
-
-        // TLE data
-        sat.setEpoch(ommRecord.getEpochUtc());
-        sat.setTleLine1(ommRecord.tleLine1());
-        sat.setTleLine2(ommRecord.tleLine2());
-
-        // Orbital elements
-        sat.setMeanMotion(ommRecord.meanMotion());
-        sat.setEccentricity(ommRecord.eccentricity());
-        sat.setInclination(ommRecord.inclination());
-        sat.setRaan(ommRecord.raan());
-        sat.setArgPerigee(ommRecord.argPerigee());
-
-        // Compute derived parameters
-        sat.computeDerivedParameters();
+    private void updateSatellite(Satellite sat, OmmRecord omm) {
+        sat.setObjectName(omm.objectName());
+        sat.setObjectId(omm.objectId());
+        sat.setObjectType(omm.objectType());
+        sat.setClassificationType(omm.classificationType());
+        sat.setCountryCode(omm.countryCode());
+        sat.setLaunchDate(omm.launchDate());
+        sat.setSite(omm.site());
+        sat.setDecayDate(omm.decayDate());
+        sat.setEpoch(omm.getEpochUtc());
+        sat.setCreationDate(omm.creationDate());
+        sat.setTleLine0(omm.tleLine0());
+        sat.setTleLine1(omm.tleLine1());
+        sat.setTleLine2(omm.tleLine2());
+        sat.setMeanMotion(omm.meanMotion());
+        sat.setMeanMotionDot(omm.meanMotionDot());
+        sat.setMeanMotionDdot(omm.meanMotionDdot());
+        sat.setEccentricity(omm.eccentricity());
+        sat.setInclination(omm.inclination());
+        sat.setRaan(omm.raan());
+        sat.setArgPerigee(omm.argPerigee());
+        sat.setMeanAnomaly(omm.meanAnomaly());
+        sat.setEphemerisType(omm.ephemerisType());
+        sat.setBstar(omm.bstar());
+        sat.setRcsSize(omm.rcsSize());
+        sat.setElementSetNo(omm.elementSetNo());
+        sat.setRevAtEpoch(omm.revAtEpoch());
+        sat.setSemiMajorAxisKm(omm.semiMajorAxis());
+        sat.setPeriod(omm.period());
+        sat.setPerigeeKm(omm.periapsis());
+        sat.setApogeeKm(omm.apoapsis());
+        sat.setFileNumber(omm.file());
+        sat.setGpId(omm.gpId());
     }
 
     private Satellite createSatellite(OmmRecord ommRecord) {
