@@ -153,6 +153,10 @@ public class ScanService {
 
         PropagationService.MeasurementResult measurement = propagationService.propagateAndMeasure(pair, propagators, tca, thresholdKm);
 
+        if (measurement.distanceKm() > thresholdKm) {
+            return null;
+        }
+
         return new RefinedEvent(pair, measurement.distanceKm(), tca, measurement.velocityMS(),
                 measurement.pvA(), measurement.pvB(), measurement.frame(), measurement.absoluteDate());
     }

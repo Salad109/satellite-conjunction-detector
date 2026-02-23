@@ -7,6 +7,22 @@ param_label = 'Interpolation Stride'
 avg_all = df.groupby(param).mean(numeric_only=True).reset_index()
 avg = avg_all[avg_all[param] != 1]
 
+# Print table (all strides, stride=1 is baseline)
+step_seconds = avg_all['tolerance_km'].iloc[0] / avg_all['step_ratio'].iloc[0]
+baseline = avg_all[avg_all[param] == 1]['conj'].iloc[0]
+print(f"| Stride | SGP4 Interval | Conjunctions | Accuracy | Loss  | Mean Time |")
+print(f"|--------|---------------|--------------|----------|-------|-----------|")
+for _, row in avg_all.iterrows():
+    stride = int(row[param])
+    interval = step_seconds * stride
+    conj = int(round(row['conj']))
+    accuracy = row['conj'] / baseline * 100
+    loss = 100 - accuracy
+    time = row['total_s']
+    interval_str = f"{interval:.2f}s"
+    loss = max(0, loss)
+    print(f"| {stride:<6} | {interval_str:<13} | {conj:>12,} | {accuracy:>7.2f}% | {loss:>5.2f}% | {time:.1f}s{'':<4} |")
+
 timing_columns = ['propagator_s', 'sgp4_s', 'interp_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
 colors = ['#2ca02c', '#06A77D', '#e377c2', '#17becf', '#9467bd', '#D62839', '#8c564b']
 labels = ['Propagator Build', 'SGP4', 'Interpolation', 'Check Pairs', 'Grouping', 'Refine', 'Probability']

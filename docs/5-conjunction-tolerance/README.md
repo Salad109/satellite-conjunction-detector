@@ -7,32 +7,39 @@ detections. The optimum balances propagation cost against grouping cost.
 
 ## Parameters
 
-- **step-second-ratio**: Fixed at 10
+- **step-second-ratio**: Fixed at 8
 - **interpolation-stride**: Fixed at 50
-- **cell-ratio**: Fixed at 1.30
+- **cell-ratio**: Fixed at 1.65
 - **lookahead-hours**: Fixed at 24
 - **threshold-km**: Fixed at 5.0 km
-- **tolerance-km**: Swept 24-160 km in steps of 8
-- **iterations**: 5 per configuration
+- **tolerance-km**: Swept 24-160 km
+- **iterations**: 1 per configuration
 
 ## Results
 
 | Tolerance (km) | Conjunctions | Accuracy | Total Time |
 |----------------|--------------|----------|------------|
-| 24             | 35,805       | 99.99%   | 63.1s      |
-| 40             | 35,809       | 100.00%  | 41.7s      |
-| 64             | 35,810       | 100.00%  | 33.5s      |
-| 72             | 35,800       | 99.97%   | 32.4s      |
-| 80             | 35,780       | 99.92%   | 32.2s      |
-| 96             | 35,792       | 99.95%   | 35.5s      |
-| 128            | 35,731       | 99.78%   | 48.3s      |
-| 160            | 35,634       | 99.51%   | 70.5s      |
+| 24             | 36,608       | 99.97%   | 47.9s      |
+| 32             | 36,618       | 100.00%  | 35.4s      |
+| 40             | 36,563       | 99.85%   | 30.8s      |
+| 48             | 36,585       | 99.91%   | 27.2s      |
+| 56             | 36,448       | 99.54%   | 27.2s      |
+| 64             | 36,549       | 99.81%   | 25.2s      |
+| 72             | 36,511       | 99.71%   | 24.7s      |
+| 80             | 36,326       | 99.20%   | 25.1s      |
+| 88             | 36,398       | 99.40%   | 25.7s      |
+| 96             | 36,301       | 99.13%   | 27.2s      |
+| 104            | 35,874       | 97.97%   | 28.5s      |
+| 112            | 35,674       | 97.42%   | 30.3s      |
+| 120            | 35,352       | 96.54%   | 32.1s      |
+| 128            | 34,569       | 94.40%   | 34.1s      |
+| 136            | 32,982       | 90.07%   | 35.0s      |
+| 144            | 31,019       | 84.71%   | 40.3s      |
+| 152            | 27,378       | 74.77%   | 40.8s      |
+| 160            | 23,609       | 64.47%   | 44.1s      |
 
-Fit `a/x + bx + cx^2 + d` gives optimal at **73.6 km ~= 72 km** - the coarse and refine stages of the pipeline are
-balanced.
-
-Conjunction count is relatively stable across the sweep. Accuracy stays between 99.5% and 100% everywhere until
-tolerance is set way above the optimal value.
+Fit gives optimal at **69.6 km ~= 72 km** - the coarse and refine stages of the pipeline are balanced. Conjunction count
+is relatively stable, staying at >99% up to tolerance=100km.
 
 ![Total Processing Time](1_total_time.png)
 

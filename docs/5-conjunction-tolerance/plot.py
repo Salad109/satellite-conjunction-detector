@@ -7,6 +7,17 @@ import glob
 csv_files = sorted(glob.glob('conjunction_benchmark_*.csv'))
 df = pd.read_csv(csv_files[-1]).groupby('tolerance_km', as_index=False).mean(numeric_only=True)
 
+# Print table
+baseline = df['conj'].max()
+print(f"| Tolerance (km) | Conjunctions | Accuracy | Total Time |")
+print(f"|----------------|--------------|----------|------------|")
+for _, row in df.iterrows():
+    tol = int(row['tolerance_km'])
+    conj = int(round(row['conj']))
+    accuracy = row['conj'] / baseline * 100
+    time = row['total_s']
+    print(f"| {tol:<14} | {conj:>12,} | {accuracy:>7.2f}% | {time:.1f}s{'':<5} |")
+
 def model(x, a, b, c, d):
     return a / x + b * x + c * x**2 + d
 

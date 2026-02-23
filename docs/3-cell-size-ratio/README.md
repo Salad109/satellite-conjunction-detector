@@ -7,32 +7,45 @@ never get compared. The sweep finds where that tradeoff breaks.
 
 ## Parameters
 
-- **tolerance-km**: Fixed at 64 km
-- **step-second-ratio**: Fixed at 10 (step = 6.40s)
-- **interpolation-stride**: Fixed at 30
+- **tolerance-km**: Fixed at 72 km
+- **step-second-ratio**: Fixed at 10
+- **interpolation-stride**: Fixed at 5
 - **lookahead-hours**: Fixed at 24
 - **threshold-km**: Fixed at 5.0 km
-- **cell-ratio**: Swept 0.50-2.00 in steps of 0.10
-- **iterations**: 3 per configuration
+- **cell-ratio**: Swept 1.0-2.3
+- **iterations**: 5 per configuration
 
 ## Results
 
 | Cell Ratio | Cell Size (km) | Conjunctions | Accuracy | Loss  | Mean Time | Check Time |
 |------------|----------------|--------------|----------|-------|-----------|------------|
-| 0.50       | 128.0          | 33,476       | 100.00%  | 0.00% | 41.9s     | 25.1s      |
-| 0.70       | 91.4           | 33,476       | 100.00%  | 0.00% | 37.4s     | 20.7s      |
-| 1.00       | 64.0           | 33,476       | 100.00%  | 0.00% | 35.5s     | 19.0s      |
-| 1.20       | 53.3           | 33,476       | 100.00%  | 0.00% | 34.6s     | 18.5s      |
-| 1.30       | 49.2           | 33,476       | 100.00%  | 0.00% | 35.0s     | 18.4s      |
-| 1.40       | 45.7           | 33,475       | 100.00%  | 0.00% | 34.1s     | 18.0s      |
-| 1.50       | 42.7           | 33,465       | 99.97%   | 0.03% | 34.5s     | 17.8s      |
-| 1.60       | 40.0           | 33,451       | 99.93%   | 0.07% | 33.8s     | 17.8s      |
-| 1.70       | 37.6           | 33,420       | 99.83%   | 0.17% | 33.0s     | 17.1s      |
-| 1.80       | 35.6           | 33,371       | 99.69%   | 0.31% | 31.9s     | 16.6s      |
-| 1.90       | 33.7           | 33,291       | 99.45%   | 0.55% | 31.2s     | 16.1s      |
-| 2.00       | 32.0           | 33,168       | 99.08%   | 0.92% | 30.9s     | 16.0s      |
+| 1.00       | 72.0           | 37,020       | 100.00%  | 0.00% | 78.5s     | 17.1s      |
+| 1.10       | 65.5           | 37,020       | 100.00%  | 0.00% | 78.4s     | 17.2s      |
+| 1.20       | 60.0           | 37,020       | 100.00%  | 0.00% | 77.8s     | 17.1s      |
+| 1.30       | 55.4           | 37,020       | 100.00%  | 0.00% | 77.8s     | 16.5s      |
+| 1.40       | 51.4           | 37,020       | 100.00%  | 0.00% | 76.0s     | 16.4s      |
+| 1.45       | 49.7           | 37,017       | 99.99%   | 0.01% | 76.5s     | 16.0s      |
+| 1.50       | 48.0           | 37,015       | 99.99%   | 0.01% | 78.4s     | 16.5s      |
+| 1.55       | 46.5           | 37,015       | 99.99%   | 0.01% | 77.2s     | 16.3s      |
+| 1.60       | 45.0           | 37,005       | 99.96%   | 0.04% | 78.4s     | 16.2s      |
+| 1.65       | 43.6           | 36,995       | 99.93%   | 0.07% | 78.8s     | 16.4s      |
+| 1.70       | 42.4           | 36,955       | 99.82%   | 0.18% | 77.8s     | 16.5s      |
+| 1.75       | 41.1           | 36,942       | 99.79%   | 0.21% | 78.0s     | 16.1s      |
+| 1.80       | 40.0           | 36,879       | 99.62%   | 0.38% | 78.0s     | 16.5s      |
+| 1.85       | 38.9           | 36,877       | 99.61%   | 0.39% | 76.4s     | 15.7s      |
+| 1.90       | 37.9           | 36,799       | 99.40%   | 0.60% | 75.4s     | 15.8s      |
+| 1.95       | 36.9           | 36,754       | 99.28%   | 0.72% | 75.0s     | 15.5s      |
+| 2.00       | 36.0           | 36,685       | 99.10%   | 0.90% | 77.3s     | 15.3s      |
+| 2.05       | 35.1           | 36,633       | 98.95%   | 1.05% | 77.9s     | 14.9s      |
+| 2.10       | 34.3           | 36,573       | 98.79%   | 1.21% | 73.0s     | 15.0s      |
+| 2.15       | 33.5           | 36,468       | 98.51%   | 1.49% | 73.6s     | 14.9s      |
+| 2.20       | 32.7           | 36,378       | 98.27%   | 1.73% | 73.6s     | 15.0s      |
+| 2.25       | 32.0           | 36,265       | 97.96%   | 2.04% | 72.0s     | 14.1s      |
+| 2.30       | 31.3           | 36,170       | 97.70%   | 2.30% | 70.4s     | 14.1s      |
 
-Accuracy holds at 100% up to ratio=1.40 (cell=45.7 km) then degrades rapidly.
+Even at multiple iterations, mean time is too noisy to talk about significant performance gains that aren't attributed
+to incorrectly missed conjunctions, but about 2 seconds can still be extracted on the check pairs stage when going from
+ratio=1.0 to 1.6. Accuracy holds at 100% up to ratio=1.40 then degrades rapidly after ratio=1.6.
 
 ![Total Processing Time](1_total_time.png)
 
@@ -44,6 +57,6 @@ Accuracy holds at 100% up to ratio=1.40 (cell=45.7 km) then degrades rapidly.
 
 ## Recommended Values
 
-- **Fast** (>= 99% accuracy): ratio = 2.00 (cell = 32.0 km)
-- **Balanced** (>= 99.9% accuracy): ratio = 1.60 (cell = 40.0 km)
-- **Conservative** (100% accuracy): ratio = 1.30 (cell = 49.2 km)
+- **Fast** (>= 98% accuracy): ratio = 2.2 (cell = 32.7 km)
+- **Balanced** (>= 99.9% accuracy): ratio = 1.65 (cell = 43.6 km)
+- **Conservative** (100% accuracy): ratio = 1.40 (cell = 51.4 km)

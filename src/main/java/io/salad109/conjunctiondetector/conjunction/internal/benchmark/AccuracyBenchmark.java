@@ -28,16 +28,16 @@ public class AccuracyBenchmark extends BenchmarkRunner implements CommandLineRun
 
     private static final Logger log = LoggerFactory.getLogger(AccuracyBenchmark.class);
 
-    private static final int ITERATIONS = 3;
-    private static final double TOLERANCE_KM = 64.0;
+    private static final int ITERATIONS = 5;
+    private static final double TOLERANCE_KM = 72.0;
 
     private static final int DEFAULT_STEP_RATIO = 10;
-    private static final int DEFAULT_STRIDE = 30;
+    private static final int DEFAULT_STRIDE = 5;
     private static final double DEFAULT_CELL_RATIO = 1.30;
 
     private static final int[] STEP_RATIO_VALUES = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    private static final int[] STRIDE_VALUES = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200};
-    private static final double[] CELL_RATIO_VALUES = {0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2};
+    private static final int[] STRIDE_VALUES = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125};
+    private static final double[] CELL_RATIO_VALUES = {1, 1.1, 1.2, 1.3, 1.4, 1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2, 2.05, 2.10, 2.15, 2.20, 2.25, 2.30};
 
     public AccuracyBenchmark(SatelliteService satelliteService, PropagationService propagationService,
                              ScanService scanService, CollisionProbabilityService collisionProbabilityService) {

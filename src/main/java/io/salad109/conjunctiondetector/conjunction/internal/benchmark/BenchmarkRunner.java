@@ -27,7 +27,7 @@ public abstract class BenchmarkRunner {
     protected static final int LOOKAHEAD_HOURS = 24;
     protected static final double THRESHOLD_KM = 5.0;
     protected static final OffsetDateTime FIXED_START_TIME = OffsetDateTime
-            .of(2026, 2, 22, 23, 13, 0, 0, ZoneOffset.UTC);
+            .of(2026, 2, 23, 0, 40, 0, 0, ZoneOffset.UTC);
     private static final Logger log = LoggerFactory.getLogger(BenchmarkRunner.class);
     protected final SatelliteService satelliteService;
     protected final PropagationService propagationService;

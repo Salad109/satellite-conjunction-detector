@@ -6,6 +6,20 @@ param = 'step_ratio'
 param_label = 'Step Second Ratio'
 avg = df.groupby(param).mean(numeric_only=True).reset_index()
 
+# Print table
+baseline = avg['conj'].max()
+tolerance_km = avg['tolerance_km'].iloc[0]
+print(f"| Ratio | Step (s) | Conjunctions | Accuracy | Loss  | Mean Time |")
+print(f"|-------|----------|--------------|----------|-------|-----------|")
+for _, row in avg.iterrows():
+    ratio = int(row[param])
+    step = tolerance_km / ratio
+    conj = int(round(row['conj']))
+    accuracy = row['conj'] / baseline * 100
+    loss = 100 - accuracy
+    time = row['total_s']
+    print(f"| {ratio:<5} | {step:<8.2f} | {conj:>12,} | {accuracy:>7.2f}% | {loss:>5.2f}% | {time:.1f}s{'':<4} |")
+
 timing_columns = ['propagator_s', 'sgp4_s', 'interp_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
 colors = ['#2ca02c', '#06A77D', '#e377c2', '#17becf', '#9467bd', '#D62839', '#8c564b']
 labels = ['Propagator Build', 'SGP4', 'Interpolation', 'Check Pairs', 'Grouping', 'Refine', 'Probability']

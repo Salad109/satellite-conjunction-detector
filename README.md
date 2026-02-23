@@ -21,14 +21,8 @@ The application is organized into five modules:
 - **Api** - UI controllers and scheduled jobs
 - **Conjunction** - Detection algorithms and conjunction storage
 - **Ingestion** - Orchestrates catalog synchronization from Space-Track
-- **Satellite** - Satellite entity, repository, and pair reduction logic
+- **Satellite** - Satellite entity and repository
 - **Spacetrack** - HTTP client for Space-Track.org API
-
-## Conjunction Candidate Reduction
-
-With ~30,000 tracked objects, the naive approach would check over 400 million satellite pairs. The system applies
-sequential geometric filters to reduce this to ~3.4% (14.7M pairs).
-See [docs/1-pair-reduction.md](docs/1-pair-reduction.md) for details.
 
 ## Coarse and Fine Scanning
 
@@ -60,7 +54,7 @@ cp .env.example .env
 ### 2A. Run with Docker Compose
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 This starts PostgreSQL and the application. The app will be available at `http://localhost:8080`.
@@ -68,20 +62,6 @@ This starts PostgreSQL and the application. The app will be available at `http:/
 ### 2B. Running Locally for Development
 
 ```bash
-docker-compose up postgres -d
+docker compose up postgres -d
 ./mvnw spring-boot:run
 ```
-
-### 3. Native Pair Reduction (Optional)
-
-The pair reduction filter has a native C implementation using Panama FFM API that runs faster. If the native library is
-not available, the application automatically falls back to the Java implementation.
-
-**Local Linux Development:**
-
-```bash
-cd src/main/c
-make
-```
-
-**Docker:** The native library is compiled automatically.

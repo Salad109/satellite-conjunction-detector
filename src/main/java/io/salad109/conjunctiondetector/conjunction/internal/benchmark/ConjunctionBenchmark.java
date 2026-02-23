@@ -30,10 +30,10 @@ public class ConjunctionBenchmark extends BenchmarkRunner implements CommandLine
 
     private static final Logger log = LoggerFactory.getLogger(ConjunctionBenchmark.class);
 
-    private static final int ITERATIONS = 5;
-    private static final int STEP_RATIO = 10;
+    private static final int ITERATIONS = 1;
+    private static final int STEP_RATIO = 8;
     private static final int INTERPOLATION_STRIDE = 50;
-    private static final double CELL_RATIO = 1.3;
+    private static final double CELL_RATIO = 1.65;
 
     private static final double[] TOLERANCE_VALUES = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160};
 
