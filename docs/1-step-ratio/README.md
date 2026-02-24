@@ -40,9 +40,3 @@ for zero benefit.
 ![Time Breakdown Stacked](3_time_breakdown_stacked.png)
 
 ![Conjunctions Detected](4_conjunctions.png)
-
-## Recommended Values
-
-- **Fast** (>= 98% accuracy): ratio = 7
-- **Balanced** (>= 99.9% accuracy): ratio = 8
-- **Conservative** (100% accuracy): ratio = 9

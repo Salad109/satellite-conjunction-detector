@@ -2,10 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit, minimize_scalar
-import glob
-
-csv_files = sorted(glob.glob('conjunction_benchmark_*.csv'))
-df = pd.read_csv(csv_files[-1]).groupby('tolerance_km', as_index=False).mean(numeric_only=True)
+df = pd.read_csv('conjunction_benchmark.csv').groupby('tolerance_km', as_index=False).mean(numeric_only=True)
 
 # Print table
 baseline = df['conj'].max()

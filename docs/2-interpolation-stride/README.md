@@ -52,9 +52,3 @@ begins to degrade rapidly after stride=85.
 ![Time Breakdown Stacked](3_time_breakdown_stacked.png)
 
 ![Conjunctions Detected](4_conjunctions.png)
-
-## Recommended Values
-
-- **Fast** (>= 98% accuracy): stride = 90
-- **Balanced** (>= 99.9% accuracy): stride = 50
-- **Conservative** (100% accuracy): stride = 20

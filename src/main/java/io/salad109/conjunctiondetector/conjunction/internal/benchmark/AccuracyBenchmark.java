@@ -18,9 +18,9 @@ import java.util.List;
 
 /**
  * Linux:
- * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-accuracy -Dspring-boot.run.jvmArguments="-Xmx12g -Xms12g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC"
+ * ./mvnw spring-boot:run -Dspring-boot.run.profiles=benchmark-accuracy -Dspring-boot.run.jvmArguments="-Xmx12g -Xms12g -XX:+AlwaysPreTouch"
  * Windows:
- * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-accuracy" "-Dspring-boot.run.jvmArguments=-Xmx12g -Xms12g -XX:+AlwaysPreTouch -XX:+UseShenandoahGC"
+ * ./mvnw spring-boot:run "-Dspring-boot.run.profiles=benchmark-accuracy" "-Dspring-boot.run.jvmArguments=-Xmx12g -Xms12g -XX:+AlwaysPreTouch"
  */
 @Component
 @Profile("benchmark-accuracy")
@@ -38,6 +38,7 @@ public class AccuracyBenchmark extends BenchmarkRunner implements CommandLineRun
     private static final int[] STEP_RATIO_VALUES = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     private static final int[] STRIDE_VALUES = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125};
     private static final double[] CELL_RATIO_VALUES = {1, 1.1, 1.2, 1.3, 1.4, 1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2, 2.05, 2.10, 2.15, 2.20, 2.25, 2.30};
+    private static final double[] TOLERANCE_VALUES = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160};
 
     public AccuracyBenchmark(SatelliteService satelliteService, PropagationService propagationService,
                              ScanService scanService, CollisionProbabilityService collisionProbabilityService) {
@@ -91,6 +92,18 @@ public class AccuracyBenchmark extends BenchmarkRunner implements CommandLineRun
                 results.addAll(runIterations(satellites, TOLERANCE_KM, DEFAULT_STEP_RATIO, stepSeconds, DEFAULT_STRIDE, cellRatio, ITERATIONS));
             }
             writeCsv(results, Paths.get("docs", "3-cell-size-ratio", "conjunction_benchmark.csv"));
+        }
+
+        log.info("");
+        log.info("Sweeping tolerance");
+        log.info("Locked: stepRatio={}, stride={}, cellRatio={}", DEFAULT_STEP_RATIO, DEFAULT_STRIDE, DEFAULT_CELL_RATIO);
+        {
+            List<BenchmarkResult> results = new ArrayList<>();
+            for (double toleranceKm : TOLERANCE_VALUES) {
+                double stepSeconds = toleranceKm / DEFAULT_STEP_RATIO;
+                results.addAll(runIterations(satellites, toleranceKm, DEFAULT_STEP_RATIO, stepSeconds, DEFAULT_STRIDE, DEFAULT_CELL_RATIO, ITERATIONS));
+            }
+            writeCsv(results, Paths.get("docs", "4-conjunction-tolerance", "conjunction_benchmark.csv"));
         }
 
         log.info("Benchmark complete");

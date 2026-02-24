@@ -54,9 +54,3 @@ ratio=1.0 to 1.6. Accuracy holds at 100% up to ratio=1.40 then degrades rapidly 
 ![Time Breakdown Stacked](3_time_breakdown_stacked.png)
 
 ![Conjunctions Detected](4_conjunctions.png)
-
-## Recommended Values
-
-- **Fast** (>= 98% accuracy): ratio = 2.2 (cell = 32.7 km)
-- **Balanced** (>= 99.9% accuracy): ratio = 1.65 (cell = 43.6 km)
-- **Conservative** (100% accuracy): ratio = 1.40 (cell = 51.4 km)
