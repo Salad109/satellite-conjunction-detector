@@ -8,6 +8,7 @@
         #results {
             transition: opacity 200ms;
         }
+
         #results.htmx-request {
             opacity: 0.5;
         }
@@ -20,8 +21,8 @@
     <input class="rounded-sm cursor-pointer"
            hx-get="/hx/conjunctions"
            hx-include="this"
-           hx-target="#results"
            hx-indicator="#results"
+           hx-target="#results"
            hx-trigger="change"
            id="includeFormations"
            name="includeFormations"
@@ -29,7 +30,7 @@
     <label class="cursor-pointer" for="includeFormations">Include formations (< 10 m/s)</label>
 </div>
 
-<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" hx-indicator="#results" id="results">
+<div class="mt-6" hx-get="/hx/conjunctions" hx-indicator="#results" hx-trigger="load" id="results">
     <p class="text-sm text-gray-400">Loading conjunctions...</p>
 </div>
 
