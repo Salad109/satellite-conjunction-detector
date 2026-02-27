@@ -1,49 +1,294 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="importmap">
+        {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"}}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/satellite.js@6.0.2/dist/satellite.min.js"></script>
     <title th:text="'Conjunction #' + ${visualization.id}"></title>
+    <style>
+        #canvas-container {
+            width: 100%;
+            height: 600px;
+            background: #000;
+            position: relative;
+        }
+
+        #time-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+    </style>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
+
 <a class="text-blue-600 hover:underline mb-6 inline-block" href="/">&larr; Back</a>
 
 <h1 class="text-2xl font-semibold mb-6" th:text="'Conjunction #' + ${visualization.id}"></h1>
 
-<div class="mb-6 text-sm">
-    <p>
-        <span class="text-gray-600">TCA:</span>
-        <span class="font-mono" th:text="${#temporals.format(visualization.tca, 'yyyy-MM-dd HH:mm:ss')}"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Miss Distance:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(visualization.missDistanceKm, 1, 3)} + ' km'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Rel. Velocity:</span>
-        <span class="font-mono"
-              th:text="${#numbers.formatDecimal(visualization.relativeVelocityMS, 1, 1)} + ' m/s'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Collision Probability:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(visualization.collisionProbability, 1, 10)}"></span>
-    </p>
+<div class="mb-6 text-sm grid grid-cols-2 gap-4">
+    <div>
+        <p><span class="text-gray-600">TCA:</span> <span class="font-mono"
+                                                         th:text="${#temporals.format(visualization.tca, 'yyyy-MM-dd HH:mm:ss')}"></span>
+        </p>
+        <p><span class="text-gray-600">Miss Distance:</span> <span class="font-mono"
+                                                                   th:text="${#numbers.formatDecimal(visualization.missDistanceKm, 1, 3)} + ' km'"></span>
+        </p>
+    </div>
+    <div>
+        <p><span class="text-gray-600">Rel. Velocity:</span> <span class="font-mono"
+                                                                   th:text="${#numbers.formatDecimal(visualization.relativeVelocityMS, 1, 1)} + ' m/s'"></span>
+        </p>
+        <p><span class="text-gray-600">Collision Probability:</span> <span class="font-mono"
+                                                                           th:text="${#numbers.formatDecimal(visualization.collisionProbability, 1, 10)}"></span>
+        </p>
+    </div>
 </div>
 
-<div class="mb-6 text-sm">
-    <p class="font-semibold" th:text="${visualization.object1Name}"></p>
-    <p class="text-gray-600">
-        <span class="font-mono" th:text="${visualization.object1NoradId}"></span>
-        <span th:text="${visualization.object1Type}"></span>
-    </p>
+<div class="mb-4 text-sm grid grid-cols-2 gap-4">
+    <div class="border border-gray-300 p-3 rounded-sm">
+        <a class="font-semibold text-blue-600 hover:underline"
+           th:href="@{/satellites/{id}(id=${visualization.object1NoradId})}" th:text="${visualization.object1Name}"></a>
+        <p class="text-gray-600">
+            <span class="font-mono" th:text="${visualization.object1NoradId}"></span>
+            <span th:text="${visualization.object1Type}"></span>
+        </p>
+    </div>
+    <div class="border border-gray-300 p-3 rounded-sm">
+        <a class="font-semibold text-red-600 hover:underline"
+           th:href="@{/satellites/{id}(id=${visualization.object2NoradId})}" th:text="${visualization.object2Name}"></a>
+        <p class="text-gray-600">
+            <span class="font-mono" th:text="${visualization.object2NoradId}"></span>
+            <span th:text="${visualization.object2Type}"></span>
+        </p>
+    </div>
 </div>
 
-<div class="mb-6 text-sm">
-    <p class="font-semibold" th:text="${visualization.object2Name}"></p>
-    <p class="text-gray-600">
-        <span class="font-mono" th:text="${visualization.object2NoradId}"></span>
-        <span th:text="${visualization.object2Type}"></span>
-    </p>
+<div class="mb-4 rounded-sm shadow-lg" id="canvas-container">
+    <div id="time-display">Time: Loading...</div>
+    <div class="flex items-center gap-2" id="controls">
+        <button class="bg-gray-600 hover:bg-gray-700 text-white w-9 h-9 rounded-sm text-lg" id="reset">&#8634;</button>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white w-9 h-9 rounded-sm text-lg" id="play-pause">&#9208;
+        </button>
+        <input type="range" id="speed-slider" class="w-128" min="-500" max="500" value="100">
+        <span class="text-white font-mono text-sm w-16" id="speed-value">100x</span>
+    </div>
 </div>
+
+<script th:inline="javascript">
+    const visualizationData = {
+        tca: /*[[${visualization.tca}]]*/ '',
+        object1: {
+            name: /*[[${visualization.object1Name}]]*/ '',
+            tle1: /*[[${visualization.object1Tle1}]]*/ '',
+            tle2: /*[[${visualization.object1Tle2}]]*/ ''
+        },
+        object2: {
+            name: /*[[${visualization.object2Name}]]*/ '',
+            tle1: /*[[${visualization.object2Tle1}]]*/ '',
+            tle2: /*[[${visualization.object2Tle2}]]*/ ''
+        }
+    };
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+    import {Line2} from 'three/addons/lines/Line2.js';
+    import {LineGeometry} from 'three/addons/lines/LineGeometry.js';
+    import {LineMaterial} from 'three/addons/lines/LineMaterial.js';
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 100, 100000);
+    const renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    new THREE.TextureLoader().load('/stars.webp', tex => {
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        scene.background = tex;
+        scene.backgroundIntensity = 0.3;
+        scene.backgroundRotation.set(1.0973, 4.9368, 0, 'YXZ');
+    });
+
+    const earthMat = new THREE.MeshPhongMaterial({shininess: 80, specular: 0x444444});
+    new THREE.TextureLoader().load('/earth.webp', tex => {
+        earthMat.map = tex;
+        earthMat.needsUpdate = true;
+    });
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(6371, 64, 64), earthMat);
+    scene.add(earth);
+
+    const sunAngle = 4.895 + 0.01721 * (new Date(visualizationData.tca).getTime() / 86400000 - 10957.5);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(50000 * Math.cos(sunAngle), 19880 * Math.sin(sunAngle), -45870 * Math.sin(sunAngle));
+    scene.add(sun);
+    scene.add(new THREE.AmbientLight(0x666666));
+
+    const satrec1 = satellite.twoline2satrec(visualizationData.object1.tle1, visualizationData.object1.tle2);
+    const satrec2 = satellite.twoline2satrec(visualizationData.object2.tle1, visualizationData.object2.tle2);
+
+    const sat1 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: 0x0088ff}));
+    const sat2 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: 0xff0044}));
+    scene.add(sat1, sat2);
+
+    function orbitalPeriodMs(satrec) {
+        return 2 * Math.PI / satrec.no * 60000;
+    }
+
+    function eciPos(satrec, date) {
+        const r = satellite.propagate(satrec, date);
+        return r.position ? new THREE.Vector3(r.position.x, r.position.z, -r.position.y) : null;
+    }
+
+    function buildTrail(satrec, color, date) {
+        const positions = [], period = orbitalPeriodMs(satrec), steps = 120;
+        for (let i = 0; i <= steps; i++) {
+            const p = eciPos(satrec, new Date(date.getTime() + (period / steps) * i));
+            if (p) positions.push(p.x, p.y, p.z);
+        }
+        const geo = new LineGeometry();
+        geo.setPositions(positions);
+        const mat = new LineMaterial({
+            color,
+            linewidth: 2,
+            transparent: true,
+            opacity: 0.5,
+            resolution: new THREE.Vector2(container.clientWidth, container.clientHeight)
+        });
+        return new Line2(geo, mat);
+    }
+
+    const distLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const distLine = new THREE.Line(distLineGeo, new THREE.LineBasicMaterial({
+        color: 0xffff00, transparent: true, opacity: 0.7
+    }));
+    scene.add(distLine);
+
+    const distDiv = document.createElement('div');
+    distDiv.style.cssText = 'position:absolute;color:#ff0;font:bold 12px monospace;pointer-events:none;z-index:10';
+    container.appendChild(distDiv);
+
+    const tcaDate = new Date(visualizationData.tca);
+    const startTime = new Date(tcaDate.getTime() - 2 * 3600000);
+    let currentTime = new Date(startTime);
+    let isPlaying = true, timeSpeed = 100;
+    let trail1, trail2, trailEpoch = startTime.getTime();
+    const trailMaxAge = Math.min(orbitalPeriodMs(satrec1), orbitalPeriodMs(satrec2));
+
+    function rebuildTrails() {
+        if (trail1) scene.remove(trail1, trail2);
+        trail1 = buildTrail(satrec1, 0x0088ff, currentTime);
+        trail2 = buildTrail(satrec2, 0xff0044, currentTime);
+        scene.add(trail1, trail2);
+        trailEpoch = currentTime.getTime();
+    }
+
+    rebuildTrails();
+
+    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    orbitControls.enablePan = false;
+    orbitControls.minDistance = 7500;
+    orbitControls.maxDistance = 50000;
+    orbitControls.enableDamping = true;
+    camera.position.set(0, 5000, 20000);
+
+    const playPauseBtn = document.getElementById('play-pause');
+    const speedValue = document.getElementById('speed-value');
+    const speedSlider = document.getElementById('speed-slider');
+
+    speedSlider.value = 100;
+
+    playPauseBtn.onclick = () => {
+        isPlaying = !isPlaying;
+        playPauseBtn.textContent = isPlaying ? '\u23F8' : '\u25B6';
+    };
+    document.getElementById('reset').onclick = () => {
+        currentTime = new Date(startTime);
+        speedSlider.value = 100;
+        timeSpeed = 100;
+        speedValue.textContent = '100x';
+        rebuildTrails();
+    };
+    speedSlider.oninput = e => {
+        timeSpeed = +e.target.value;
+        speedValue.textContent = timeSpeed + 'x';
+    };
+
+    function toScreen(v) {
+        const ndc = v.clone().project(camera);
+        return {x: (ndc.x + 1) / 2 * container.clientWidth, y: (-ndc.y + 1) / 2 * container.clientHeight};
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (isPlaying) {
+            currentTime = new Date(currentTime.getTime() + timeSpeed * (1000 / 60));
+            if (Math.abs(currentTime.getTime() - trailEpoch) > trailMaxAge) {
+                rebuildTrails();
+            }
+        }
+
+        earth.rotation.y = satellite.gstime(currentTime);
+
+        const p1 = eciPos(satrec1, currentTime), p2 = eciPos(satrec2, currentTime);
+        if (p1 && p2) {
+            sat1.position.copy(p1);
+            sat2.position.copy(p2);
+
+            const positions = distLine.geometry.attributes.position.array;
+            positions[0] = p1.x;
+            positions[1] = p1.y;
+            positions[2] = p1.z;
+            positions[3] = p2.x;
+            positions[4] = p2.y;
+            positions[5] = p2.z;
+            distLine.geometry.attributes.position.needsUpdate = true;
+
+            const dist = p1.distanceTo(p2);
+            const mid = toScreen(p1.clone().add(p2).multiplyScalar(0.5));
+            distDiv.textContent = dist.toFixed(1) + ' km';
+            distDiv.style.left = mid.x + 'px';
+            distDiv.style.top = mid.y + 'px';
+        }
+
+        orbitControls.update();
+
+        const dt = (tcaDate - currentTime) / 1000;
+        const m = Math.floor(Math.abs(dt) / 60), s = Math.floor(Math.abs(dt) % 60);
+        document.getElementById('time-display').textContent =
+            `${currentTime.toISOString().slice(0, 19).replace('T', ' ')} | ${dt >= 0 ? 'T-' : 'T+'}${m}:${String(s).padStart(2, '0')}`;
+
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    animate();
+</script>
+
 </body>
 </html>

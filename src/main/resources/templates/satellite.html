@@ -8,57 +8,184 @@
 <body class="bg-white text-gray-900 p-8 min-h-screen">
 <a class="text-blue-600 hover:underline text-sm" href="/">&larr; Back</a>
 
-<h1 class="text-2xl font-semibold mt-4 mb-6" th:text="${satellite.objectName}">Satellite Name</h1>
+<h1 class="text-2xl font-semibold mt-4 mb-1" th:text="${satellite.objectName}">Satellite Name</h1>
+<p class="text-sm text-gray-500 mb-6 font-mono"
+   th:text="'NORAD ' + ${satellite.noradCatId} + ' / ' + (${satellite.objectId} ?: 'N/A')"></p>
 
-<div class="text-sm mb-6">
-    <p>
-        <span class="text-gray-600">NORAD ID:</span>
-        <span class="font-mono" th:text="${satellite.noradCatId}"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Type:</span>
-        <span th:text="${satellite.objectType}"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Epoch:</span>
-        <span class="font-mono" th:text="${#temporals.format(satellite.epoch, 'yyyy-MM-dd HH:mm:ss')}"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Inclination:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.inclination, 1, 2)} + '&deg;'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Perigee:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Apogee:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Semi-Major Axis:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Eccentricity:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.eccentricity, 1, 7)}"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">RAAN:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.raan, 1, 2)} + '&deg;'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Arg. of Perigee:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.argPerigee, 1, 2)} + '&deg;'"></span>
-    </p>
-    <p>
-        <span class="text-gray-600">Mean Motion:</span>
-        <span class="font-mono" th:text="${#numbers.formatDecimal(satellite.meanMotion, 1, 4)} + ' rev/day'"></span>
-    </p>
+<div class="flex gap-8 mb-8 items-start">
+
+    <!-- Left: info cards + TLE -->
+    <div class="flex-1 min-w-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+            <!-- Identity -->
+            <div class="border border-gray-200 rounded-sm p-4">
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Identity</h3>
+                <dl class="text-sm space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Type</dt>
+                        <dd th:text="${satellite.objectType} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Classification</dt>
+                        <dd th:text="${satellite.classificationType} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Country</dt>
+                        <dd th:text="${satellite.countryCode} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">RCS Size</dt>
+                        <dd th:text="${satellite.rcsSize} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Launch Date</dt>
+                        <dd class="font-mono" th:text="${satellite.launchDate} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Launch Site</dt>
+                        <dd th:text="${satellite.site} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Decay Date</dt>
+                        <dd class="font-mono" th:text="${satellite.decayDate} ?: '-'"></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Orbit -->
+            <div class="border border-gray-200 rounded-sm p-4">
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Orbit</h3>
+                <dl class="text-sm space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Perigee</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.perigeeKm != null} ? ${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Apogee</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.apogeeKm != null} ? ${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Semi-Major Axis</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.semiMajorAxisKm != null} ? ${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Period</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.period != null} ? ${#numbers.formatDecimal(satellite.period, 1, 2)} + ' min' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Inclination</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.inclination != null} ? ${#numbers.formatDecimal(satellite.inclination, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">RAAN</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.raan != null} ? ${#numbers.formatDecimal(satellite.raan, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Arg. of Perigee</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.argPerigee != null} ? ${#numbers.formatDecimal(satellite.argPerigee, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Eccentricity</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.eccentricity != null} ? ${#numbers.formatDecimal(satellite.eccentricity, 1, 8)} : '-'"></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Mean Elements -->
+            <div class="border border-gray-200 rounded-sm p-4">
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Mean Elements</h3>
+                <dl class="text-sm space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Mean Motion</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.meanMotion != null} ? ${#numbers.formatDecimal(satellite.meanMotion, 1, 8)} + ' rev/day' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Mean Motion Dot</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.meanMotionDot != null} ? ${satellite.meanMotionDot} : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Mean Motion DDot</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.meanMotionDdot != null} ? ${satellite.meanMotionDdot} : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Mean Anomaly</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.meanAnomaly != null} ? ${#numbers.formatDecimal(satellite.meanAnomaly, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">B*</dt>
+                        <dd class="font-mono" th:text="${satellite.bstar != null} ? ${satellite.bstar} : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Ephemeris Type</dt>
+                        <dd class="font-mono" th:text="${satellite.ephemerisType} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Element Set No.</dt>
+                        <dd class="font-mono" th:text="${satellite.elementSetNo} ?: '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Rev at Epoch</dt>
+                        <dd class="font-mono" th:text="${satellite.revAtEpoch} ?: '-'"></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Metadata -->
+            <div class="border border-gray-200 rounded-sm p-4">
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Metadata</h3>
+                <dl class="text-sm space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Epoch</dt>
+                        <dd class="font-mono"
+                            th:text="${#temporals.format(satellite.epoch, 'yyyy-MM-dd HH:mm:ss')} + ' UTC'"></dd>
+                    </div>
+                    <div class="flex justify-between" th:if="${satellite.creationDate != null}">
+                        <dt class="text-gray-600">GP Record Created</dt>
+                        <dd class="font-mono"
+                            th:text="${#temporals.format(satellite.creationDate, 'yyyy-MM-dd HH:mm:ss')}"></dd>
+                    </div>
+                    <div class="flex justify-between" th:if="${satellite.gpId != null}">
+                        <dt class="text-gray-600">GP ID</dt>
+                        <dd class="font-mono" th:text="${satellite.gpId}"></dd>
+                    </div>
+                    <div class="flex justify-between" th:if="${satellite.fileNumber != null}">
+                        <dt class="text-gray-600">File</dt>
+                        <dd class="font-mono" th:text="${satellite.fileNumber}"></dd>
+                    </div>
+                </dl>
+            </div>
+
+        </div>
+
+        <!-- TLE -->
+        <div class="text-xs text-gray-500 border border-gray-200 rounded-sm p-3 font-mono bg-gray-50 whitespace-pre"><span
+                th:if="${satellite.tleLine0 ne null}" th:text="${satellite.tleLine0}"></span>
+            <span th:text="${satellite.tleLine1}"></span>
+            <span th:text="${satellite.tleLine2}"></span></div>
+    </div>
+
+    <!-- Right: live position placeholder -->
+    <div class="flex-1 min-w-0">
+        <div class="border border-gray-200 rounded-sm bg-gray-50 flex flex-col items-center justify-center"
+             style="aspect-ratio: 2/1;">
+            <p class="text-xs uppercase text-gray-400 font-semibold tracking-widest">Live Position Placeholder</p>
+        </div>
+    </div>
+
 </div>
-
-<div class="mb-6 text-xs text-gray-500 border border-gray-200 rounded-sm p-3 font-mono bg-gray-50 whitespace-pre"
-     th:text="${satellite.tleLine1} + '&#10;' + ${satellite.tleLine2}"></div>
 
 <h2 class="text-lg font-semibold mt-8 mb-4">Conjunctions
     <span class="text-sm font-normal text-gray-500" th:text="'(' + ${#lists.size(conjunctions)} + ')'"></span>
