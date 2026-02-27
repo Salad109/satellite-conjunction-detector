@@ -14,7 +14,7 @@ between satellites.
 
 ## Architecture
 
-![Module diagram](https://github.com/user-attachments/assets/320db956-f3b7-458e-80f7-eb8e6cf3fa64)
+![Module diagram](https://github.com/user-attachments/assets/0a541237-4e1f-42a0-bd9d-487089dad69a)
 
 The application is organized into five modules:
 
