@@ -1,4 +1,4 @@
-package io.salad109.conjunctiondetector.api;
+package io.salad109.conjunctiondetector.ui.internal;
 
 import io.salad109.conjunctiondetector.conjunction.ConjunctionService;
 import io.salad109.conjunctiondetector.ingestion.IngestionLogService;

@@ -18,7 +18,7 @@ between satellites.
 
 The application is organized into five modules:
 
-- **Api** - UI controllers and scheduled jobs
+- **Ui** - UI controllers and scheduled jobs
 - **Conjunction** - Detection algorithms and conjunction storage
 - **Ingestion** - Orchestrates catalog synchronization from Space-Track
 - **Satellite** - Satellite entity and repository
@@ -30,7 +30,7 @@ The detection algorithm uses a two-step approach:
 
 1. **Coarse sweep**: Pre-computes satellite positions using SGP4 with Hermite interpolation, then uses spatial grid
    indexing to efficiently find nearby satellites within tolerance
-2. **Refinement**: Solves quadratic equation to find precise TCA and miss distance, filtering by 5 km collision
+2. **Refinement**: Solves for precise TCA and miss distance, filtering by 5 km collision
    threshold
 
 See docs for tuning experiments and optimal parameters.

@@ -4,6 +4,14 @@
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title>Conjunction Detector</title>
+    <style>
+        #results {
+            transition: opacity 200ms;
+        }
+        #results.htmx-request {
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
 <h1 class="text-2xl font-semibold mb-6">Conjunction Detector</h1>
@@ -13,6 +21,7 @@
            hx-get="/hx/conjunctions"
            hx-include="this"
            hx-target="#results"
+           hx-indicator="#results"
            hx-trigger="change"
            id="includeFormations"
            name="includeFormations"
@@ -20,7 +29,7 @@
     <label class="cursor-pointer" for="includeFormations">Include formations (< 10 m/s)</label>
 </div>
 
-<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" id="results">
+<div class="mt-6" hx-get="/hx/conjunctions" hx-trigger="load" hx-indicator="#results" id="results">
     <p class="text-sm text-gray-400">Loading conjunctions...</p>
 </div>
 

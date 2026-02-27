@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title th:text="${status} + ' - Conjunction Detector'">Error</title>
+</head>
+<body class="bg-white text-gray-900 p-8 min-h-screen flex flex-col items-center justify-center">
+<p class="text-8xl font-bold text-gray-200" th:text="${status}">404</p>
+<p class="text-lg text-gray-600 mt-4" th:text="${reason}">Not found</p>
+<a class="text-blue-600 hover:underline text-sm mt-6" href="/">&larr; Back to dashboard</a>
+</body>
+</html>
