@@ -5,7 +5,6 @@ import io.salad109.conjunctiondetector.conjunction.internal.Conjunction;
 import io.salad109.conjunctiondetector.conjunction.internal.PropagationService;
 import io.salad109.conjunctiondetector.conjunction.internal.ScanService;
 import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
-import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import org.apache.commons.lang3.time.StopWatch;
 import org.orekit.propagation.analytical.tle.TLEPropagator;
@@ -42,6 +41,15 @@ public abstract class BenchmarkRunner {
         this.collisionProbabilityService = collisionProbabilityService;
     }
 
+    private static void gc() {
+        System.gc();
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     protected BenchmarkResult runBenchmark(List<SatelliteScanInfo> satellites,
                                            double toleranceKm, int stepRatio, double stepSeconds,
                                            int stride, double cellRatio) {
@@ -66,16 +74,12 @@ public abstract class BenchmarkRunner {
         checkPairs.stop();
 
         StopWatch grouping = StopWatch.createStarted();
-        Map<SatelliteScanInfoPair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
-        int totalEvents = eventsByPair.values().stream().mapToInt(List::size).sum();
-        List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
-                .flatMap(List::stream)
-                .toList();
+        List<ScanService.CoarseDetection> events = scanService.groupAndReduce(detections);
         grouping.stop();
 
         StopWatch refine = StopWatch.createStarted();
-        List<ScanService.RefinedEvent> refined = allEvents.parallelStream()
-                .map(event -> scanService.refineEvent(event, positionCache, propagators, stepSeconds, THRESHOLD_KM))
+        List<ScanService.RefinedEvent> refined = events.parallelStream()
+                .map(det -> scanService.refineDetection(det, positionCache, propagators, stepSeconds, THRESHOLD_KM))
                 .filter(Objects::nonNull)
                 .toList();
         refine.stop();
@@ -95,7 +99,7 @@ public abstract class BenchmarkRunner {
                 probability.getTime(), conjunctions.size());
 
         return new BenchmarkResult(toleranceKm, stepRatio, cellRatio, stride,
-                detections.size(), totalEvents, conjunctions.size(),
+                detections.size(), events.size(), conjunctions.size(),
                 propagator.getTime(), propagateSweep.getTime(),
                 interpolation.getTime(), checkPairs.getTime(), grouping.getTime(), refine.getTime(),
                 probability.getTime(), total.getTime());

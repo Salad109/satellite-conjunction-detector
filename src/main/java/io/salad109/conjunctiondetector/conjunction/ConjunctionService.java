@@ -2,7 +2,6 @@ package io.salad109.conjunctiondetector.conjunction;
 
 import io.salad109.conjunctiondetector.conjunction.internal.*;
 import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
-import io.salad109.conjunctiondetector.satellite.SatelliteScanInfoPair;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.time.StopWatch;
@@ -120,16 +119,13 @@ public class ConjunctionService {
         List<ScanService.CoarseDetection> detections = scanService.checkPairs(satellites, positionCache, toleranceKm, cellSizeKm);
         log.debug("Coarse sweep found {} detections", detections.size());
 
-        // Group into events
-        Map<SatelliteScanInfoPair, List<List<ScanService.CoarseDetection>>> eventsByPair = scanService.groupIntoEvents(detections);
-        List<List<ScanService.CoarseDetection>> allEvents = eventsByPair.values().stream()
-                .flatMap(List::stream)
-                .toList();
-        log.debug("Grouped into {} events", allEvents.size());
+        // Sort, cluster, reduce to best-per-event
+        List<ScanService.CoarseDetection> events = scanService.groupAndReduce(detections);
+        log.debug("Grouped into {} events", events.size());
 
         // Refine
-        List<ScanService.RefinedEvent> refined = allEvents.parallelStream()
-                .map(event -> scanService.refineEvent(event, positionCache, propagators, stepSeconds, thresholdKm))
+        List<ScanService.RefinedEvent> refined = events.parallelStream()
+                .map(det -> scanService.refineDetection(det, positionCache, propagators, stepSeconds, thresholdKm))
                 .filter(Objects::nonNull)
                 .toList();
 

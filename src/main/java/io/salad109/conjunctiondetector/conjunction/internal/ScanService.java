@@ -10,7 +10,10 @@ import org.orekit.utils.PVCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 @Service
@@ -58,10 +61,10 @@ public class ScanService {
     }
 
     /**
-     * Group detections by pair, then cluster consecutive detections into events (orbital passes).
+     * Sort detections, cluster by pair and step gap, extract the best detection per event.
      * Two detections belong to the same event if they're within 3 steps of each other.
      */
-    public Map<SatelliteScanInfoPair, List<List<CoarseDetection>>> groupIntoEvents(List<CoarseDetection> detections) {
+    public List<CoarseDetection> groupAndReduce(List<CoarseDetection> detections) {
         List<CoarseDetection> sorted = detections.parallelStream()
                 .sorted(Comparator
                         .comparingInt((CoarseDetection d) -> d.pair().a().noradCatId())
@@ -69,45 +72,37 @@ public class ScanService {
                         .thenComparingInt(CoarseDetection::stepIndex))
                 .toList();
 
-        Map<SatelliteScanInfoPair, List<List<CoarseDetection>>> result = new HashMap<>();
-        if (sorted.isEmpty()) return result;
+        List<CoarseDetection> bestPerEvent = new ArrayList<>();
 
-        SatelliteScanInfoPair currentPair = sorted.getFirst().pair();
-        List<CoarseDetection> currentCluster = new ArrayList<>();
-        List<List<CoarseDetection>> currentEvents = new ArrayList<>();
-        currentCluster.add(sorted.getFirst());
+        CoarseDetection best = sorted.getFirst();
+        SatelliteScanInfoPair currentPair = best.pair();
 
         for (int i = 1; i < sorted.size(); i++) {
             CoarseDetection prev = sorted.get(i - 1);
             CoarseDetection curr = sorted.get(i);
 
-            if (!curr.pair().equals(currentPair)) {
-                currentEvents.add(currentCluster);
-                result.put(currentPair, currentEvents);
+            if (!curr.pair().equals(currentPair) || curr.stepIndex() - prev.stepIndex() > 3) {
+                // Event boundary: different pair or time gap > 3 steps
+                bestPerEvent.add(best);   // emit winner of the finished event
+                best = curr;              // start new event with curr as initial best
                 currentPair = curr.pair();
-                currentEvents = new ArrayList<>();
-                currentCluster = new ArrayList<>();
-            } else if (curr.stepIndex() - prev.stepIndex() > 3) {
-                currentEvents.add(currentCluster);
-                currentCluster = new ArrayList<>();
+            } else if (curr.distanceSq() < best.distanceSq()) {
+                best = curr;              // same event, curr is closer - new best
             }
-            currentCluster.add(curr);
+            // else: same event, curr is farther - skip
         }
-        currentEvents.add(currentCluster);
-        result.put(currentPair, currentEvents);
+        // Close last event
+        bestPerEvent.add(best);
 
-        return result;
+        return bestPerEvent;
     }
 
     /**
-     * Refine an event to find more accurate TCA and minimum distance.
+     * Refine a coarse detection to find accurate TCA and minimum distance.
      * Call SGP4 only for events that survive the threshold check.
      */
-    public RefinedEvent refineEvent(List<CoarseDetection> event, PropagationService.PositionCache cache,
-                                    Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
-        CoarseDetection best = event.stream()
-                .min(Comparator.comparing(CoarseDetection::distanceSq))
-                .orElseThrow();
+    public RefinedEvent refineDetection(CoarseDetection best, PropagationService.PositionCache cache,
+                                        Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
         SatelliteScanInfoPair pair = best.pair();
         int step = best.stepIndex();
         int totalSteps = cache.times().length;
