@@ -37,8 +37,7 @@
     </style>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
-
-<a class="text-blue-600 hover:underline mb-6 inline-block" href="/">&larr; Back</a>
+<div th:replace="~{fragments/nav :: nav}"></div>
 
 <h1 class="text-2xl font-semibold mb-6" th:text="'Conjunction #' + ${visualization.id}"></h1>
 
@@ -138,10 +137,10 @@
     scene.add(earth);
 
     const sunAngle = 4.895 + 0.01721 * (new Date(visualizationData.tca).getTime() / 86400000 - 10957.5);
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    const sun = new THREE.PointLight(0xffffff, 1.2 * 50000 * 50000, 0, 2);
     sun.position.set(50000 * Math.cos(sunAngle), 19880 * Math.sin(sunAngle), -45870 * Math.sin(sunAngle));
     scene.add(sun);
-    scene.add(new THREE.AmbientLight(0x666666));
+    scene.add(new THREE.AmbientLight(0x606060));
 
     const satrec1 = satellite.twoline2satrec(visualizationData.object1.tle1, visualizationData.object1.tle2);
     const satrec2 = satellite.twoline2satrec(visualizationData.object2.tle1, visualizationData.object2.tle2);
@@ -290,5 +289,6 @@
     animate();
 </script>
 
+<div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>

@@ -6,7 +6,7 @@
     <title th:text="${satellite.objectName} + ' - Conjunction Detector'">Satellite</title>
 </head>
 <body class="bg-white text-gray-900 p-8 min-h-screen">
-<a class="text-blue-600 hover:underline text-sm" href="/">&larr; Back</a>
+<div th:replace="~{fragments/nav :: nav}"></div>
 
 <h1 class="text-2xl font-semibold mt-4 mb-1" th:text="${satellite.objectName}">Satellite Name</h1>
 <p class="text-sm text-gray-500 mb-6 font-mono"
@@ -15,7 +15,7 @@
 <div class="flex gap-8 mb-8 items-start">
 
     <!-- Left: info cards + TLE -->
-    <div class="flex-1 min-w-0">
+    <div class="min-w-0 max-w-2xl">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
             <!-- Identity -->
@@ -53,49 +53,27 @@
                 </dl>
             </div>
 
-            <!-- Orbit -->
+            <!-- Metadata -->
             <div class="border border-gray-200 rounded-sm p-4">
-                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Orbit</h3>
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Metadata</h3>
                 <dl class="text-sm space-y-1">
                     <div class="flex justify-between">
-                        <dt class="text-gray-600">Perigee</dt>
+                        <dt class="text-gray-600">Epoch</dt>
                         <dd class="font-mono"
-                            th:text="${satellite.perigeeKm != null} ? ${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km' : '-'"></dd>
+                            th:text="${#temporals.format(satellite.epoch, 'yyyy-MM-dd HH:mm:ss')}"></dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Apogee</dt>
+                    <div class="flex justify-between" th:if="${satellite.creationDate != null}">
+                        <dt class="text-gray-600">GP Record Created</dt>
                         <dd class="font-mono"
-                            th:text="${satellite.apogeeKm != null} ? ${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km' : '-'"></dd>
+                            th:text="${#temporals.format(satellite.creationDate, 'yyyy-MM-dd HH:mm:ss')}"></dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Semi-Major Axis</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.semiMajorAxisKm != null} ? ${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km' : '-'"></dd>
+                    <div class="flex justify-between" th:if="${satellite.gpId != null}">
+                        <dt class="text-gray-600">GP ID</dt>
+                        <dd class="font-mono" th:text="${satellite.gpId}"></dd>
                     </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Period</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.period != null} ? ${#numbers.formatDecimal(satellite.period, 1, 2)} + ' min' : '-'"></dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Inclination</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.inclination != null} ? ${#numbers.formatDecimal(satellite.inclination, 1, 4)} + '&deg;' : '-'"></dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">RAAN</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.raan != null} ? ${#numbers.formatDecimal(satellite.raan, 1, 4)} + '&deg;' : '-'"></dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Arg. of Perigee</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.argPerigee != null} ? ${#numbers.formatDecimal(satellite.argPerigee, 1, 4)} + '&deg;' : '-'"></dd>
-                    </div>
-                    <div class="flex justify-between">
-                        <dt class="text-gray-600">Eccentricity</dt>
-                        <dd class="font-mono"
-                            th:text="${satellite.eccentricity != null} ? ${#numbers.formatDecimal(satellite.eccentricity, 1, 8)} : '-'"></dd>
+                    <div class="flex justify-between" th:if="${satellite.fileNumber != null}">
+                        <dt class="text-gray-600">File</dt>
+                        <dd class="font-mono" th:text="${satellite.fileNumber}"></dd>
                     </div>
                 </dl>
             </div>
@@ -143,27 +121,49 @@
                 </dl>
             </div>
 
-            <!-- Metadata -->
+            <!-- Orbit -->
             <div class="border border-gray-200 rounded-sm p-4">
-                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Metadata</h3>
+                <h3 class="text-xs uppercase text-gray-500 font-semibold mb-3">Orbit</h3>
                 <dl class="text-sm space-y-1">
                     <div class="flex justify-between">
-                        <dt class="text-gray-600">Epoch</dt>
+                        <dt class="text-gray-600">Perigee</dt>
                         <dd class="font-mono"
-                            th:text="${#temporals.format(satellite.epoch, 'yyyy-MM-dd HH:mm:ss')} + ' UTC'"></dd>
+                            th:text="${satellite.perigeeKm != null} ? ${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km' : '-'"></dd>
                     </div>
-                    <div class="flex justify-between" th:if="${satellite.creationDate != null}">
-                        <dt class="text-gray-600">GP Record Created</dt>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Apogee</dt>
                         <dd class="font-mono"
-                            th:text="${#temporals.format(satellite.creationDate, 'yyyy-MM-dd HH:mm:ss')}"></dd>
+                            th:text="${satellite.apogeeKm != null} ? ${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km' : '-'"></dd>
                     </div>
-                    <div class="flex justify-between" th:if="${satellite.gpId != null}">
-                        <dt class="text-gray-600">GP ID</dt>
-                        <dd class="font-mono" th:text="${satellite.gpId}"></dd>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Semi-Major Axis</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.semiMajorAxisKm != null} ? ${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km' : '-'"></dd>
                     </div>
-                    <div class="flex justify-between" th:if="${satellite.fileNumber != null}">
-                        <dt class="text-gray-600">File</dt>
-                        <dd class="font-mono" th:text="${satellite.fileNumber}"></dd>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Period</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.period != null} ? ${#numbers.formatDecimal(satellite.period, 1, 2)} + ' min' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Inclination</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.inclination != null} ? ${#numbers.formatDecimal(satellite.inclination, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">RAAN</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.raan != null} ? ${#numbers.formatDecimal(satellite.raan, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Arg. of Perigee</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.argPerigee != null} ? ${#numbers.formatDecimal(satellite.argPerigee, 1, 4)} + '&deg;' : '-'"></dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Eccentricity</dt>
+                        <dd class="font-mono"
+                            th:text="${satellite.eccentricity != null} ? ${#numbers.formatDecimal(satellite.eccentricity, 1, 8)} : '-'"></dd>
                     </div>
                 </dl>
             </div>
@@ -227,5 +227,6 @@
     </tr>
     </tbody>
 </table>
+<div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>
