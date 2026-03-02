@@ -7,6 +7,7 @@ import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
@@ -29,11 +30,19 @@ public interface SatelliteRepository extends JpaRepository<Satellite, Integer> {
             "FROM Satellite s")
     List<SatelliteScanInfo> findAllSatelliteScanInfo();
 
-    // todo replace conjunction count subquery with denormalized column or materialized view
     @Query("SELECT new io.salad109.conjunctiondetector.satellite.SatelliteBriefInfo(" +
             "s.noradCatId, s.objectName, s.objectType, s.countryCode, s.perigeeKm, s.apogeeKm, " +
-            "s.inclination, s.eccentricity, s.period, " +
-            "(SELECT COUNT(c) FROM Conjunction c WHERE c.object1NoradId = s.noradCatId OR c.object2NoradId = s.noradCatId)) " +
+            "s.inclination, s.eccentricity, s.period, s.conjunctionCount) " +
             "FROM Satellite s")
     Page<SatelliteBriefInfo> getSatelliteBriefInfos(Pageable pageable);
+
+    @Modifying
+    @Query(value = """
+            UPDATE satellite s SET conjunction_count = (
+                SELECT COUNT(*) FROM conjunction c
+                WHERE c.object1_norad_id = s.norad_cat_id
+                   OR c.object2_norad_id = s.norad_cat_id
+            )
+            """, nativeQuery = true)
+    void updateConjunctionCounts();
 }

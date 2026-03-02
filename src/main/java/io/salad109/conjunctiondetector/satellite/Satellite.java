@@ -118,6 +118,9 @@ public class Satellite implements Persistable<Integer> {
     @Column(name = "gp_id")
     private Integer gpId;
 
+    @Column(name = "conjunction_count")
+    private int conjunctionCount;
+
     @Version
     @Column(name = "version", nullable = false)
     private Long version;

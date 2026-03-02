@@ -140,6 +140,7 @@ public class ConjunctionService {
         // Persist
         conjunctionRepository.truncate();
         conjunctionRepository.saveAll(conjunctions);
+        satelliteService.updateConjunctionCounts();
 
         stopWatch.stop();
         log.info("Conjunction screening completed in {}ms, found {} conjunctions",

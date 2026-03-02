@@ -47,6 +47,11 @@ public class SatelliteService {
     }
 
     @Transactional
+    public void updateConjunctionCounts() {
+        satelliteRepository.updateConjunctionCounts();
+    }
+
+    @Transactional
     public int save(List<Satellite> satellites) {
         return satelliteRepository.saveAll(satellites).size();
     }
