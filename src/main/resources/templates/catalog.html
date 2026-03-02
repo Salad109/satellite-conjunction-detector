@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Satellite Catalog - Conjunction Detector</title>
+    <style>
+        #results {
+            transition: opacity 200ms;
+        }
+
+        #results.htmx-request {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 p-8 min-h-screen">
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<div class="mt-6" hx-get="/hx/satellites" hx-indicator="#results" hx-trigger="load" id="results">
+    <p class="text-sm text-gray-400">Loading catalog...</p>
+</div>
+
+<div class="mt-8" hx-get="/hx/lastsync" hx-trigger="load" id="sync-info">
+    <p class="text-sm text-gray-400">Loading sync info...</p>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

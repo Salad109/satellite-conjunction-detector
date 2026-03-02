@@ -1,0 +1,51 @@
+<table class="text-sm border border-gray-300">
+    <thead class="bg-gray-50 text-gray-700 text-xs uppercase">
+    <tr>
+        <th class="px-4 py-2 border-b whitespace-nowrap">NORAD ID</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Name</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Type</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Country</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Perigee (km)</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Apogee (km)</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Incl. (&deg;)</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Period (min)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:class="${iter.odd} ? 'bg-white' : 'bg-gray-50'" th:each="s, iter : ${page.content}">
+        <td class="px-4 py-2 border-b font-mono">
+            <a class="text-blue-600 hover:underline" th:href="@{/satellites/{id}(id=${s.noradCatId})}"
+               th:text="${s.noradCatId}"></a>
+        </td>
+        <td class="px-4 py-2 border-b" th:text="${s.objectName}"></td>
+        <td class="px-4 py-2 border-b" th:text="${s.objectType}"></td>
+        <td class="px-4 py-2 border-b" th:text="${s.countryCode} ?: '-'"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${s.perigee != null} ? ${#numbers.formatDecimal(s.perigee, 1, 1)} : '-'"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${s.apogee != null} ? ${#numbers.formatDecimal(s.apogee, 1, 1)} : '-'"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} : '-'"></td>
+        <td class="px-4 py-2 border-b font-mono"
+            th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '-'"></td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="flex items-center gap-4 mt-4">
+    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?page=' + ${page.number - 1}"
+            th:if="${page.hasPrevious()}">
+        Previous
+    </button>
+
+    <span class="text-sm text-gray-600" th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}"></span>
+
+    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?page=' + ${page.number + 1}"
+            th:if="${page.hasNext()}">
+        Next
+    </button>
+</div>

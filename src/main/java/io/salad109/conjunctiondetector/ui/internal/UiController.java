@@ -38,9 +38,20 @@ public class UiController {
 
     @GetMapping("/satellites/{noradId}")
     public String satellite(@PathVariable int noradId, Model model) {
-        model.addAttribute("satellite", satelliteService.getInfoByCatalogId(noradId));
+        model.addAttribute("satellite", satelliteService.getDetailsByCatalogId(noradId));
         model.addAttribute("conjunctions", conjunctionService.getConjunctionInfosByNoradId(noradId));
         return "satellite";
+    }
+
+    @GetMapping("/catalog")
+    public String catalog() {
+        return "catalog";
+    }
+
+    @GetMapping("/hx/satellites")
+    public String satellitesFragment(@PageableDefault(sort = "noradCatId", direction = Sort.Direction.ASC) Pageable pageable, Model model) {
+        model.addAttribute("page", satelliteService.getBriefInfos(pageable));
+        return "fragments/satellite-table";
     }
 
     @GetMapping("/hx/conjunctions")

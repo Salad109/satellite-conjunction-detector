@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
-public record SatelliteInfo(
+public record SatelliteDetails(
         int noradCatId,
         String objectName,
         String objectId,

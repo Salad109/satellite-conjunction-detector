@@ -171,10 +171,11 @@
         </div>
 
         <!-- TLE -->
-        <div class="text-xs text-gray-500 border border-gray-200 rounded-sm p-3 font-mono bg-gray-50 whitespace-pre"><span
-                th:if="${satellite.tleLine0 ne null}" th:text="${satellite.tleLine0}"></span>
+        <div class="text-xs text-gray-500 border border-gray-200 rounded-sm p-3 font-mono bg-gray-50 flex flex-col">
+            <span th:if="${satellite.tleLine0 ne null}" th:text="${satellite.tleLine0}"></span>
             <span th:text="${satellite.tleLine1}"></span>
-            <span th:text="${satellite.tleLine2}"></span></div>
+            <span th:text="${satellite.tleLine2}"></span>
+        </div>
     </div>
 
     <!-- Right: live position placeholder -->
@@ -208,7 +209,11 @@
     </tr>
     </thead>
     <tbody>
-    <tr th:class="${iter.odd} ? 'bg-white' : 'bg-gray-50'" th:each="c, iter : ${conjunctions}">
+    <tr th:class="${iter.odd} ? 'bg-white' : 'bg-gray-50'" th:each="c, iter : ${conjunctions}"
+        th:with="isObj1=${c.object1NoradId == satellite.noradCatId},
+                 otherName=${isObj1 ? c.object2Name : c.object1Name},
+                 otherId=${isObj1 ? c.object2NoradId : c.object1NoradId},
+                 otherType=${isObj1 ? c.object2Type : c.object1Type}">
         <td class="px-4 py-2 border-b font-mono">
             <a class="text-blue-600 hover:underline" th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}"></a>
         </td>
@@ -219,11 +224,10 @@
             th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}"></td>
         <td class="px-4 py-2 border-b border-l">
             <a class="text-blue-600 hover:underline"
-               th:href="@{/satellites/{id}(id=${c.object1NoradId == satellite.noradCatId ? c.object2NoradId : c.object1NoradId})}"
-               th:text="(${c.object1NoradId == satellite.noradCatId} ? ${c.object2Name} : ${c.object1Name}) + ' (' + (${c.object1NoradId == satellite.noradCatId} ? ${c.object2NoradId} : ${c.object1NoradId}) + ')'"></a>
+               th:href="@{/satellites/{id}(id=${otherId})}"
+               th:text="${otherName + ' (' + otherId + ')'}"></a>
         </td>
-        <td class="px-4 py-2 border-b"
-            th:text="${c.object1NoradId == satellite.noradCatId} ? ${c.object2Type} : ${c.object1Type}"></td>
+        <td class="px-4 py-2 border-b" th:text="${otherType}"></td>
     </tr>
     </tbody>
 </table>
