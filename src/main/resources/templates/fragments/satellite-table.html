@@ -9,6 +9,7 @@
         <th class="px-4 py-2 border-b whitespace-nowrap">Apogee (km)</th>
         <th class="px-4 py-2 border-b whitespace-nowrap">Incl. (&deg;)</th>
         <th class="px-4 py-2 border-b whitespace-nowrap">Period (min)</th>
+        <th class="px-4 py-2 border-b whitespace-nowrap">Conjunctions</th>
     </tr>
     </thead>
     <tbody>
@@ -28,6 +29,7 @@
             th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} : '-'"></td>
         <td class="px-4 py-2 border-b font-mono"
             th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '-'"></td>
+        <td class="px-4 py-2 border-b font-mono text-center" th:text="${s.conjunctions}"></td>
     </tr>
     </tbody>
 </table>

@@ -11,5 +11,6 @@ public record SatelliteBriefInfo(
         Double apogee,
         BigDecimal inclination,
         BigDecimal eccentricity,
-        Double period) {
+        Double period,
+        long conjunctions) {
 }
