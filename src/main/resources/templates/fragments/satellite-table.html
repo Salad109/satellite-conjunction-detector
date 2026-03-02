@@ -1,15 +1,45 @@
-<table class="text-sm border border-gray-300">
+<table class="text-sm border border-gray-300" hx-indicator="#results">
     <thead class="bg-gray-50 text-gray-700 text-xs uppercase">
     <tr>
         <th class="px-4 py-2 border-b whitespace-nowrap">NORAD ID</th>
         <th class="px-4 py-2 border-b whitespace-nowrap">Name</th>
         <th class="px-4 py-2 border-b whitespace-nowrap">Type</th>
         <th class="px-4 py-2 border-b whitespace-nowrap">Country</th>
-        <th class="px-4 py-2 border-b whitespace-nowrap">Perigee (km)</th>
-        <th class="px-4 py-2 border-b whitespace-nowrap">Apogee (km)</th>
-        <th class="px-4 py-2 border-b whitespace-nowrap">Incl. (&deg;)</th>
-        <th class="px-4 py-2 border-b whitespace-nowrap">Period (min)</th>
-        <th class="px-4 py-2 border-b whitespace-nowrap">Conjunctions</th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?sort=perigeeKm,' + (${sortField == 'perigeeKm' && sortDir == 'asc'} ? 'desc' : 'asc')">
+            Perigee (km)
+            <span th:if="${sortField == 'perigeeKm' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'perigeeKm' && sortDir == 'desc'}">&#9660;</span>
+        </th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?sort=apogeeKm,' + (${sortField == 'apogeeKm' && sortDir == 'asc'} ? 'desc' : 'asc')">
+            Apogee (km)
+            <span th:if="${sortField == 'apogeeKm' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'apogeeKm' && sortDir == 'desc'}">&#9660;</span>
+        </th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?sort=inclination,' + (${sortField == 'inclination' && sortDir == 'asc'} ? 'desc' : 'asc')">
+            Incl. (&deg;)
+            <span th:if="${sortField == 'inclination' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'inclination' && sortDir == 'desc'}">&#9660;</span>
+        </th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?sort=period,' + (${sortField == 'period' && sortDir == 'asc'} ? 'desc' : 'asc')">
+            Period (min)
+            <span th:if="${sortField == 'period' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'period' && sortDir == 'desc'}">&#9660;</span>
+        </th>
+        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
+            hx-target="#results"
+            th:hx-get="'/hx/satellites?sort=conjunctionCount,' + (${sortField == 'conjunctionCount' && sortDir == 'asc'} ? 'desc' : 'asc')">
+            Conjunctions
+            <span th:if="${sortField == 'conjunctionCount' && sortDir == 'asc'}">&#9650;</span>
+            <span th:if="${sortField == 'conjunctionCount' && sortDir == 'desc'}">&#9660;</span>
+        </th>
     </tr>
     </thead>
     <tbody>
@@ -37,7 +67,7 @@
 <div class="flex items-center gap-4 mt-4">
     <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
             hx-target="#results"
-            th:hx-get="'/hx/satellites?page=' + ${page.number - 1}"
+            th:hx-get="'/hx/satellites?page=' + ${page.number - 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir}"
             th:if="${page.hasPrevious()}">
         Previous
     </button>
@@ -46,7 +76,7 @@
 
     <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
             hx-target="#results"
-            th:hx-get="'/hx/satellites?page=' + ${page.number + 1}"
+            th:hx-get="'/hx/satellites?page=' + ${page.number + 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir}"
             th:if="${page.hasNext()}">
         Next
     </button>

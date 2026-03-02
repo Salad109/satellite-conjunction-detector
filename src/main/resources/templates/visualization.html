@@ -159,7 +159,7 @@
     }
 
     function buildTrail(satrec, color, date) {
-        const positions = [], period = orbitalPeriodMs(satrec), steps = 120;
+        const positions = [], period = orbitalPeriodMs(satrec), steps = 500;
         for (let i = 0; i <= steps; i++) {
             const p = eciPos(satrec, new Date(date.getTime() + (period / steps) * i));
             if (p) positions.push(p.x, p.y, p.z);

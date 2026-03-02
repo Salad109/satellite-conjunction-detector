@@ -55,6 +55,11 @@ public class UiController {
     @GetMapping("/hx/satellites")
     public String satellitesFragment(@PageableDefault(sort = "noradCatId", direction = Sort.Direction.ASC) Pageable pageable, Model model) {
         model.addAttribute("page", satelliteService.getBriefInfos(pageable));
+
+        Sort.Order order = pageable.getSort().stream().findFirst().orElse(null);
+        model.addAttribute("sortField", order != null ? order.getProperty() : "noradCatId");
+        model.addAttribute("sortDir", order != null ? order.getDirection().name().toLowerCase() : "asc");
+
         return "fragments/satellite-table";
     }
 
