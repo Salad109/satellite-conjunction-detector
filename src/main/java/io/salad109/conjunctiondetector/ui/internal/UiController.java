@@ -1,6 +1,7 @@
 package io.salad109.conjunctiondetector.ui.internal;
 
 import io.salad109.conjunctiondetector.conjunction.ConjunctionService;
+import io.salad109.conjunctiondetector.conjunction.ScanLogService;
 import io.salad109.conjunctiondetector.ingestion.IngestionLogService;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +18,14 @@ public class UiController {
 
     private final ConjunctionService conjunctionService;
     private final IngestionLogService ingestionLogService;
+    private final ScanLogService scanLogService;
     private final SatelliteService satelliteService;
 
-    public UiController(ConjunctionService conjunctionService, IngestionLogService ingestionLogService, SatelliteService satelliteService) {
+    public UiController(ConjunctionService conjunctionService, IngestionLogService ingestionLogService,
+                        ScanLogService scanLogService, SatelliteService satelliteService) {
         this.conjunctionService = conjunctionService;
         this.ingestionLogService = ingestionLogService;
+        this.scanLogService = scanLogService;
         this.satelliteService = satelliteService;
     }
 
@@ -72,5 +76,11 @@ public class UiController {
     public String lastSyncFragment(Model model) {
         model.addAttribute("log", ingestionLogService.getLatest());
         return "fragments/last-sync-log";
+    }
+
+    @GetMapping("/hx/lastscan")
+    public String lastScanFragment(Model model) {
+        model.addAttribute("scan", scanLogService.getLatest());
+        return "fragments/last-scan-log";
     }
 }

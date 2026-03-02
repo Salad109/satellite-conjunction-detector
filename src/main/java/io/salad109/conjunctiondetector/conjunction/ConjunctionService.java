@@ -32,6 +32,7 @@ public class ConjunctionService {
     private final PropagationService propagationService;
     private final ScanService scanService;
     private final CollisionProbabilityService collisionProbabilityService;
+    private final ScanLogService scanLogService;
 
     @Value("${conjunction.tolerance-km:72.0}")
     private double toleranceKm;
@@ -55,12 +56,14 @@ public class ConjunctionService {
                               ConjunctionRepository conjunctionRepository,
                               PropagationService propagationService,
                               ScanService scanService,
-                              CollisionProbabilityService collisionProbabilityService) {
+                              CollisionProbabilityService collisionProbabilityService,
+                              ScanLogService scanLogService) {
         this.satelliteService = satelliteService;
         this.conjunctionRepository = conjunctionRepository;
         this.propagationService = propagationService;
         this.scanService = scanService;
         this.collisionProbabilityService = collisionProbabilityService;
+        this.scanLogService = scanLogService;
     }
 
     @PostConstruct
@@ -99,7 +102,7 @@ public class ConjunctionService {
         StopWatch stopWatch = StopWatch.createStarted();
         log.info("Starting conjunction screening...");
 
-        OffsetDateTime startTime = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime startedAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         // Load satellites
         List<SatelliteScanInfo> satellites = satelliteService.getAllScanInfo();
@@ -110,7 +113,7 @@ public class ConjunctionService {
 
         // SGP4 at stride points
         PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, startTime, stepSeconds, lookaheadHours, interpolationStride);
+                propagators, startedAt, stepSeconds, lookaheadHours, interpolationStride);
 
         // Interpolate to full position cache
         PropagationService.PositionCache positionCache = propagationService.interpolate(knots);
@@ -141,5 +144,7 @@ public class ConjunctionService {
         stopWatch.stop();
         log.info("Conjunction screening completed in {}ms, found {} conjunctions",
                 stopWatch.getTime(), conjunctions.size());
+
+        scanLogService.saveScanLog(startedAt, stopWatch.getTime(), satellites.size(), conjunctions.size());
     }
 }
