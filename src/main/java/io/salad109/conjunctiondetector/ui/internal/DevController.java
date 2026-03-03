@@ -3,7 +3,6 @@ package io.salad109.conjunctiondetector.ui.internal;
 import io.salad109.conjunctiondetector.conjunction.ConjunctionService;
 import io.salad109.conjunctiondetector.ingestion.IngestionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,13 +26,13 @@ public class DevController {
     }
 
 
-    @GetMapping("/scan")
+    @PostMapping("/scan")
     public ResponseEntity<List<Void>> scanForConjunctions() {
         conjunctionService.findConjunctions();
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/sync-and-scan")
+    @PostMapping("/sync-and-scan")
     public ResponseEntity<List<Void>> syncAndScan() {
         ingestionService.sync();
         conjunctionService.findConjunctions();

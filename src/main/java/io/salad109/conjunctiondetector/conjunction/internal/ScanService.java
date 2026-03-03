@@ -160,8 +160,8 @@ public class ScanService {
      * With linear interpolation between two positions, squared distance is a quadratic in t.
      * Solve for the minimum analytically. Returns {minDistSq, t} where t in [0,1].
      */
-    private double[] analyticalMin(PropagationService.PositionCache cache, int idxA, int idxB,
-                                   int s0, int s1) {
+    double[] analyticalMin(PropagationService.PositionCache cache, int idxA, int idxB,
+                           int s0, int s1) {
         double sepX = cache.x()[idxA][s0] - cache.x()[idxB][s0];
         double sepY = cache.y()[idxA][s0] - cache.y()[idxB][s0];
         double sepZ = cache.z()[idxA][s0] - cache.z()[idxB][s0];
@@ -173,8 +173,27 @@ public class ScanService {
         double sepDotDelta = sepX * deltaSepX + sepY * deltaSepY + sepZ * deltaSepZ;
         double deltaSepSq = deltaSepX * deltaSepX + deltaSepY * deltaSepY + deltaSepZ * deltaSepZ;
 
-        double t = deltaSepSq == 0 ? 0.5 : Math.clamp(-sepDotDelta / deltaSepSq, 0, 1);
-        return new double[]{distSq0 + (2 * sepDotDelta + deltaSepSq * t) * t, t};
+        if (deltaSepSq == 0) {
+            // Constant separation
+            return new double[]{distSq0, 0.5};
+        }
+
+        double t = Math.clamp(-sepDotDelta / deltaSepSq, 0, 1);
+
+        // Compute minimum distSq via discriminant form to avoid catastrophic cancellation.
+        double minDistSq;
+        if (t == 0.0) {
+            minDistSq = distSq0;
+        } else if (t == 1.0) {
+            double sepEndX = sepX + deltaSepX;
+            double sepEndY = sepY + deltaSepY;
+            double sepEndZ = sepZ + deltaSepZ;
+            minDistSq = sepEndX * sepEndX + sepEndY * sepEndY + sepEndZ * sepEndZ;
+        } else {
+            minDistSq = (distSq0 * deltaSepSq - sepDotDelta * sepDotDelta) / deltaSepSq;
+        }
+
+        return new double[]{minDistSq, t};
     }
 
 

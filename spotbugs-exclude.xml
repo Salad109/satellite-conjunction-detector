@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Records intentionally expose mutable arrays -->
+    <Match>
+        <Class name="~.*\$KnotCache"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="~.*\$PositionCache"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="~.*\$RefinedEvent"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Spring constructor injection is intended -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~.*Service|.*Controller|.*Client"/>
+    </Match>
+</FindBugsFilter>

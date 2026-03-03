@@ -11,8 +11,9 @@ import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -39,15 +40,6 @@ public abstract class BenchmarkRunner {
         this.propagationService = propagationService;
         this.scanService = scanService;
         this.collisionProbabilityService = collisionProbabilityService;
-    }
-
-    private static void gc() {
-        System.gc();
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     protected BenchmarkResult runBenchmark(List<SatelliteScanInfo> satellites,
@@ -119,10 +111,10 @@ public abstract class BenchmarkRunner {
 
     protected void writeCsv(List<BenchmarkResult> results, Path outputPath) {
         String csv = buildCsv(results);
-        //noinspection ResultOfMethodCallIgnored
-        outputPath.getParent().toFile().mkdirs();
-        try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-            writer.write(csv);
+        try {
+            Path parent = outputPath.toAbsolutePath().getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Files.writeString(outputPath, csv, StandardCharsets.UTF_8);
             log.info("CSV written to: {}", outputPath.toAbsolutePath());
         } catch (IOException e) {
             log.error("Failed to write CSV to {}: {}", outputPath, e.getMessage());
