@@ -14,7 +14,10 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 /**
  * Linux:
@@ -30,7 +33,7 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
 
     private static final double TOLERANCE_KM = 72.0;
     private static final double MIN_ACCURACY_PCT = 98.0;
-    private static final int ITERATIONS = 2;
+    private static final int ITERATIONS = 3;
 
     // Starting values (safest)
     private static final int START_STEP_RATIO = 9;
@@ -39,8 +42,8 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
 
     // Step sizes
     private static final int STEP_RATIO_DELTA = 1;
-    private static final int STRIDE_DELTA = 10;
-    private static final double CELL_RATIO_DELTA = 0.15;
+    private static final int STRIDE_DELTA = 5;
+    private static final double CELL_RATIO_DELTA = 0.1;
 
     public ParetoFrontierBenchmark(SatelliteService satelliteService, PropagationService propagationService,
                                    ScanService scanService, CollisionProbabilityService collisionProbabilityService) {
@@ -51,22 +54,35 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
         return Math.min(100.0, (result.conjunctions() * 100.0) / groundTruth);
     }
 
-    private static BenchmarkResult averageResults(List<BenchmarkResult> results) {
-        int n = results.size();
+    private static long medianLong(List<BenchmarkResult> results, ToLongFunction<BenchmarkResult> extractor) {
+        List<Long> values = new ArrayList<>(results.stream().map(extractor::applyAsLong).toList());
+        Collections.sort(values);
+        int n = values.size();
+        return (n % 2 == 1) ? values.get(n / 2) : (values.get(n / 2 - 1) + values.get(n / 2)) / 2;
+    }
+
+    private static int medianInt(List<BenchmarkResult> results, ToIntFunction<BenchmarkResult> extractor) {
+        List<Integer> values = new ArrayList<>(results.stream().map(extractor::applyAsInt).toList());
+        Collections.sort(values);
+        int n = values.size();
+        return (n % 2 == 1) ? values.get(n / 2) : (values.get(n / 2 - 1) + values.get(n / 2)) / 2;
+    }
+
+    private static BenchmarkResult medianResults(List<BenchmarkResult> results) {
         BenchmarkResult first = results.getFirst();
         return new BenchmarkResult(
                 first.toleranceKm(), first.stepRatio(), first.cellRatio(), first.stride(),
-                results.stream().mapToLong(BenchmarkResult::detections).sum() / n,
-                results.stream().mapToInt(BenchmarkResult::events).sum() / n,
-                results.stream().mapToInt(BenchmarkResult::conjunctions).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::propagatorTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::sgp4Time).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::interpTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::checkTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::groupingTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::refineTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::probabilityTime).sum() / n,
-                results.stream().mapToLong(BenchmarkResult::totalTime).sum() / n);
+                medianLong(results, BenchmarkResult::detections),
+                medianInt(results, BenchmarkResult::events),
+                medianInt(results, BenchmarkResult::conjunctions),
+                medianLong(results, BenchmarkResult::propagatorTime),
+                medianLong(results, BenchmarkResult::sgp4Time),
+                medianLong(results, BenchmarkResult::interpTime),
+                medianLong(results, BenchmarkResult::checkTime),
+                medianLong(results, BenchmarkResult::groupingTime),
+                medianLong(results, BenchmarkResult::refineTime),
+                medianLong(results, BenchmarkResult::probabilityTime),
+                medianLong(results, BenchmarkResult::totalTime));
     }
 
     @Override
@@ -106,7 +122,7 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
                     double stepSeconds = TOLERANCE_KM / stepRatio;
                     List<BenchmarkResult> results = runIterations(satellites, TOLERANCE_KM,
                             stepRatio, stepSeconds, stride, cellRatio, ITERATIONS);
-                    BenchmarkResult result = averageResults(results);
+                    BenchmarkResult result = medianResults(results);
                     double acc = accuracyPct(result, groundTruth);
                     evaluated++;
 

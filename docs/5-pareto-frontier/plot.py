@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 df = pd.read_csv('pareto_benchmark.csv')
 
@@ -96,4 +97,41 @@ plt.tight_layout()
 plt.savefig('2_frontier_parameters.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print(f"\nPlots saved: 1_pareto_frontier.png, 2_frontier_parameters.png")
+timing_columns = ['propagator_s', 'sgp4_s', 'interp_s', 'check_s', 'grouping_s', 'refine_s', 'probability_s']
+stack_colors = ['#2ca02c', '#06A77D', '#e377c2', '#17becf', '#9467bd', '#D62839', '#8c564b']
+stack_labels = ['Propagator Build', 'SGP4', 'Interpolation', 'Check Pairs', 'Grouping', 'Refine', 'Probability']
+markers = ['^', 'd', 'D', 'x', 'v', 'p', '*']
+
+f = frontier.sort_values('accuracy_pct', ascending=False).reset_index(drop=True)
+x_acc = f['accuracy_pct'].values
+
+# Plot 3 - Line per component along Pareto frontier
+fig, ax = plt.subplots(figsize=(12, 7))
+for col, color, marker, label in zip(timing_columns, stack_colors, markers, stack_labels):
+    ax.plot(x_acc, f[col], marker=marker, linestyle='-', label=label,
+            color=color, linewidth=2, markersize=8)
+ax.invert_xaxis()
+ax.set_xlabel('Accuracy (%)', fontsize=12)
+ax.set_ylabel('Time (s)', fontsize=12)
+ax.set_title('Pareto Frontier: Time Breakdown', fontsize=14, fontweight='bold')
+ax.legend(fontsize=8, ncol=2)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('3_time_breakdown.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# Plot 4 - Stacked area along Pareto frontier
+fig, ax = plt.subplots(figsize=(12, 7))
+y_stack = np.vstack([f[col].values for col in timing_columns])
+ax.stackplot(x_acc, y_stack, labels=stack_labels, colors=stack_colors, alpha=0.8)
+ax.invert_xaxis()
+ax.set_xlabel('Accuracy (%)', fontsize=12)
+ax.set_ylabel('Time (s)', fontsize=12)
+ax.set_title('Pareto Frontier: Time Breakdown (Stacked)', fontsize=14, fontweight='bold')
+ax.legend(fontsize=8, loc='upper left', ncol=2)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('4_time_breakdown_stacked.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+print(f"\nPlots saved: 1_pareto_frontier.png, 2_frontier_parameters.png, 3_time_breakdown.png, 4_time_breakdown_stacked.png")

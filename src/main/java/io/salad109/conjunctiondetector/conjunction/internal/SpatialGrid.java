@@ -1,8 +1,9 @@
 package io.salad109.conjunctiondetector.conjunction.internal;
 
-import org.eclipse.collections.api.list.primitive.MutableIntList;
 import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
 import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
+
+import java.util.ArrayList;
 
 public class SpatialGrid {
 
@@ -22,25 +23,42 @@ public class SpatialGrid {
             {1, -1, 1},   // +x-y+z
             {1, -1, -1},  // +x-y-z
     };
+
+    // Reuse to reduce hot path allocations
+    private static final ThreadLocal<IntObjectHashMap<IntArrayList>> MAP_POOL
+            = ThreadLocal.withInitial(() -> new IntObjectHashMap<>(512));
+    private static final ThreadLocal<ArrayList<IntArrayList>> BUCKET_POOL =
+            ThreadLocal.withInitial(ArrayList::new);
+
     private final double cellSizeKm;
-    private final IntObjectHashMap<MutableIntList> grid;
+    private final IntObjectHashMap<IntArrayList> grid;
 
     public SpatialGrid(double cellSizeKm, float[][] x, float[][] y, float[][] z, int step) {
         this.cellSizeKm = cellSizeKm;
-        this.grid = new IntObjectHashMap<>();
+
+        IntObjectHashMap<IntArrayList> map = MAP_POOL.get();
+        ArrayList<IntArrayList> bucketPool = BUCKET_POOL.get();
+
+        map.forEachValue(bucket -> {
+            bucket.clear();
+            bucketPool.add(bucket);
+        });
+        map.clear();
 
         int numSatellites = x.length;
         for (int satIdx = 0; satIdx < numSatellites; satIdx++) {
             if (Float.isNaN(x[satIdx][step])) continue;
 
             int cellKey = cellHash(x[satIdx][step], y[satIdx][step], z[satIdx][step]);
-            MutableIntList satellites = grid.get(cellKey);
-            if (satellites == null) {
-                satellites = new IntArrayList();
-                grid.put(cellKey, satellites);
+            IntArrayList bucket = map.get(cellKey);
+            if (bucket == null) {
+                bucket = bucketPool.isEmpty() ? new IntArrayList(4) : bucketPool.removeLast();
+                map.put(cellKey, bucket);
             }
-            satellites.add(satIdx);
+            bucket.add(satIdx);
         }
+
+        this.grid = map;
     }
 
     /**
@@ -56,7 +74,6 @@ public class SpatialGrid {
 
     /**
      * Iterate all candidate pairs that could be within tolerance.
-     * Pairs are only emitted once (idxA < idxB by construction).
      */
     public void forEachCandidatePair(IntBiConsumer consumer) {
         grid.forEachKeyValue((cellKey, satellites) -> {
@@ -78,12 +95,12 @@ public class SpatialGrid {
 
             for (int[] offset : HALF_NEIGHBOR_OFFSETS) {
                 int neighborKey = packCellKey(cx + offset[0], cy + offset[1], cz + offset[2]);
-                MutableIntList neighborSatellites = grid.get(neighborKey);
+                IntArrayList neighborSatellites = grid.get(neighborKey);
                 if (neighborSatellites == null) continue;
 
+                int neighborSize = neighborSatellites.size();
                 for (int i = 0; i < size; i++) {
                     int idxA = satellites.get(i);
-                    int neighborSize = neighborSatellites.size();
                     for (int j = 0; j < neighborSize; j++) {
                         int idxB = neighborSatellites.get(j);
                         consumer.accept(idxA, idxB);

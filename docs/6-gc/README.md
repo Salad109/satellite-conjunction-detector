@@ -17,15 +17,14 @@ Each GC runs the same fixed-parameter conjunction pipeline 10 times to measure t
 
 | GC         | Mean Time | Std Dev | Min    | Max    | Conjunctions |
 |------------|-----------|---------|--------|--------|--------------|
-| G1         | 29.89s    | 0.45s   | 29.20s | 30.56s | 36907        |
-| Parallel   | 29.87s    | 0.60s   | 29.08s | 30.70s | 36907        |
-| Shenandoah | 30.39s    | 0.39s   | 29.93s | 31.19s | 36907        |
-| Z          | 33.12s    | 0.59s   | 32.33s | 33.94s | 36907        |
+| G1         | 22.46s    | 0.47s   | 22.00s | 23.21s | 43770        |
+| Parallel   | 22.70s    | 0.30s   | 22.17s | 23.08s | 43770        |
+| Shenandoah | 22.73s    | 0.22s   | 22.44s | 23.11s | 43770        |
+| Z          | 24.57s    | 0.37s   | 23.97s | 25.24s | 43770        |
 
-All GCs detect identical conjunctions (36,907). The difference is pure runtime.
+All GCs detect identical conjunctions (43,770). The difference is pure runtime.
 
-G1 and Parallel are tied, but Parallel isn't suitable for a web backend. Shenandoah is ~1.7% slower. ZGC is the slowest
-by a significant margin.
+G1, Parallel, and Shenandoah are effectively tied (~1% spread). ZGC is ~9% slower.
 
 **Recommendation: G1.**
 
