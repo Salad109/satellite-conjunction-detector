@@ -37,7 +37,7 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
 
     // Starting values (safest)
     private static final int START_STEP_RATIO = 9;
-    private static final int START_STRIDE = 10;
+    private static final int START_STRIDE = 5;
     private static final double START_CELL_RATIO = 1.0;
 
     // Step sizes
@@ -96,8 +96,13 @@ public class ParetoFrontierBenchmark extends BenchmarkRunner implements CommandL
         log.info("Loaded {} satellites", satellites.size());
         log.info("Using fixed start time: {}", FIXED_START_TIME);
 
-        BenchmarkResult groundTruthResult = runBenchmark(satellites, TOLERANCE_KM,
+        log.info("Warmup...");
+        runBenchmark(satellites, TOLERANCE_KM,
                 START_STEP_RATIO, TOLERANCE_KM / START_STEP_RATIO, START_STRIDE, START_CELL_RATIO);
+
+        List<BenchmarkResult> groundTruthResults = runIterations(satellites, TOLERANCE_KM,
+                START_STEP_RATIO, TOLERANCE_KM / START_STEP_RATIO, START_STRIDE, START_CELL_RATIO, ITERATIONS);
+        BenchmarkResult groundTruthResult = medianResults(groundTruthResults);
         int groundTruth = groundTruthResult.conjunctions();
         log.info("Ground truth: {} conjunctions ({}s)", groundTruth, groundTruthResult.totalTime() / 1000.0);
 

@@ -40,6 +40,7 @@ class IridiumCosmosBackTest {
 
     private final PropagationService propagationService = new PropagationService();
     private final ScanService scanService = new ScanService(propagationService);
+    private final CollisionProbabilityService probabilityService = new CollisionProbabilityService();
 
     @BeforeAll
     static void initOrekit() {
@@ -64,8 +65,8 @@ class IridiumCosmosBackTest {
         double distanceM = pvIridium.getPosition().subtract(pvCosmos.getPosition()).getNorm();
         double relVelMS = pvIridium.getVelocity().subtract(pvCosmos.getVelocity()).getNorm();
 
-        System.out.println("Distance: " + String.format("%.1f", distanceM) + " m");
-        System.out.println("Relative velocity: " + String.format("%.1f", relVelMS) + " m/s (expected ~11700 m/s)");
+        System.out.printf("Distance: %.1f m%n", distanceM);
+        System.out.printf("Relative velocity: %.1f m/s (expected ~11700 m/s)%n", relVelMS);
 
         assertThat(distanceM)
                 .as("SGP4 miss distance at known collision time")
@@ -79,7 +80,7 @@ class IridiumCosmosBackTest {
     void fullPipelineDetectsCollision() {
 
         double toleranceKm = 72.0;
-        double cellSizeKm = 55.4;
+        double cellSizeKm = 48.0;
         double stepSeconds = 9;
         int interpolationStride = 50;
         int lookaheadHours = 2;
@@ -124,26 +125,28 @@ class IridiumCosmosBackTest {
                 .min(Comparator.comparingDouble(ScanService.RefinedEvent::distanceKm))
                 .orElseThrow();
 
-        System.out.println("Events detected: " + refined.size());
-        System.out.println("Closest approach: " + String.format("%.3f", best.distanceKm()) + " km");
-        System.out.println("TCA: " + best.tca() + " (error: " + Duration.between(COLLISION_TIME, best.tca()).toMillis() + " milliseconds)");
-        System.out.println("Relative velocity: " + String.format("%.1f", best.relativeVelocityMS()) + " m/s (expected ~11700 m/s)");
+        Conjunction conjunction = probabilityService.computeProbabilityAndBuild(best);
 
-        long tcaErrorSeconds = Math.abs(Duration.between(COLLISION_TIME, best.tca()).toSeconds());
+        long tcaErrorMs = Duration.between(COLLISION_TIME, conjunction.getTca()).toMillis();
 
-        assertThat(best.distanceKm())
+        System.out.printf("Closest approach: %.3f km%n", conjunction.getMissDistanceKm());
+        System.out.printf("TCA: %s (error: %d ms)%n", conjunction.getTca(), tcaErrorMs);
+        System.out.printf("Relative velocity: %.1f m/s (expected ~11700 m/s)%n", conjunction.getRelativeVelocityMS());
+        System.out.printf("Collision probability: %.6e%n", conjunction.getCollisionProbability());
+
+        assertThat(conjunction.getMissDistanceKm())
                 .as("pipeline miss distance")
                 .isLessThan(5.0);
-        assertThat(tcaErrorSeconds)
+        assertThat(Math.abs(tcaErrorMs / 1000))
                 .as("TCA error from known collision time")
                 .isLessThan(30);
-        assertThat(best.relativeVelocityMS())
+        assertThat(conjunction.getRelativeVelocityMS())
                 .as("relative velocity (expected ~11700 m/s)")
                 .isCloseTo(11700, offset(1000.0));
-        assertThat(best.pair().a().noradCatId())
+        assertThat(conjunction.getObject1NoradId())
                 .as("ordering: lower NORAD ID first")
                 .isEqualTo(22675);
-        assertThat(best.pair().b().noradCatId())
+        assertThat(conjunction.getObject2NoradId())
                 .isEqualTo(24946);
     }
 }

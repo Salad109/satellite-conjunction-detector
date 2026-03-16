@@ -31,9 +31,9 @@ public class AccuracyBenchmark extends BenchmarkRunner implements CommandLineRun
     private static final int ITERATIONS = 5;
     private static final double TOLERANCE_KM = 72.0;
 
-    private static final int DEFAULT_STEP_RATIO = 10;
-    private static final int DEFAULT_STRIDE = 5;
-    private static final double DEFAULT_CELL_RATIO = 1.30;
+    private static final int DEFAULT_STEP_RATIO = 9;
+    private static final int DEFAULT_STRIDE = 25;
+    private static final double DEFAULT_CELL_RATIO = 1.20;
 
     private static final int[] STEP_RATIO_VALUES = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
     private static final int[] STRIDE_VALUES = {1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125};

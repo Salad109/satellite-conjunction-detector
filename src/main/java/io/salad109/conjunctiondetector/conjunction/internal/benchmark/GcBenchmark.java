@@ -32,7 +32,7 @@ public class GcBenchmark extends BenchmarkRunner implements CommandLineRunner {
     private static final double TOLERANCE_KM = 72.0;
     private static final int STEP_RATIO = 8;
     private static final int INTERPOLATION_STRIDE = 50;
-    private static final double CELL_RATIO = 1.30;
+    private static final double CELL_RATIO = 1.50;
 
     public GcBenchmark(SatelliteService satelliteService, PropagationService propagationService,
                        ScanService scanService, CollisionProbabilityService collisionProbabilityService) {

@@ -37,7 +37,7 @@ public class ConjunctionService {
     @Value("${conjunction.tolerance-km:72.0}")
     private double toleranceKm;
 
-    @Value("${conjunction.cell-size-km:46.875}")
+    @Value("${conjunction.cell-size-km:48.0}")
     private double cellSizeKm;
 
     @Value("${conjunction.collision-threshold-km:5.0}")
@@ -46,10 +46,10 @@ public class ConjunctionService {
     @Value("${conjunction.lookahead-hours:24}")
     private int lookaheadHours;
 
-    @Value("${conjunction.step-seconds:9.375}")
+    @Value("${conjunction.step-seconds:9.0}")
     private double stepSeconds;
 
-    @Value("${conjunction.interpolation-stride:130}")
+    @Value("${conjunction.interpolation-stride:50}")
     private int interpolationStride;
 
     public ConjunctionService(SatelliteService satelliteService,
