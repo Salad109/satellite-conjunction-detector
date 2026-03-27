@@ -6,6 +6,7 @@ target/
 .env
 *.so
 docs/*.csv
+stuff/
 
 ### STS ###
 .apt_generated
