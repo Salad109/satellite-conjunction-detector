@@ -10,10 +10,7 @@ import org.orekit.utils.PVCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @Service
@@ -98,11 +95,19 @@ public class ScanService {
     }
 
     /**
-     * Refine a coarse detection to find accurate TCA and minimum distance.
-     * Call SGP4 only for events that survive the threshold check.
+     * Refine coarse detections to find accurate TCA and minimum distance.
+     * Call SGP4 only for events that survive the analytical threshold check.
      */
-    public RefinedEvent refineDetection(CoarseDetection best, PropagationService.PositionCache cache,
-                                        Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
+    public List<RefinedEvent> refine(List<CoarseDetection> events, PropagationService.PositionCache cache,
+                                     Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
+        return events.parallelStream()
+                .map(det -> refineDetection(det, cache, propagators, stepSeconds, thresholdKm))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private RefinedEvent refineDetection(CoarseDetection best, PropagationService.PositionCache cache,
+                                         Map<Integer, TLEPropagator> propagators, double stepSeconds, double thresholdKm) {
         SatelliteScanInfoPair pair = best.pair();
         int step = best.stepIndex();
         int totalSteps = cache.times().length;

@@ -16,12 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 public class ConjunctionService {
@@ -117,21 +117,18 @@ public class ConjunctionService {
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
 
         // Split the lookahead window into subwindows to cap PositionCache memory
-        int totalSteps = (int) Math.round((lookaheadHours * 3600.0) / stepSeconds) + 1;
-        long stepNanos = Math.round(stepSeconds * 1_000_000_000L);
-        int baseStepsPerSub = totalSteps / subwindowCount;
-        int remainder = totalSteps % subwindowCount;
+        OffsetDateTime windowEnd = startedAt.plusHours(lookaheadHours);
+        long subwindowNanos = Duration.between(startedAt, windowEnd).toNanos() / subwindowCount;
 
         List<ScanService.RefinedEvent> allRefined = new ArrayList<>();
-        int globalOffset = 0;
 
         for (int w = 0; w < subwindowCount; w++) {
-            int subSteps = baseStepsPerSub + (w < remainder ? 1 : 0);
-            OffsetDateTime subStart = startedAt.plusNanos((long) globalOffset * stepNanos);
+            OffsetDateTime subStart = startedAt.plusNanos(w * subwindowNanos);
+            OffsetDateTime subEnd = (w == subwindowCount - 1) ? windowEnd : startedAt.plusNanos((w + 1) * subwindowNanos);
 
             // SGP4 at stride points
             PropagationService.KnotCache knots = propagationService.computeKnots(
-                    propagators, subStart, stepSeconds, subSteps, interpolationStride);
+                    propagators, subStart, subEnd, stepSeconds, interpolationStride);
 
             // Interpolate to full position cache
             PropagationService.PositionCache cache = propagationService.interpolate(knots);
@@ -144,16 +141,12 @@ public class ConjunctionService {
             List<ScanService.CoarseDetection> events = scanService.groupAndReduce(detections);
 
             // Refine
-            List<ScanService.RefinedEvent> refined = events.parallelStream()
-                    .map(det -> scanService.refineDetection(det, cache, propagators, stepSeconds, thresholdKm))
-                    .filter(Objects::nonNull)
-                    .toList();
+            List<ScanService.RefinedEvent> refined = scanService.refine(
+                    events, cache, propagators, stepSeconds, thresholdKm);
             allRefined.addAll(refined);
 
             log.debug("Subwindow {}/{}: {} detections, {} events, {} refined",
                     w + 1, subwindowCount, detections.size(), events.size(), refined.size());
-
-            globalOffset += subSteps;
         }
 
         // Collision probability

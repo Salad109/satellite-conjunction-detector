@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,11 +42,10 @@ public class PropagationService {
      * Calculates SGP4 PV coordinates at stride points only. Returns SGP4 knot arrays sized [numSats][numKnots].
      * Position in km, velocity in km/s.
      */
-    public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime, double stepSeconds,
-                                  int totalSteps, int interpolationStride) {
-        int stride = Math.max(1, interpolationStride);
-
+    public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime,
+                                  OffsetDateTime endTime, double stepSeconds, int interpolationStride) {
         long stepNanos = Math.round(stepSeconds * 1_000_000_000L);
+        int totalSteps = (int) Math.round(Duration.between(startTime, endTime).toNanos() / (stepSeconds * 1_000_000_000L)) + 1;
         OffsetDateTime[] times = new OffsetDateTime[totalSteps];
         for (int i = 0; i < totalSteps; i++) {
             times[i] = startTime.plusNanos(i * stepNanos);
@@ -60,7 +60,7 @@ public class PropagationService {
         }
 
         int numSats = satIds.length;
-        int numKnots = (totalSteps - 1) / stride + 1;
+        int numKnots = (totalSteps - 1) / interpolationStride + 1;
 
         float[][] kx = new float[numSats][numKnots];
         float[][] ky = new float[numSats][numKnots];
@@ -77,7 +77,7 @@ public class PropagationService {
             TLEPropagator prop = propagators.get(satIds[s]);
 
             for (int k = 0; k < numKnots; k++) {
-                int step = k * stride;
+                int step = k * interpolationStride;
                 if (step >= totalSteps) break;
                 try {
                     PVCoordinates pv = prop.getPVCoordinates(toAbsoluteDate(times[step]), prop.getFrame());
@@ -93,7 +93,7 @@ public class PropagationService {
             }
         });
 
-        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stepNanos, stride,
+        return new KnotCache(noradIdToArrayId, arrayIdToNoradId, times, stepNanos, interpolationStride,
                 kx, ky, kz, kvx, kvy, kvz);
     }
 
@@ -104,15 +104,15 @@ public class PropagationService {
     public PositionCache interpolate(KnotCache knots) {
         int numSats = knots.x.length;
         int totalSteps = knots.times.length;
-        int stride = knots.stride;
+        int interpolationStride = knots.interpolationStride;
 
-        if (stride == 1) {
+        if (interpolationStride == 1) {
             // No interpolation
             return new PositionCache(knots.noradIdToArrayId, knots.arrayIdToNoradId, knots.times,
                     knots.x, knots.y, knots.z);
         }
 
-        float dt = (float) (knots.stepNanos * stride / 1e9); // seconds between knots
+        float dt = (float) (knots.stepNanos * interpolationStride / 1e9); // seconds between knots
 
         float[][] x = new float[numSats][totalSteps];
         float[][] y = new float[numSats][totalSteps];
@@ -128,8 +128,8 @@ public class PropagationService {
             for (int k = 0; k < numKnots - 1; k++) {
                 if (Float.isNaN(knots.x[s][k]) || Float.isNaN(knots.x[s][k + 1])) continue;
 
-                int stepStart = k * stride;
-                int stepEnd = Math.min((k + 1) * stride, totalSteps - 1);
+                int stepStart = k * interpolationStride;
+                int stepEnd = Math.min((k + 1) * interpolationStride, totalSteps - 1);
 
                 x[s][stepStart] = knots.x[s][k];
                 y[s][stepStart] = knots.y[s][k];
@@ -224,7 +224,7 @@ public class PropagationService {
     }
 
     public record KnotCache(MutableIntIntMap noradIdToArrayId, int[] arrayIdToNoradId, OffsetDateTime[] times,
-                            long stepNanos, int stride,
+                            long stepNanos, int interpolationStride,
                             float[][] x, float[][] y, float[][] z,
                             float[][] vx, float[][] vy, float[][] vz) {
     }
