@@ -98,8 +98,9 @@ class IridiumCosmosBackTest {
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
 
         // Propagate and interpolate
+        int totalSteps = (int) Math.round((lookaheadHours * 3600.0) / stepSeconds) + 1;
         PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, COLLISION_TIME.minusHours(1), stepSeconds, lookaheadHours, interpolationStride);
+                propagators, COLLISION_TIME.minusHours(1), stepSeconds, totalSteps, interpolationStride);
         PropagationService.PositionCache cache = propagationService.interpolate(knots);
 
         // Coarse spatial scan

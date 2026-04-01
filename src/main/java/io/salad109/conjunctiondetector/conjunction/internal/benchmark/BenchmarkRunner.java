@@ -53,8 +53,9 @@ public abstract class BenchmarkRunner {
         propagator.stop();
 
         StopWatch propagateSweep = StopWatch.createStarted();
+        int totalSteps = (int) Math.round((LOOKAHEAD_HOURS * 3600.0) / stepSeconds) + 1;
         PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, BenchmarkRunner.FIXED_START_TIME, stepSeconds, LOOKAHEAD_HOURS, stride);
+                propagators, FIXED_START_TIME, stepSeconds, totalSteps, stride);
         propagateSweep.stop();
 
         StopWatch interpolation = StopWatch.createStarted();

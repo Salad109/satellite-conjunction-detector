@@ -42,8 +42,7 @@ public class PropagationService {
      * Position in km, velocity in km/s.
      */
     public KnotCache computeKnots(Map<Integer, TLEPropagator> propagators, OffsetDateTime startTime, double stepSeconds,
-                                  int lookaheadHours, int interpolationStride) {
-        int totalSteps = (int) Math.round((lookaheadHours * 3600.0) / stepSeconds) + 1;
+                                  int totalSteps, int interpolationStride) {
         int stride = Math.max(1, interpolationStride);
 
         long stepNanos = Math.round(stepSeconds * 1_000_000_000L);
