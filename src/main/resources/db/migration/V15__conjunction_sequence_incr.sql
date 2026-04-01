@@ -1,0 +1,1 @@
+ALTER SEQUENCE conjunction_id_seq INCREMENT BY 1000;

@@ -16,7 +16,8 @@ import java.time.OffsetDateTime;
 @Table(name = "conjunction")
 public class Conjunction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "conjunction_seq")
+    @SequenceGenerator(name = "conjunction_seq", sequenceName = "conjunction_id_seq", allocationSize = 1000)
     private Long id;
 
     @Column(name = "object1_norad_id", nullable = false)
