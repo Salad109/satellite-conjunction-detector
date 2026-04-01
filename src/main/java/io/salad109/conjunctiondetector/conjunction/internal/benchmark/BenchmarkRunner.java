@@ -20,7 +20,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public abstract class BenchmarkRunner {
 
@@ -53,8 +52,9 @@ public abstract class BenchmarkRunner {
         propagator.stop();
 
         StopWatch propagateSweep = StopWatch.createStarted();
+        OffsetDateTime endTime = FIXED_START_TIME.plusHours(LOOKAHEAD_HOURS);
         PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, BenchmarkRunner.FIXED_START_TIME, stepSeconds, LOOKAHEAD_HOURS, stride);
+                propagators, FIXED_START_TIME, endTime, stepSeconds, stride);
         propagateSweep.stop();
 
         StopWatch interpolation = StopWatch.createStarted();
@@ -70,10 +70,8 @@ public abstract class BenchmarkRunner {
         grouping.stop();
 
         StopWatch refine = StopWatch.createStarted();
-        List<ScanService.RefinedEvent> refined = events.parallelStream()
-                .map(det -> scanService.refineDetection(det, positionCache, propagators, stepSeconds, THRESHOLD_KM))
-                .filter(Objects::nonNull)
-                .toList();
+        List<ScanService.RefinedEvent> refined = scanService.refine(
+                events, positionCache, propagators, stepSeconds, THRESHOLD_KM);
         refine.stop();
 
         StopWatch probability = StopWatch.createStarted();

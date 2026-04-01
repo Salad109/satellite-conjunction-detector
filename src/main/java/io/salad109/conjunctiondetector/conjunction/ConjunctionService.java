@@ -16,11 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Service
 public class ConjunctionService {
@@ -52,6 +53,9 @@ public class ConjunctionService {
     @Value("${conjunction.interpolation-stride:50}")
     private int interpolationStride;
 
+    @Value("${conjunction.subwindow-count:1}")
+    private int subwindowCount;
+
     public ConjunctionService(SatelliteService satelliteService,
                               ConjunctionRepository conjunctionRepository,
                               PropagationService propagationService,
@@ -75,6 +79,7 @@ public class ConjunctionService {
         if (stepSeconds <= 0) throw new IllegalStateException("conjunction.step-seconds must be positive");
         if (interpolationStride <= 0)
             throw new IllegalStateException("conjunction.interpolation-stride must be positive");
+        if (subwindowCount <= 0) throw new IllegalStateException("conjunction.subwindow-count must be positive");
     }
 
     @Transactional(readOnly = true)
@@ -111,29 +116,41 @@ public class ConjunctionService {
         // Build propagators
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
 
-        // SGP4 at stride points
-        PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, startedAt, stepSeconds, lookaheadHours, interpolationStride);
+        // Split the lookahead window into subwindows to cap PositionCache memory
+        OffsetDateTime windowEnd = startedAt.plusHours(lookaheadHours);
+        long subwindowNanos = Duration.between(startedAt, windowEnd).toNanos() / subwindowCount;
 
-        // Interpolate to full position cache
-        PropagationService.PositionCache positionCache = propagationService.interpolate(knots);
+        List<ScanService.RefinedEvent> allRefined = new ArrayList<>();
 
-        // Coarse sweep
-        List<ScanService.CoarseDetection> detections = scanService.checkPairs(satellites, positionCache, toleranceKm, cellSizeKm);
-        log.debug("Coarse sweep found {} detections", detections.size());
+        for (int w = 0; w < subwindowCount; w++) {
+            OffsetDateTime subStart = startedAt.plusNanos(w * subwindowNanos);
+            OffsetDateTime subEnd = (w == subwindowCount - 1) ? windowEnd : startedAt.plusNanos((w + 1) * subwindowNanos);
 
-        // Sort, cluster, reduce to best-per-event
-        List<ScanService.CoarseDetection> events = scanService.groupAndReduce(detections);
-        log.debug("Grouped into {} events", events.size());
+            // SGP4 at stride points
+            PropagationService.KnotCache knots = propagationService.computeKnots(
+                    propagators, subStart, subEnd, stepSeconds, interpolationStride);
 
-        // Refine
-        List<ScanService.RefinedEvent> refined = events.parallelStream()
-                .map(det -> scanService.refineDetection(det, positionCache, propagators, stepSeconds, thresholdKm))
-                .filter(Objects::nonNull)
-                .toList();
+            // Interpolate to full position cache
+            PropagationService.PositionCache cache = propagationService.interpolate(knots);
+
+            // Coarse sweep
+            List<ScanService.CoarseDetection> detections = scanService.checkPairs(
+                    satellites, cache, toleranceKm, cellSizeKm);
+
+            // Sort, cluster, reduce to best-per-event
+            List<ScanService.CoarseDetection> events = scanService.groupAndReduce(detections);
+
+            // Refine
+            List<ScanService.RefinedEvent> refined = scanService.refine(
+                    events, cache, propagators, stepSeconds, thresholdKm);
+            allRefined.addAll(refined);
+
+            log.debug("Subwindow {}/{}: {} detections, {} events, {} refined",
+                    w + 1, subwindowCount, detections.size(), events.size(), refined.size());
+        }
 
         // Collision probability
-        List<Conjunction> conjunctions = refined.parallelStream()
+        List<Conjunction> conjunctions = allRefined.parallelStream()
                 .map(collisionProbabilityService::computeProbabilityAndBuild)
                 .toList();
 

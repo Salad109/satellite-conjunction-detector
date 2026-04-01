@@ -18,7 +18,6 @@ import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
@@ -98,8 +97,10 @@ class IridiumCosmosBackTest {
         Map<Integer, TLEPropagator> propagators = propagationService.buildPropagators(satellites);
 
         // Propagate and interpolate
+        OffsetDateTime startTime = COLLISION_TIME.minusHours(1);
+        OffsetDateTime endTime = startTime.plusHours(lookaheadHours);
         PropagationService.KnotCache knots = propagationService.computeKnots(
-                propagators, COLLISION_TIME.minusHours(1), stepSeconds, lookaheadHours, interpolationStride);
+                propagators, startTime, endTime, stepSeconds, interpolationStride);
         PropagationService.PositionCache cache = propagationService.interpolate(knots);
 
         // Coarse spatial scan
@@ -114,10 +115,8 @@ class IridiumCosmosBackTest {
         assertThat(events).as("grouped events").isNotEmpty();
 
         // Refine
-        List<ScanService.RefinedEvent> refined = events.stream()
-                .map(e -> scanService.refineDetection(e, cache, propagators, stepSeconds, thresholdKm))
-                .filter(Objects::nonNull)
-                .toList();
+        List<ScanService.RefinedEvent> refined = scanService.refine(
+                events, cache, propagators, stepSeconds, thresholdKm);
 
         assertThat(refined).as("refined events").isNotEmpty();
 
