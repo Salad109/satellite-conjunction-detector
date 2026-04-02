@@ -28,12 +28,13 @@ very high counts the constant overhead dominates and cache savings become neglig
 
 ## Boundary duplicates
 
-A conjunction straddling a subwindow boundary can appear in both subwindows. Testing with count=4 on 24h produced ~28
-duplicates out of ~89k conjunctions (0.03%). The conjunction table allows multiple events per pair, so these are
+A conjunction straddling a subwindow boundary can appear in both subwindows. Testing with count=4 on a 24h window
+produced 576 duplicates out of ~51k conjunctions (1.1%). The system allows multiple events per pair, so these are
 harmless.
 
 ## Recommended values
 
 For 24h lookahead window, use 4. For 7 days, use 28 (same cache size per subwindow as 24h/4).
 
-Higher counts cause no meaningful speed penalty.
+Higher counts cause no meaningful speed penalty, and may arguably improve performance in memory-constrained environments
+by reducing GC pressure.

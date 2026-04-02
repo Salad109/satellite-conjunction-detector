@@ -50,10 +50,18 @@ covariance synthesized from empirical SGP4 error models).
 
 ## Parameter Tuning
 
-The `docs/` directory contains sweep experiments for each tunable parameter of the scan pipeline and a Pareto frontier
-analysis of speed vs accuracy across all parameters simultaneously. Key takeaway is that individually safe parameter
-choices compound in complex ways when combined. Tuning parameters in isolation is not representative of the final
-result, so the Pareto analysis is necessary to find configurations that are both fast and actually accurate.
+The [/docs](docs) directory contains experiments from benchmarking each tunable parameter. Individually safe choices
+compound in complex ways when combined, so the Pareto analysis sweeps all parameters simultaneously.
+
+| # | Experiment                                            | What it sweeps                                     |
+|---|-------------------------------------------------------|----------------------------------------------------|
+| 1 | [Step Ratio](docs/1-step-ratio)                       | Time step size                                     |
+| 2 | [Interpolation Stride](docs/2-interpolation-stride)   | SGP4 calls per time step via interpolation spacing |
+| 3 | [Cell Size Ratio](docs/3-cell-size-ratio)             | Spatial grid cell size                             |
+| 4 | [Conjunction Tolerance](docs/4-conjunction-tolerance) | Coarse scan distance threshold in km               |
+| 5 | [Pareto Frontier](docs/5-pareto-frontier)             | All parameters simultaneously                      |
+| 6 | [Garbage Collector](docs/6-gc)                        | GC impact on pipeline throughput                   |
+| 7 | [Subwindow Count](docs/7-subwindow-count)             | Memory partitioning for peak heap reduction        |
 
 Selected Pareto-optimal configurations:
 

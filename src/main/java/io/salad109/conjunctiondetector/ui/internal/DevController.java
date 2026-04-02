@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 @RestController
 public class DevController {
@@ -27,13 +26,13 @@ public class DevController {
 
 
     @PostMapping("/scan")
-    public ResponseEntity<List<Void>> scanForConjunctions() {
+    public ResponseEntity<Void> scanForConjunctions() {
         conjunctionService.findConjunctions();
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/sync-and-scan")
-    public ResponseEntity<List<Void>> syncAndScan() {
+    public ResponseEntity<Void> syncAndScan() {
         ingestionService.sync();
         conjunctionService.findConjunctions();
         return ResponseEntity.ok().build();

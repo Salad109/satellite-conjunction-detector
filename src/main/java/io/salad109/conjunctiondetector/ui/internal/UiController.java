@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Locale;
+
 @Controller
 public class UiController {
 
@@ -58,7 +60,7 @@ public class UiController {
 
         Sort.Order order = pageable.getSort().stream().findFirst().orElse(null);
         model.addAttribute("sortField", order != null ? order.getProperty() : "noradCatId");
-        model.addAttribute("sortDir", order != null ? order.getDirection().name().toLowerCase() : "asc");
+        model.addAttribute("sortDir", order != null ? order.getDirection().name().toLowerCase(Locale.ROOT) : "asc");
 
         return "fragments/satellite-table";
     }
@@ -72,7 +74,7 @@ public class UiController {
 
         Sort.Order order = pageable.getSort().stream().findFirst().orElse(null);
         model.addAttribute("sortField", order != null ? order.getProperty() : "tca");
-        model.addAttribute("sortDir", order != null ? order.getDirection().name().toLowerCase() : "desc");
+        model.addAttribute("sortDir", order != null ? order.getDirection().name().toLowerCase(Locale.ROOT) : "desc");
 
         return "fragments/conjunction-table";
     }

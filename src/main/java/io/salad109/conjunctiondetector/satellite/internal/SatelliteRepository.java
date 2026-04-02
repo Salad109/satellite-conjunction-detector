@@ -19,6 +19,7 @@ public interface SatelliteRepository extends JpaRepository<Satellite, Integer> {
     /**
      * Count satellites in catalog.
      */
+    @Override
     long count();
 
     int deleteSatellitesByNoradCatIdNotIn(Collection<Integer> id);
@@ -36,6 +37,7 @@ public interface SatelliteRepository extends JpaRepository<Satellite, Integer> {
             "FROM Satellite s")
     Page<SatelliteBriefInfo> getSatelliteBriefInfos(Pageable pageable);
 
+    @SuppressWarnings("SqlWithoutWhere")
     @Modifying
     @Query(value = """
             UPDATE satellite s SET conjunction_count = (

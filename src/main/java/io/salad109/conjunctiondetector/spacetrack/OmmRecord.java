@@ -56,7 +56,7 @@ public record OmmRecord(
         return noradCatId != null
                 && tleLine1 != null && !tleLine1.isBlank()
                 && tleLine2 != null && !tleLine2.isBlank()
-                && epoch != null && epoch.isAfter(LocalDateTime.now().minusDays(30))
+                && epoch != null && epoch.isAfter(LocalDateTime.now(ZoneOffset.UTC).minusDays(30))
                 && meanMotion != null && meanMotion.compareTo(BigDecimal.ZERO) > 0
                 && eccentricity != null && eccentricity.compareTo(BigDecimal.ZERO) >= 0
                 && eccentricity.compareTo(new BigDecimal("0.95")) < 0;
