@@ -7,8 +7,7 @@ Validated against [CelesTrak SOCRATES](https://celestrak.org/SOCRATES/): when fi
 (payload-vs-catalog, excluding intra-constellation pairs), detection counts match within 8%. Full all-vs-all screening
 finds ~48,000 conjunctions per 24h window, including debris-vs-debris pairs that SOCRATES excludes.
 
-Backtested against
-the 2009 Iridium 33 / Cosmos 2251 collision - the pipeline flags the event with 10 ms TCA accuracy.
+Backtested against the 2009 Iridium 33 / Cosmos 2251 collision - the pipeline flags the event with 10 ms TCA accuracy.
 
 |                  | This                                        | SOCRATES (CelesTrak)     |
 |------------------|---------------------------------------------|--------------------------|
@@ -28,12 +27,12 @@ The detection pipeline has four stages:
 
 Rather than calling SGP4 at every timestep, the propagator stage evaluates SGP4 at knot points spaced minutes apart and
 fills intermediate positions using cubic Hermite interpolation on position and velocity. This cuts expensive SGP4 calls
-by 50x with negligible accuracy loss.
+by up to 70x with negligible accuracy loss.
 
 ### 2. Coarse sweep (spatial grid indexing)
 
 At each timestep, all satellite positions are hashed into a 1024 x 1024 x 1024 3D cell grid. Candidate pairs are
-generated only from same and neighbor cells. This eliminates the O(n^2) pairwise comparison.
+generated only from same and neighboring cells. This eliminates the O(n^2) pairwise comparison.
 
 ### 3. Grouping
 
@@ -45,15 +44,15 @@ event.
 Between two interpolated timesteps (~9 seconds apart), relative motion is effectively linear, so squared distance is
 quadratic, therefore the minimum of a quadratic is just one division. No golden section, no Brent's method, no iterative
 SGP4 calls. Most candidates get discarded here because the analytical minimum exceeds the 5 km threshold. Only survivors
-get a single SGP4 call to confirm. Events that pass are scored with collision probability (Orekit's Laas2015 method,
-covariance synthesized from empirical SGP4 error models).
+get a single SGP4 call to confirm. Events that pass are scored with collision probability synthesized from empirical 
+SGP4 error models.
 
 ## Parameter Tuning
 
 The [/docs](docs) directory contains experiments from benchmarking each tunable parameter. Individually safe choices
 compound in complex ways when combined, so the Pareto analysis sweeps all parameters simultaneously.
 
-| # | Experiment                                            | What it sweeps                                     |
+| # | Experiment                                            | Description                                        |
 |---|-------------------------------------------------------|----------------------------------------------------|
 | 1 | [Step Ratio](docs/1-step-ratio)                       | Time step size                                     |
 | 2 | [Interpolation Stride](docs/2-interpolation-stride)   | SGP4 calls per time step via interpolation spacing |
