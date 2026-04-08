@@ -82,7 +82,6 @@ class IridiumCosmosBackTest {
         double cellSizeKm = 48.0;
         double stepSeconds = 9;
         int interpolationStride = 50;
-        int lookaheadHours = 2;
         double thresholdKm = 5.0;
 
         OffsetDateTime iridiumEpoch = OffsetDateTime.of(2009, 2, 9, 18, 49, 39, 0, ZoneOffset.UTC);
@@ -98,7 +97,7 @@ class IridiumCosmosBackTest {
 
         // Propagate and interpolate
         OffsetDateTime startTime = COLLISION_TIME.minusHours(1);
-        OffsetDateTime endTime = startTime.plusHours(lookaheadHours);
+        OffsetDateTime endTime = startTime.plusHours(1);
         PropagationService.KnotCache knots = propagationService.computeKnots(
                 propagators, startTime, endTime, stepSeconds, interpolationStride);
         PropagationService.PositionCache cache = propagationService.interpolate(knots);

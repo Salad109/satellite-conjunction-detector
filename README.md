@@ -7,7 +7,8 @@ Validated against [CelesTrak SOCRATES](https://celestrak.org/SOCRATES/): when fi
 (payload-vs-catalog, excluding intra-constellation pairs), detection counts match within 8%. Full all-vs-all screening
 finds ~48,000 conjunctions per 24h window, including debris-vs-debris pairs that SOCRATES excludes.
 
-Backtested against the 2009 Iridium 33 / Cosmos 2251 collision - the pipeline flags the event with 10 ms TCA accuracy.
+Backtested against the 2009 Iridium 33 / Cosmos 2251 collision and the 1996 CERISE / Ariane debris collision. The
+pipeline flags both events with 10 and 7 ms TCA accuracy respectively.
 
 |                  | This                                        | SOCRATES (CelesTrak)     |
 |------------------|---------------------------------------------|--------------------------|
@@ -44,7 +45,7 @@ event.
 Between two interpolated timesteps (~9 seconds apart), relative motion is effectively linear, so squared distance is
 quadratic, therefore the minimum of a quadratic is just one division. No golden section, no Brent's method, no iterative
 SGP4 calls. Most candidates get discarded here because the analytical minimum exceeds the 5 km threshold. Only survivors
-get a single SGP4 call to confirm. Events that pass are scored with collision probability synthesized from empirical 
+get a single SGP4 call to confirm. Events that pass are scored with collision probability synthesized from empirical
 SGP4 error models.
 
 ## Parameter Tuning
