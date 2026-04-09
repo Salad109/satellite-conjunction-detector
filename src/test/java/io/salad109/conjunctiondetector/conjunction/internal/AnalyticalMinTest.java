@@ -5,6 +5,7 @@ import org.eclipse.collections.impl.map.mutable.primitive.IntIntHashMap;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
@@ -142,7 +143,7 @@ class AnalyticalMinTest {
         IntIntHashMap idMap = new IntIntHashMap();
         idMap.put(1, 0);
         idMap.put(2, 1);
-        OffsetDateTime[] times = {OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(10)};
+        OffsetDateTime[] times = {OffsetDateTime.now(ZoneOffset.UTC), OffsetDateTime.now(ZoneOffset.UTC).plusSeconds(10)};
         return new PositionCache(idMap, new int[]{1, 2}, times, x, y, z);
     }
 }
