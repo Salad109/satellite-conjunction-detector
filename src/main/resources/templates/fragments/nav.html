@@ -1,5 +1,26 @@
-<nav class="flex items-center gap-6 mb-8 text-sm border-b border-gray-200 pb-3" th:fragment="nav">
-    <span class="font-semibold text-base">Conjunction Detector</span>
-    <a class="text-gray-600 hover:text-gray-900" href="/">Home</a>
-    <a class="text-gray-600 hover:text-gray-900" href="/catalog">Satellite Catalog</a>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  fragments/nav.html
+  Usage: <nav th:replace="~{fragments/nav :: nav('home')}"></nav>
+  activePage: 'home' | 'catalog' | 'stats' | '' (satellite/viz detail pages)
+
+  Each page loads its own status into #nav-status via HTMX.
+  See fragments/nav-status-scan.html and nav-status-sync.html.
+-->
+<nav class="app-nav" th:fragment="nav(activePage)">
+    <a class="nav-brand" href="/">Conjunction Detector</a>
+    <div class="nav-links">
+        <a class="nav-link" href="/"
+           th:classappend="${activePage == 'home'} ? ' active' : ''">Conjunctions</a>
+        <a class="nav-link" href="/catalog"
+           th:classappend="${activePage == 'catalog'} ? ' active' : ''">Satellite Catalog</a>
+        <a class="nav-link" href="/stats"
+           th:classappend="${activePage == 'stats'} ? ' active' : ''">Stats</a>
+    </div>
+    <div class="nav-right" id="nav-status">
+        <!-- Populated by each page via: hx-get="..." hx-target="#nav-status" hx-trigger="load" -->
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark"></button>
 </nav>
+</html>

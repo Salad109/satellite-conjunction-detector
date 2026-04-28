@@ -1,101 +1,102 @@
-<table class="text-sm border border-gray-300" hx-indicator="#results">
-    <thead class="bg-gray-50 text-gray-700 text-xs uppercase">
-    <tr>
-        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
-            hx-target="#results"
-            rowspan="2"
-            th:hx-get="'/hx/conjunctions?sort=id,' + (${sortField == 'id' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
-            ID
-            <span th:if="${sortField == 'id' && sortDir == 'asc'}">&#9650;</span>
-            <span th:if="${sortField == 'id' && sortDir == 'desc'}">&#9660;</span>
-        </th>
-        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
-            hx-target="#results"
-            rowspan="2"
-            th:hx-get="'/hx/conjunctions?sort=missDistanceKm,' + (${sortField == 'missDistanceKm' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
-            Miss Distance (km)
-            <span th:if="${sortField == 'missDistanceKm' && sortDir == 'asc'}">&#9650;</span>
-            <span th:if="${sortField == 'missDistanceKm' && sortDir == 'desc'}">&#9660;</span>
-        </th>
-        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
-            hx-target="#results"
-            rowspan="2"
-            th:hx-get="'/hx/conjunctions?sort=tca,' + (${sortField == 'tca' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
-            TCA
-            <span th:if="${sortField == 'tca' && sortDir == 'asc'}">&#9650;</span>
-            <span th:if="${sortField == 'tca' && sortDir == 'desc'}">&#9660;</span>
-        </th>
-        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
-            hx-target="#results"
-            rowspan="2"
-            th:hx-get="'/hx/conjunctions?sort=relativeVelocityMS,' + (${sortField == 'relativeVelocityMS' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
-            Rel. Velocity (m/s)
-            <span th:if="${sortField == 'relativeVelocityMS' && sortDir == 'asc'}">&#9650;</span>
-            <span th:if="${sortField == 'relativeVelocityMS' && sortDir == 'desc'}">&#9660;</span>
-        </th>
-        <th class="px-4 py-2 border-b cursor-pointer hover:bg-gray-100 whitespace-nowrap"
-            hx-target="#results"
-            rowspan="2"
-            th:hx-get="'/hx/conjunctions?sort=collisionProbability,' + (${sortField == 'collisionProbability' && sortDir == 'asc'} ? 'desc' : 'asc') + '&amp;includeFormations=' + ${includeFormations}">
-            Pc
-            <span th:if="${sortField == 'collisionProbability' && sortDir == 'asc'}">&#9650;</span>
-            <span th:if="${sortField == 'collisionProbability' && sortDir == 'desc'}">&#9660;</span>
-        </th>
-        <th class="px-4 py-2 border-b border-l text-center" colspan="3">Object 1</th>
-        <th class="px-4 py-2 border-b border-l text-center" colspan="3">Object 2</th>
-    </tr>
-    <tr>
-        <th class="px-4 py-2 border-b border-l">NORAD ID</th>
-        <th class="px-4 py-2 border-b">Name</th>
-        <th class="px-4 py-2 border-b">Type</th>
-        <th class="px-4 py-2 border-b border-l">NORAD ID</th>
-        <th class="px-4 py-2 border-b">Name</th>
-        <th class="px-4 py-2 border-b">Type</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:class="${iter.odd} ? 'bg-white' : 'bg-gray-50'" th:each="c, iter : ${page.content}">
-        <td class="px-4 py-2 border-b font-mono">
-            <a class="text-blue-600 hover:underline cursor-pointer" th:href="@{/conjunctions/{id}(id=${c.id})}"
-               th:text="${c.id}"></a>
-        </td>
-        <td class="px-4 py-2 border-b font-mono"
-            th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}"></td>
-        <td class="px-4 py-2 border-b font-mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}"></td>
-        <td class="px-4 py-2 border-b font-mono"
-            th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}"></td>
-        <td class="px-4 py-2 border-b font-mono"
-            th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}"></td>
-        <td class="px-4 py-2 border-b border-l font-mono">
-            <a class="text-blue-600 hover:underline" th:href="@{/satellites/{id}(id=${c.object1NoradId})}"
-               th:text="${c.object1NoradId}"></a>
-        </td>
-        <td class="px-4 py-2 border-b" th:text="${c.object1Name}"></td>
-        <td class="px-4 py-2 border-b" th:text="${c.object1Type}"></td>
-        <td class="px-4 py-2 border-b border-l font-mono">
-            <a class="text-blue-600 hover:underline" th:href="@{/satellites/{id}(id=${c.object2NoradId})}"
-               th:text="${c.object2NoradId}"></a>
-        </td>
-        <td class="px-4 py-2 border-b" th:text="${c.object2Name}"></td>
-        <td class="px-4 py-2 border-b" th:text="${c.object2Type}"></td>
-    </tr>
-    </tbody>
-</table>
+<!--
+  fragments/conjunction-table.html
+  Returned by GET /hx/conjunctions
+  Model: page (Page<ConjunctionInfo>), sortField, sortDir, includeFormations
+-->
+<th:block xmlns:th="http://www.thymeleaf.org">
 
-<div class="flex items-center gap-4 mt-4">
-    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
-            hx-target="#results"
-            th:hx-get="'/hx/conjunctions?page=' + ${page.number - 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir} + '&amp;includeFormations=' + ${includeFormations}"
-            th:if="${page.hasPrevious()}">
-        Previous
-    </button>
+    <table class="data-table" hx-indicator="#results">
+        <thead>
+        <tr>
+            <!-- Sortable scalar columns (rowspan=2) -->
+            <th class="sortable" hx-target="#results"
+                rowspan="2"
+                th:classappend="${sortField == 'id'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
+                th:hx-get="'/hx/conjunctions?sort=id,' + (${sortField == 'id' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
+                ID
+            </th>
+            <th class="sortable num" hx-target="#results"
+                rowspan="2"
+                th:classappend="${sortField == 'missDistanceKm'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
+                th:hx-get="'/hx/conjunctions?sort=missDistanceKm,' + (${sortField == 'missDistanceKm' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
+                Miss Dist (km)
+            </th>
+            <th class="sortable" hx-target="#results"
+                rowspan="2"
+                th:classappend="${sortField == 'tca'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
+                th:hx-get="'/hx/conjunctions?sort=tca,' + (${sortField == 'tca' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
+                TCA (UTC)
+            </th>
+            <th class="sortable num" hx-target="#results"
+                rowspan="2"
+                th:classappend="${sortField == 'relativeVelocityMS'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
+                th:hx-get="'/hx/conjunctions?sort=relativeVelocityMS,' + (${sortField == 'relativeVelocityMS' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
+                Rel. Vel (m/s)
+            </th>
+            <th class="sortable" hx-target="#results"
+                rowspan="2"
+                th:classappend="${sortField == 'collisionProbability'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
+                th:hx-get="'/hx/conjunctions?sort=collisionProbability,' + (${sortField == 'collisionProbability' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
+                Pc
+            </th>
+            <th class="col-head-sep" colspan="3" style="text-align:center">Object 1</th>
+            <th class="col-head-sep" colspan="3" style="text-align:center">Object 2</th>
+        </tr>
+        <tr>
+            <th class="col-sep">NORAD ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th class="col-sep">NORAD ID</th>
+            <th>Name</th>
+            <th>Type</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="c : ${page.content}"
+            th:with="pcClass=${c.collisionProbability >= 1e-6 ? 'pc-hi' : (c.collisionProbability >= 1e-8 ? 'pc-med' : '')}">
+            <td class="mono">
+                <a th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}">8821</a>
+            </td>
+            <td class="num" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}">0.051</td>
+            <td class="mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}">2025-04-20 03:17:42</td>
+            <td class="num" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}">14823.1</td>
+            <td class="mono" th:classappend="${pcClass}"
+                th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}">0.0000000821
+            </td>
+            <td class="mono col-sep">
+                <a th:href="@{/satellites/{id}(id=${c.object1NoradId})}" th:text="${c.object1NoradId}">25544</a>
+            </td>
+            <td th:text="${c.object1Name}">ISS (ZARYA)</td>
+            <td>
+        <span class="type-badge"
+              th:classappend="${c.object1Type == 'PAYLOAD'} ? ' payload' : (${c.object1Type == 'DEBRIS'} ? ' debris' : ' rocket')"
+              th:text="${c.object1Type}">PAYLOAD</span>
+            </td>
+            <td class="mono col-sep">
+                <a th:href="@{/satellites/{id}(id=${c.object2NoradId})}" th:text="${c.object2NoradId}">43205</a>
+            </td>
+            <td th:text="${c.object2Name}">STARLINK-1234</td>
+            <td>
+        <span class="type-badge"
+              th:classappend="${c.object2Type == 'PAYLOAD'} ? ' payload' : (${c.object2Type == 'DEBRIS'} ? ' debris' : ' rocket')"
+              th:text="${c.object2Type}">PAYLOAD</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 
-    <span class="text-sm text-gray-600" th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}"></span>
+    <div class="pagination">
+        <button class="btn" hx-target="#results"
+                th:hx-get="'/hx/conjunctions?page=' + ${page.number - 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
+                th:if="${page.hasPrevious()}">
+            ← Prev
+        </button>
+        <span th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">Page 1 of 441</span>
+        <button class="btn" hx-target="#results"
+                th:hx-get="'/hx/conjunctions?page=' + ${page.number + 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
+                th:if="${page.hasNext()}">
+            Next →
+        </button>
+    </div>
 
-    <button class="border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded-sm text-sm"
-            hx-target="#results"
-            th:hx-get="'/hx/conjunctions?page=' + ${page.number + 1} + '&amp;sort=' + ${sortField} + ',' + ${sortDir} + '&amp;includeFormations=' + ${includeFormations}"
-            th:if="${page.hasNext()}">
-        Next
-    </button>
-</div>
+</th:block>

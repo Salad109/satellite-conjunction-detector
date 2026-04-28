@@ -1,43 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <title>Conjunction Detector</title>
-    <style>
-        #results {
-            transition: opacity 200ms;
-        }
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Conjunctions')}"></head>
+<body>
 
-        #results.htmx-request {
-            opacity: 0.5;
-        }
-    </style>
-</head>
-<body class="bg-white text-gray-900 p-8 min-h-screen">
-<div th:replace="~{fragments/nav :: nav}"></div>
+<nav th:replace="~{fragments/nav :: nav('home')}"></nav>
 
-<div class="flex items-center gap-2 text-sm">
-    <input class="rounded-sm cursor-pointer"
-           hx-get="/hx/conjunctions"
-           hx-include="this"
-           hx-indicator="#results"
-           hx-target="#results"
-           hx-trigger="change"
-           id="includeFormations"
-           name="includeFormations"
-           type="checkbox">
-    <label class="cursor-pointer" for="includeFormations">Include formations (< 10 m/s)</label>
-</div>
+<!-- Load scan status into nav on page load -->
+<div hx-get="/hx/nav-status/scan"
+     hx-swap="innerHTML"
+     hx-target="#nav-status"
+     hx-trigger="load"
+     style="display:none"></div>
 
-<div class="mt-6" hx-get="/hx/conjunctions" hx-indicator="#results" hx-trigger="load" id="results">
-    <p class="text-sm text-gray-400">Loading conjunctions...</p>
-</div>
+<main class="page-body">
+    <div class="filter-bar">
+        <label>
+            <input hx-get="/hx/conjunctions"
+                   hx-include="this"
+                   hx-indicator="#results"
+                   hx-target="#results"
+                   hx-trigger="change"
+                   id="includeFormations"
+                   name="includeFormations"
+                   type="checkbox">
+            Include formations (&lt; 10 m/s)
+        </label>
+    </div>
 
-<div class="mt-8" hx-get="/hx/lastscan" hx-trigger="load">
-    <p class="text-sm text-gray-400">Loading scan info...</p>
-</div>
+    <div hx-get="/hx/conjunctions"
+         hx-trigger="load"
+         id="results">
+        <p style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace">Loading conjunctions…</p>
+    </div>
+</main>
 
-<div th:replace="~{fragments/footer :: footer}"></div>
+<footer class="app-footer" th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 </html>

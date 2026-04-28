@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <title th:text="${status} + ' - Conjunction Detector'">Error</title>
-</head>
-<body class="bg-white text-gray-900 p-8 min-h-screen">
-<div th:replace="~{fragments/nav :: nav}"></div>
-<div class="flex flex-col items-center justify-center mt-32">
-    <p class="text-8xl font-bold text-gray-200" th:text="${status}">404</p>
-    <p class="text-lg text-gray-600 mt-4" th:text="${reason}">Not found</p>
-</div>
-<div th:replace="~{fragments/footer :: footer}"></div>
+<head th:replace="~{fragments/head :: head(${status})}"></head>
+<body>
+
+<nav th:replace="~{fragments/nav :: nav('')}"></nav>
+
+<main class="page-body error-body">
+    <div class="error-code" th:text="${status}">404</div>
+    <div class="error-msg" th:text="${reason}">Not found</div>
+</main>
+
+<footer class="app-footer" th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 </html>

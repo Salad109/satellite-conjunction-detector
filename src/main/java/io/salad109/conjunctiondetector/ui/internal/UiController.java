@@ -79,15 +79,15 @@ public class UiController {
         return "fragments/conjunction-table";
     }
 
-    @GetMapping("/hx/lastsync")
-    public String lastSyncFragment(Model model) {
+    @GetMapping("/hx/nav-status/sync")
+    public String navStatusSyncFragment(Model model) {
         model.addAttribute("log", ingestionLogService.getLatest());
-        return "fragments/last-sync-log";
+        return "fragments/nav-status-sync";
     }
 
-    @GetMapping("/hx/lastscan")
-    public String lastScanFragment(Model model) {
+    @GetMapping("/hx/nav-status/scan")
+    public String navStatusScanFragment(Model model) {
         model.addAttribute("scan", scanLogService.getLatest());
-        return "fragments/last-scan-log";
+        return "fragments/nav-status-scan";
     }
 }
