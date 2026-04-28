@@ -6,6 +6,8 @@ on:
     types: [ completed ]
     branches: [ master ]
 
+permissions: {}
+
 jobs:
   deploy:
     name: Deploy to box

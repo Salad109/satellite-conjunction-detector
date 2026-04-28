@@ -6,6 +6,9 @@ on:
   schedule:
     - cron: '29 18 * * 2'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -26,7 +29,7 @@ jobs:
             build-mode: manual
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Java
         if: matrix.language == 'java-kotlin'
