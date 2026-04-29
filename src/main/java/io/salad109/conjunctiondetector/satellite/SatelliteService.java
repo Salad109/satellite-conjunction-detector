@@ -28,6 +28,27 @@ public class SatelliteService {
         return satelliteRepository.findAllSatelliteScanInfo();
     }
 
+    @Transactional(readOnly = true)
+    public long count() {
+        return satelliteRepository.count();
+    }
+
+    @Transactional(readOnly = true)
+    public CatalogBreakdown getCatalogBreakdown() {
+        return new CatalogBreakdown(
+                satelliteRepository.countByObjectType("PAYLOAD"),
+                satelliteRepository.countByObjectType("DEBRIS"),
+                satelliteRepository.countByObjectType("ROCKET BODY"),
+                satelliteRepository.countByObjectType("UNKNOWN")
+                        + satelliteRepository.countByObjectType("TBA"),
+                satelliteRepository.countLeo(),
+                satelliteRepository.countMeo(),
+                satelliteRepository.countGeo(),
+                satelliteRepository.countByObjectNameStartingWith("STARLINK"),
+                satelliteRepository.countByObjectNameStartingWith("ONEWEB"),
+                satelliteRepository.countByObjectNameStartingWith("COSMOS")
+        );
+    }
 
     @Transactional(readOnly = true)
     public Map<Integer, Satellite> getByCatalogIds(Iterable<Integer> catalogIds) {
@@ -59,5 +80,19 @@ public class SatelliteService {
     @Transactional
     public int deleteByCatalogIdsNotIn(Collection<Integer> catalogIds) {
         return satelliteRepository.deleteSatellitesByNoradCatIdNotIn(catalogIds);
+    }
+
+    public record CatalogBreakdown(
+            long payloadCount,
+            long debrisCount,
+            long rocketBodyCount,
+            long unknownCount,
+            long leoCount,
+            long meoCount,
+            long geoCount,
+            long starlinkCount,
+            long onewebCount,
+            long cosmosCount
+    ) {
     }
 }

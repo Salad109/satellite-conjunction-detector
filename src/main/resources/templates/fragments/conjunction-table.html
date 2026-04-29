@@ -8,37 +8,21 @@
     <table class="data-table" hx-indicator="#results">
         <thead>
         <tr>
-            <!-- Sortable scalar columns (rowspan=2) -->
-            <th class="sortable" hx-target="#results"
-                rowspan="2"
-                th:classappend="${sortField == 'id'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/conjunctions?sort=id,' + (${sortField == 'id' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
-                ID
-            </th>
-            <th class="sortable num" hx-target="#results"
-                rowspan="2"
-                th:classappend="${sortField == 'missDistanceKm'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/conjunctions?sort=missDistanceKm,' + (${sortField == 'missDistanceKm' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
-                Miss Dist (km)
-            </th>
-            <th class="sortable" hx-target="#results"
-                rowspan="2"
-                th:classappend="${sortField == 'tca'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/conjunctions?sort=tca,' + (${sortField == 'tca' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
-                TCA (UTC)
-            </th>
-            <th class="sortable num" hx-target="#results"
-                rowspan="2"
-                th:classappend="${sortField == 'relativeVelocityMS'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/conjunctions?sort=relativeVelocityMS,' + (${sortField == 'relativeVelocityMS' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
-                Rel. Vel (m/s)
-            </th>
-            <th class="sortable" hx-target="#results"
-                rowspan="2"
-                th:classappend="${sortField == 'collisionProbability'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/conjunctions?sort=collisionProbability,' + (${sortField == 'collisionProbability' && sortDir == 'asc'} ? 'desc' : 'asc') + '&includeFormations=' + ${includeFormations}">
-                Pc
-            </th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'id', 'ID', '/hx/conjunctions', ${sortField}, ${sortDir},
+                    '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'missDistanceKm', 'Miss Dist (km)', '/hx/conjunctions', ${sortField}, ${sortDir},
+                    '&includeFormations=' + ${includeFormations}, true, 2)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'tca', 'TCA (UTC)', '/hx/conjunctions', ${sortField}, ${sortDir},
+                    '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'relativeVelocityMS', 'Rel. Vel (m/s)', '/hx/conjunctions', ${sortField}, ${sortDir},
+                    '&includeFormations=' + ${includeFormations}, true, 2)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'collisionProbability', 'Pc', '/hx/conjunctions', ${sortField}, ${sortDir},
+                    '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
             <th class="col-head-sep" colspan="3" style="text-align:center">Object 1</th>
             <th class="col-head-sep" colspan="3" style="text-align:center">Object 2</th>
         </tr>
@@ -69,7 +53,7 @@
             <td th:text="${c.object1Name}">ISS (ZARYA)</td>
             <td>
         <span class="type-badge"
-              th:classappend="${c.object1Type == 'PAYLOAD'} ? ' payload' : (${c.object1Type == 'DEBRIS'} ? ' debris' : ' rocket')"
+              th:attr="data-type=${c.object1Type}"
               th:text="${c.object1Type}">PAYLOAD</span>
             </td>
             <td class="mono col-sep">
@@ -78,7 +62,7 @@
             <td th:text="${c.object2Name}">STARLINK-1234</td>
             <td>
         <span class="type-badge"
-              th:classappend="${c.object2Type == 'PAYLOAD'} ? ' payload' : (${c.object2Type == 'DEBRIS'} ? ' debris' : ' rocket')"
+              th:attr="data-type=${c.object2Type}"
               th:text="${c.object2Type}">PAYLOAD</span>
             </td>
         </tr>

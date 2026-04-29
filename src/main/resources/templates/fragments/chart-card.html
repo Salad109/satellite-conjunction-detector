@@ -1,0 +1,35 @@
+<!--
+  fragments/chart-card.html
+  A 30-day SVG line+area chart inside a card.
+  Args: title, points (controller-built "x,y x,y …"), min, max,
+        startLabel, endLabel, gradId (unique per chart), color (CSS var or hex)
+-->
+<div class="card"
+     th:fragment="chartCard(title, points, min, max, startLabel, endLabel, gradId, color)" xmlns:th="http://www.thymeleaf.org">
+    <div class="card-title" th:text="${title}">Chart title</div>
+    <div class="chart-wrap">
+        <svg style="width:100%;height:auto;display:block" viewBox="0 0 620 110">
+            <line stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.5" x1="44" x2="612" y1="8" y2="8"/>
+            <line stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.5" x1="44" x2="612" y1="53" y2="53"/>
+            <line stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.5" x1="44" x2="612" y1="98" y2="98"/>
+
+            <text class="chart-axis" text-anchor="end" th:text="${max}" x="40" y="12">42k</text>
+            <text class="chart-axis" text-anchor="end" th:text="${(min + max) / 2}" x="40" y="57">40k</text>
+            <text class="chart-axis" text-anchor="end" th:text="${min}" x="40" y="102">38k</text>
+
+            <text class="chart-axis" th:text="${startLabel}" x="44" y="109">Mar 20</text>
+            <text class="chart-axis" text-anchor="end" th:text="${endLabel}" x="612" y="109">Apr 19</text>
+
+            <defs>
+                <linearGradient th:id="${gradId}" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-opacity="0.18" th:attr="stop-color=${color}"/>
+                    <stop offset="100%" stop-opacity="0" th:attr="stop-color=${color}"/>
+                </linearGradient>
+            </defs>
+            <polygon th:attr="fill='url(#' + ${gradId} + ')',
+                              points=${'44,98 ' + points + ' 612,98'}"/>
+            <polyline fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      th:attr="stroke=${color},points=${points}"/>
+        </svg>
+    </div>
+</div>

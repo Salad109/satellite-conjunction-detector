@@ -2,12 +2,14 @@ package io.salad109.conjunctiondetector.ingestion;
 
 import io.salad109.conjunctiondetector.ingestion.internal.IngestionLog;
 import io.salad109.conjunctiondetector.ingestion.internal.IngestionLogRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 @Service
 public class IngestionLogService {
@@ -19,20 +21,8 @@ public class IngestionLogService {
     }
 
     @Transactional(readOnly = true)
-    public SyncResult getLatest() {
-        IngestionLog log = ingestionLogRepository.findTopByOrderByStartedAtDesc();
-        if (log == null)
-            return null;
-        else
-            return new SyncResult(
-                    log.getStartedAt(),
-                    log.getObjectsInserted(),
-                    log.getObjectsUpdated(),
-                    log.getObjectsUnchanged(),
-                    log.getObjectsSkipped(),
-                    log.getObjectsDeleted(),
-                    log.isSuccessful()
-            );
+    public List<SyncResult> getRecent(int n) {
+        return ingestionLogRepository.findRecent(PageRequest.of(0, n));
     }
 
     /**

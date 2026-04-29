@@ -28,25 +28,25 @@
             <div class="card-title">Identity</div>
             <div class="kv"><span class="k">Type</span>
                 <span class="type-badge"
-                      th:classappend="${satellite.objectType == 'PAYLOAD'} ? ' payload' : (${satellite.objectType == 'DEBRIS'} ? ' debris' : ' rocket')"
-                      th:text="${satellite.objectType} ?: '—'">PAYLOAD</span>
+                      th:attr="data-type=${satellite.objectType}"
+                      th:text="${satellite.objectType} ?: '-'">PAYLOAD</span>
             </div>
             <div class="kv"><span class="k">Classification</span><span class="v"
-                                                                       th:text="${satellite.classificationType} ?: '—'">U</span>
+                                                                       th:text="${satellite.classificationType} ?: '-'">U</span>
             </div>
             <div class="kv"><span class="k">Country</span><span class="v"
-                                                                th:text="${satellite.countryCode} ?: '—'">US</span>
+                                                                th:text="${satellite.countryCode} ?: '-'">US</span>
             </div>
             <div class="kv"><span class="k">RCS Size</span><span class="v"
-                                                                 th:text="${satellite.rcsSize} ?: '—'">LARGE</span>
+                                                                 th:text="${satellite.rcsSize} ?: '-'">LARGE</span>
             </div>
-            <div class="kv"><span class="k">Launch Date</span><span class="v" th:text="${satellite.launchDate} ?: '—'">1998-11-20</span>
+            <div class="kv"><span class="k">Launch Date</span><span class="v" th:text="${satellite.launchDate} ?: '-'">1998-11-20</span>
             </div>
             <div class="kv"><span class="k">Launch Site</span><span class="v"
-                                                                    th:text="${satellite.site} ?: '—'">TTMTR</span>
+                                                                    th:text="${satellite.site} ?: '-'">TTMTR</span>
             </div>
             <div class="kv"><span class="k">Decay Date</span><span class="v"
-                                                                   th:text="${satellite.decayDate} ?: '—'">—</span>
+                                                                   th:text="${satellite.decayDate} ?: '-'">-</span>
             </div>
         </div>
 
@@ -55,35 +55,35 @@
             <div class="card-title">Orbital Elements</div>
             <div class="kv"><span class="k">Perigee</span>
                 <span class="v"
-                      th:text="${satellite.perigeeKm != null} ? ${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km' : '—'">408.2 km</span>
+                      th:text="${satellite.perigeeKm != null} ? ${#numbers.formatDecimal(satellite.perigeeKm, 1, 2)} + ' km' : '-'">408.2 km</span>
             </div>
             <div class="kv"><span class="k">Apogee</span>
                 <span class="v"
-                      th:text="${satellite.apogeeKm != null} ? ${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km' : '—'">416.5 km</span>
+                      th:text="${satellite.apogeeKm != null} ? ${#numbers.formatDecimal(satellite.apogeeKm, 1, 2)} + ' km' : '-'">416.5 km</span>
             </div>
             <div class="kv"><span class="k">Semi-Major Axis</span>
                 <span class="v"
-                      th:text="${satellite.semiMajorAxisKm != null} ? ${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km' : '—'">6786.3 km</span>
+                      th:text="${satellite.semiMajorAxisKm != null} ? ${#numbers.formatDecimal(satellite.semiMajorAxisKm, 1, 2)} + ' km' : '-'">6786.3 km</span>
             </div>
             <div class="kv"><span class="k">Period</span>
                 <span class="v"
-                      th:text="${satellite.period != null} ? ${#numbers.formatDecimal(satellite.period, 1, 2)} + ' min' : '—'">92.7 min</span>
+                      th:text="${satellite.period != null} ? ${#numbers.formatDecimal(satellite.period, 1, 2)} + ' min' : '-'">92.7 min</span>
             </div>
             <div class="kv"><span class="k">Inclination</span>
                 <span class="v"
-                      th:text="${satellite.inclination != null} ? ${#numbers.formatDecimal(satellite.inclination, 1, 4)} + '°' : '—'">51.6400°</span>
+                      th:text="${satellite.inclination != null} ? ${#numbers.formatDecimal(satellite.inclination, 1, 4)} + '°' : '-'">51.6400°</span>
             </div>
             <div class="kv"><span class="k">RAAN</span>
                 <span class="v"
-                      th:text="${satellite.raan != null} ? ${#numbers.formatDecimal(satellite.raan, 1, 4)} + '°' : '—'">221.3210°</span>
+                      th:text="${satellite.raan != null} ? ${#numbers.formatDecimal(satellite.raan, 1, 4)} + '°' : '-'">221.3210°</span>
             </div>
             <div class="kv"><span class="k">Arg. of Perigee</span>
                 <span class="v"
-                      th:text="${satellite.argPerigee != null} ? ${#numbers.formatDecimal(satellite.argPerigee, 1, 4)} + '°' : '—'">88.1234°</span>
+                      th:text="${satellite.argPerigee != null} ? ${#numbers.formatDecimal(satellite.argPerigee, 1, 4)} + '°' : '-'">88.1234°</span>
             </div>
             <div class="kv"><span class="k">Eccentricity</span>
                 <span class="v"
-                      th:text="${satellite.eccentricity != null} ? ${#numbers.formatDecimal(satellite.eccentricity, 1, 8)} : '—'">0.00058240</span>
+                      th:text="${satellite.eccentricity != null} ? ${#numbers.formatDecimal(satellite.eccentricity, 1, 8)} : '-'">0.00058240</span>
             </div>
         </div>
 
@@ -103,14 +103,14 @@
                 <span class="k">File</span><span class="v" th:text="${satellite.fileNumber}">999</span></div>
             <div class="kv"><span class="k">Mean Motion</span>
                 <span class="v"
-                      th:text="${satellite.meanMotion != null} ? ${#numbers.formatDecimal(satellite.meanMotion, 1, 8)} + ' rev/day' : '—'">15.50123456 rev/day</span>
+                      th:text="${satellite.meanMotion != null} ? ${#numbers.formatDecimal(satellite.meanMotion, 1, 8)} + ' rev/day' : '-'">15.50123456 rev/day</span>
             </div>
             <div class="kv"><span class="k">B*</span>
-                <span class="v" th:text="${satellite.bstar} ?: '—'">0.000021832</span></div>
+                <span class="v" th:text="${satellite.bstar} ?: '-'">0.000021832</span></div>
             <div class="kv"><span class="k">Element Set No.</span>
-                <span class="v" th:text="${satellite.elementSetNo} ?: '—'">999</span></div>
+                <span class="v" th:text="${satellite.elementSetNo} ?: '-'">999</span></div>
             <div class="kv"><span class="k">Rev at Epoch</span>
-                <span class="v" th:text="${satellite.revAtEpoch} ?: '—'">47823</span></div>
+                <span class="v" th:text="${satellite.revAtEpoch} ?: '-'">47823</span></div>
         </div>
 
     </div>
@@ -163,7 +163,7 @@
             </td>
             <td>
           <span class="type-badge"
-                th:classappend="${otherType == 'PAYLOAD'} ? ' payload' : (${otherType == 'DEBRIS'} ? ' debris' : ' rocket')"
+                th:attr="data-type=${otherType}"
                 th:text="${otherType}">PAYLOAD</span>
             </td>
         </tr>

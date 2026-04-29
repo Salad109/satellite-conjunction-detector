@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Conjunction #' + ${visualization.id})}"></head>
-<!-- Three.js + satellite.js (no changes to 3D logic) -->
-<style>
-    /* Override for canvas page — nav + meta cards, rest from app.css */
-</style>
 <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"}}
 </script>
@@ -22,8 +18,8 @@
 
 <main class="page-body">
     <div class="section-head"
-         th:text="'Conjunction #' + ${visualization.id} + ' — Orbit Visualization'">
-        Conjunction #8821 — Orbit Visualization
+         th:text="'Conjunction #' + ${visualization.id} + ' - Orbit Visualization'">
+        Conjunction #8821 - Orbit Visualization
     </div>
 
     <!-- Meta cards -->
@@ -91,11 +87,11 @@
 
         <div id="viz-legend">
             <div class="legend-item">
-                <div class="legend-dot" style="background:#60a5fa"></div>
+                <div class="legend-dot" style="background:var(--accent)"></div>
                 <span th:text="${visualization.object1Name}">ISS (ZARYA)</span>
             </div>
             <div class="legend-item">
-                <div class="legend-dot" style="background:#f87171"></div>
+                <div class="legend-dot" style="background:var(--err)"></div>
                 <span th:text="${visualization.object2Name}">STARLINK-1234</span>
             </div>
         </div>
@@ -110,7 +106,6 @@
     </div>
 </main>
 
-<!-- Inject TLE data for Three.js (unchanged) -->
 <script th:inline="javascript">
     const visualizationData = {
         tca: /*[[${visualization.tca}]]*/ '',
@@ -127,13 +122,18 @@
     };
 </script>
 
-<!-- ── Three.js 3D scene (identical to original, no changes needed) ── -->
 <script type="module">
     import * as THREE from 'three';
     import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
     import {Line2} from 'three/addons/lines/Line2.js';
     import {LineGeometry} from 'three/addons/lines/LineGeometry.js';
     import {LineMaterial} from 'three/addons/lines/LineMaterial.js';
+
+    const cssVars = getComputedStyle(document.documentElement);
+    const hex = name => parseInt(cssVars.getPropertyValue(name).trim().slice(1), 16);
+    const COLOR_OBJ1 = hex('--accent');
+    const COLOR_OBJ2 = hex('--err');
+    const COLOR_DIST = hex('--accent-bright');
 
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
@@ -167,8 +167,8 @@
     const satrec1 = satellite.twoline2satrec(visualizationData.object1.tle1, visualizationData.object1.tle2);
     const satrec2 = satellite.twoline2satrec(visualizationData.object2.tle1, visualizationData.object2.tle2);
 
-    const sat1 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: 0x60a5fa}));
-    const sat2 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: 0xf87171}));
+    const sat1 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: COLOR_OBJ1}));
+    const sat2 = new THREE.Mesh(new THREE.SphereGeometry(120, 8, 8), new THREE.MeshBasicMaterial({color: COLOR_OBJ2}));
     scene.add(sat1, sat2);
 
     function orbitalPeriodMs(satrec) {
@@ -197,14 +197,14 @@
 
     const distLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
     const distLine = new THREE.Line(distLineGeo, new THREE.LineBasicMaterial({
-        color: 0xfbbf24,
+        color: COLOR_DIST,
         transparent: true,
         opacity: 0.6
     }));
     scene.add(distLine);
 
     const distDiv = document.createElement('div');
-    distDiv.style.cssText = 'position:absolute;color:#fbbf24;font:bold 11px "IBM Plex Mono",monospace;pointer-events:none;z-index:10';
+    distDiv.className = 'dist-label';
     container.appendChild(distDiv);
 
     const tcaDate = new Date(visualizationData.tca);
@@ -215,8 +215,8 @@
 
     function rebuildTrails() {
         if (trail1) scene.remove(trail1, trail2);
-        trail1 = buildTrail(satrec1, 0x60a5fa, currentTime);
-        trail2 = buildTrail(satrec2, 0xf87171, currentTime);
+        trail1 = buildTrail(satrec1, COLOR_OBJ1, currentTime);
+        trail2 = buildTrail(satrec2, COLOR_OBJ2, currentTime);
         scene.add(trail1, trail2);
         trailEpoch = currentTime.getTime();
     }

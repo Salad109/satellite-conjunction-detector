@@ -12,36 +12,16 @@
             <th>Name</th>
             <th>Type</th>
             <th>Country</th>
-            <th class="sortable num"
-                hx-target="#results"
-                th:classappend="${sortField == 'perigeeKm'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/satellites?sort=perigeeKm,' + (${sortField == 'perigeeKm' && sortDir == 'asc'} ? 'desc' : 'asc')">
-                Perigee (km)
-            </th>
-            <th class="sortable num"
-                hx-target="#results"
-                th:classappend="${sortField == 'apogeeKm'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/satellites?sort=apogeeKm,' + (${sortField == 'apogeeKm' && sortDir == 'asc'} ? 'desc' : 'asc')">
-                Apogee (km)
-            </th>
-            <th class="sortable num"
-                hx-target="#results"
-                th:classappend="${sortField == 'inclination'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/satellites?sort=inclination,' + (${sortField == 'inclination' && sortDir == 'asc'} ? 'desc' : 'asc')">
-                Incl. (°)
-            </th>
-            <th class="sortable num"
-                hx-target="#results"
-                th:classappend="${sortField == 'period'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/satellites?sort=period,' + (${sortField == 'period' && sortDir == 'asc'} ? 'desc' : 'asc')">
-                Period (min)
-            </th>
-            <th class="sortable num"
-                hx-target="#results"
-                th:classappend="${sortField == 'conjunctionCount'} ? (${sortDir == 'asc'} ? ' sort-asc' : ' sort-desc') : ''"
-                th:hx-get="'/hx/satellites?sort=conjunctionCount,' + (${sortField == 'conjunctionCount' && sortDir == 'asc'} ? 'desc' : 'asc')">
-                Conjunctions
-            </th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'perigeeKm', 'Perigee (km)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'apogeeKm', 'Apogee (km)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'inclination', 'Incl. (°)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'period', 'Period (min)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'conjunctionCount', 'Conjunctions', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
         </tr>
         </thead>
         <tbody>
@@ -52,16 +32,16 @@
             <td th:text="${s.objectName}">ISS (ZARYA)</td>
             <td>
         <span class="type-badge"
-              th:classappend="${s.objectType == 'PAYLOAD'} ? ' payload' : (${s.objectType == 'DEBRIS'} ? ' debris' : ' rocket')"
+              th:attr="data-type=${s.objectType}"
               th:text="${s.objectType}">PAYLOAD</span>
             </td>
-            <td class="mono" style="color:var(--muted)" th:text="${s.countryCode} ?: '—'">US</td>
-            <td class="num" th:text="${s.perigee != null} ? ${#numbers.formatDecimal(s.perigee, 1, 1)} : '—'">408.2</td>
-            <td class="num" th:text="${s.apogee  != null} ? ${#numbers.formatDecimal(s.apogee,  1, 1)} : '—'">416.5</td>
+            <td class="mono" style="color:var(--muted)" th:text="${s.countryCode} ?: '-'">US</td>
+            <td class="num" th:text="${s.perigee != null} ? ${#numbers.formatDecimal(s.perigee, 1, 1)} : '-'">408.2</td>
+            <td class="num" th:text="${s.apogee != null} ? ${#numbers.formatDecimal(s.apogee, 1, 1)} : '-'">416.5</td>
             <td class="num"
-                th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} + '°' : '—'">51.64°
+                th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} + '°' : '-'">51.64°
             </td>
-            <td class="num" th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '—'">92.7</td>
+            <td class="num" th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '-'">92.7</td>
             <td class="num">
                 <a th:href="@{/satellites/{id}(id=${s.noradCatId})}" th:text="${s.conjunctions}">3</a>
             </td>

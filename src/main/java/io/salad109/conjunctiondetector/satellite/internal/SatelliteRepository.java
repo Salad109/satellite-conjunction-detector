@@ -16,11 +16,23 @@ import java.util.Optional;
 
 public interface SatelliteRepository extends JpaRepository<Satellite, Integer> {
 
-    /**
-     * Count satellites in catalog.
-     */
     @Override
     long count();
+
+    long countByObjectType(String objectType);
+
+    long countByObjectNameStartingWith(String prefix);
+
+    @Query("SELECT COUNT(s) FROM Satellite s WHERE s.apogeeKm <= 2000")
+    long countLeo();
+
+    @Query("SELECT COUNT(s) FROM Satellite s " +
+            "WHERE s.apogeeKm BETWEEN 35000 AND 37000 AND s.perigeeKm > 2000")
+    long countGeo();
+
+    @Query("SELECT COUNT(s) FROM Satellite s " +
+            "WHERE s.apogeeKm > 2000 AND s.apogeeKm < 35000 AND s.perigeeKm > 2000")
+    long countMeo();
 
     int deleteSatellitesByNoradCatIdNotIn(Collection<Integer> id);
 

@@ -1,0 +1,16 @@
+<!--
+  fragments/sortable-th.html
+  A clickable HTMX-driven sort header for data tables.
+  Args: field, label, endpoint, sortField, sortDir, extraQs (e.g. "&includeFormations=true"),
+        num (true => right-aligned numeric class), rowspan (null/0 => no rowspan attr)
+-->
+<th hx-target="#results"
+    th:attr="rowspan=${rowspan}"
+    th:class="${'sortable'
+              + (num ? ' num' : '')
+              + (sortField == field ? (sortDir == 'asc' ? ' sort-asc' : ' sort-desc') : '')}"
+    th:fragment="sortableTh(field, label, endpoint, sortField, sortDir, extraQs, num, rowspan)"
+    th:hx-get="${endpoint + '?sort=' + field + ',' + (sortField == field and sortDir == 'asc' ? 'desc' : 'asc') + extraQs}"
+    th:text="${label}"
+    xmlns:th="http://www.thymeleaf.org">Label
+</th>
