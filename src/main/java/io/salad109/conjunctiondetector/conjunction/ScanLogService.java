@@ -2,12 +2,14 @@ package io.salad109.conjunctiondetector.conjunction;
 
 import io.salad109.conjunctiondetector.conjunction.internal.ScanLog;
 import io.salad109.conjunctiondetector.conjunction.internal.ScanLogRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 @Service
 public class ScanLogService {
@@ -19,18 +21,8 @@ public class ScanLogService {
     }
 
     @Transactional(readOnly = true)
-    public ScanResult getLatest() {
-        ScanLog log = scanLogRepository.findTopByOrderByStartedAtDesc();
-        if (log == null)
-            return null;
-        else
-            return new ScanResult(
-                    log.getStartedAt(),
-                    log.getCompletedAt(),
-                    log.getDurationMs(),
-                    log.getSatellitesScanned(),
-                    log.getConjunctionsDetected()
-            );
+    public List<ScanResult> getRecent(int n) {
+        return scanLogRepository.findRecent(PageRequest.of(0, n));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

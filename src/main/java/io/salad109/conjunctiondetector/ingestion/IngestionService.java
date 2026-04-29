@@ -1,5 +1,6 @@
 package io.salad109.conjunctiondetector.ingestion;
 
+import io.salad109.conjunctiondetector.DataChangedEvent;
 import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
 import io.salad109.conjunctiondetector.spacetrack.OmmRecord;
@@ -7,6 +8,7 @@ import io.salad109.conjunctiondetector.spacetrack.SpaceTrackClient;
 import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +27,16 @@ public class IngestionService {
     private final SpaceTrackClient spaceTrackClient;
     private final SatelliteService satelliteService;
     private final IngestionLogService ingestionLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public IngestionService(SpaceTrackClient spaceTrackClient,
                             SatelliteService satelliteService,
-                            IngestionLogService ingestionLogService) {
+                            IngestionLogService ingestionLogService,
+                            ApplicationEventPublisher eventPublisher) {
         this.spaceTrackClient = spaceTrackClient;
         this.satelliteService = satelliteService;
         this.ingestionLogService = ingestionLogService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -63,6 +68,8 @@ public class IngestionService {
                     processingResult.unchanged(),
                     processingResult.skipped(),
                     processingResult.deleted());
+
+            eventPublisher.publishEvent(new DataChangedEvent());
         } catch (IOException e) {
             SyncResult failedSyncResult = new SyncResult(startedAt, 0, 0, 0, 0, 0, false);
             ingestionLogService.saveIngestionLog(failedSyncResult, e.getMessage());

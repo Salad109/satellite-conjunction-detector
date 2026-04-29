@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Stats')}"></head>
+<body>
+
+<nav th:replace="~{fragments/nav :: nav('stats')}"></nav>
+
+<!-- Load scan status into nav -->
+<div hx-get="/hx/nav-status/scan"
+     hx-swap="innerHTML"
+     hx-target="#nav-status"
+     hx-trigger="load"
+     style="display:none"></div>
+
+<main class="page-body">
+    <div class="section-head">System overview</div>
+
+    <!-- ── KPI strip ── -->
+    <div class="stat-grid"
+         th:with="lastScan=${snap.chartLogs.isEmpty() ? null : snap.chartLogs[0]},
+                  lastSync=${snap.recentSyncs.isEmpty() ? null : snap.recentSyncs[0]}">
+        <div class="stat-card">
+            <div class="stat-label">Satellites Tracked</div>
+            <div class="stat-val" th:text="${#numbers.formatInteger(snap.satelliteCount, 1, 'COMMA')}">25,412</div>
+            <div class="stat-sub" th:if="${lastSync != null}"
+                 th:text="'+' + ${lastSync.objectsInserted} + ' from last sync'">+312 from last sync
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Conjunctions</div>
+            <div class="stat-val" th:text="${#numbers.formatInteger(snap.activeConjunctionCount, 1, 'COMMA')}">41,284
+            </div>
+            <div class="stat-sub">excl. formations</div>
+        </div>
+        <div class="stat-card" th:classappend="${atRisk} ? ' risk-hi' : ''"
+             th:with="atRisk=${snap.highRiskCount > 0}">
+            <div class="stat-label">High-Risk (Pc &ge; 10<sup>-6</sup>)</div>
+            <div class="stat-val" th:text="${snap.highRiskCount}">3</div>
+            <div class="stat-sub" th:text="${atRisk} ? 'requires attention' : 'none detected'">requires
+                attention
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Last Scan Duration</div>
+            <div class="stat-val" th:if="${lastScan != null}">
+                <span th:text="${lastScan.durationMs / 1000}">147</span>
+                <span class="unit"> s</span>
+            </div>
+            <div class="stat-val" style="color:var(--muted)" th:unless="${lastScan != null}">-</div>
+            <div class="stat-sub" th:if="${lastScan != null}"
+                 th:text="${#numbers.formatInteger(lastScan.satellitesScanned, 1, 'COMMA')} + ' objects'">25,412 objects
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Time-series charts ── -->
+    <div class="split-grid" th:if="${conjChartPoints != null}">
+        <div th:replace="~{fragments/chart-card :: chartCard(
+                'Conjunctions detected - last 30 days',
+                ${conjChartPoints}, ${conjChartMin}, ${conjChartMax},
+                ${chartStartLabel}, ${chartEndLabel},
+                'gradConj', 'var(--series-blue)')}"></div>
+        <div th:replace="~{fragments/chart-card :: chartCard(
+                'Satellites tracked - last 30 days',
+                ${satChartPoints}, ${satChartMin}, ${satChartMax},
+                ${chartStartLabel}, ${chartEndLabel},
+                'gradSat', 'var(--series-green)')}"></div>
+    </div>
+
+    <!-- ── Breakdown bar charts ── -->
+    <div class="split-grid" th:with="b=${snap.breakdown},
+                                     otherPayload=${b.payloadCount - b.starlinkCount - b.onewebCount - b.cosmosCount},
+                                     heo=${snap.satelliteCount - b.leoCount - b.meoCount - b.geoCount}">
+
+        <!-- Major satellite groups -->
+        <div class="card">
+            <div class="card-title">Major satellite groups</div>
+            <div class="bar-chart" th:if="${b.payloadCount > 0}">
+                <div th:replace="~{fragments/bar-row :: barRow('Starlink', ${b.starlinkCount}, ${b.payloadCount}, '')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('OneWeb',   ${b.onewebCount},   ${b.payloadCount}, '')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('COSMOS',   ${b.cosmosCount},   ${b.payloadCount}, 'amber')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('Other',    ${otherPayload},    ${b.payloadCount}, 'muted')}"></div>
+            </div>
+        </div>
+
+        <!-- Orbit regime -->
+        <div class="card">
+            <div class="card-title">Orbit regime breakdown</div>
+            <div class="bar-chart" th:if="${snap.satelliteCount > 0}">
+                <div th:replace="~{fragments/bar-row :: barRow('LEO',         ${b.leoCount}, ${snap.satelliteCount}, '')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('GEO',         ${b.geoCount}, ${snap.satelliteCount}, 'amber')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('MEO',         ${b.meoCount}, ${snap.satelliteCount}, 'purple')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('HEO / Other', ${heo},        ${snap.satelliteCount}, 'muted')}"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Log tables ── -->
+    <div class="split-grid">
+
+        <!-- Recent scans -->
+        <div class="card">
+            <div class="card-title">Recent scans</div>
+            <table class="data-table log-table" style="margin-top:6px">
+                <thead>
+                <tr>
+                    <th>Started At</th>
+                    <th class="num">Satellites</th>
+                    <th class="num">Conjunctions</th>
+                    <th class="num">Duration</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${snap.recentScans}">
+                    <td th:text="${#temporals.format(s.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:32:07</td>
+                    <td class="num" th:text="${#numbers.formatInteger(s.satellitesScanned, 1, 'COMMA')}">25,412</td>
+                    <td class="num" th:text="${#numbers.formatInteger(s.conjunctionsDetected, 1, 'COMMA')}">41,284</td>
+                    <td class="num" th:text="${s.durationMs / 1000} + ' s'">147 s</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recent syncs -->
+        <div class="card">
+            <div class="card-title">Recent syncs (Space-Track)</div>
+            <table class="data-table log-table" style="margin-top:6px">
+                <thead>
+                <tr>
+                    <th>Started At</th>
+                    <th class="num">Inserted</th>
+                    <th class="num">Updated</th>
+                    <th class="num">Unchanged</th>
+                    <th class="num">Skipped</th>
+                    <th class="num">Deleted</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${snap.recentSyncs}">
+                    <td th:text="${#temporals.format(l.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:00:00</td>
+                    <td class="num" th:text="${l.objectsInserted}">312</td>
+                    <td class="num" th:text="${#numbers.formatInteger(l.objectsUpdated, 1, 'COMMA')}">1,840</td>
+                    <td class="num" th:text="${#numbers.formatInteger(l.objectsUnchanged, 1, 'COMMA')}">23,218</td>
+                    <td class="num" th:text="${l.objectsSkipped}">42</td>
+                    <td class="num" th:classappend="${l.objectsDeleted > 0} ? ' nav-err' : ''"
+                        th:text="${l.objectsDeleted}">0
+                    </td>
+                    <td>
+                        <span class="nav-ok" th:if="${l.successful}">OK</span>
+                        <span class="nav-err" th:unless="${l.successful}">FAILED</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</main>
+
+<footer class="app-footer" th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

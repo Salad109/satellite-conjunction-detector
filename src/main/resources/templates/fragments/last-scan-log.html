@@ -1,7 +1,0 @@
-<p class="text-sm text-gray-500" th:if="${scan != null}">
-    Last scan: <span th:text="${#temporals.format(scan.startedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
-    - <span th:text="${scan.conjunctionsDetected}"></span> conjunctions
-    from <span th:text="${scan.satellitesScanned}"></span> satellites
-    in <span th:text="${scan.durationMs}"></span>ms
-</p>
-<p class="text-sm text-gray-400" th:if="${scan == null}">No scan data available</p>

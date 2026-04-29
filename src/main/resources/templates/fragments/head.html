@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  fragments/head.html
+  Usage: <head th:replace="~{fragments/head :: head('Page Title')}"></head>
+-->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title th:text="${title} + ' - Conjunction Detector'">Conjunction Detector</title>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script>
+        // Apply saved theme before paint to avoid flash
+        (function () {
+            if (localStorage.getItem('theme') === 'light') {
+                document.documentElement.classList.add('light');
+            }
+        })();
+
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+    </script>
+</head>
+</html>

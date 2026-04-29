@@ -1,5 +1,6 @@
 package io.salad109.conjunctiondetector.conjunction;
 
+import io.salad109.conjunctiondetector.DataChangedEvent;
 import io.salad109.conjunctiondetector.conjunction.internal.*;
 import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
 import io.salad109.conjunctiondetector.satellite.SatelliteService;
@@ -9,6 +10,7 @@ import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,7 @@ public class ConjunctionService {
     private final ScanService scanService;
     private final CollisionProbabilityService collisionProbabilityService;
     private final ScanLogService scanLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${conjunction.tolerance-km:72.0}")
     private double toleranceKm;
@@ -61,13 +64,15 @@ public class ConjunctionService {
                               PropagationService propagationService,
                               ScanService scanService,
                               CollisionProbabilityService collisionProbabilityService,
-                              ScanLogService scanLogService) {
+                              ScanLogService scanLogService,
+                              ApplicationEventPublisher eventPublisher) {
         this.satelliteService = satelliteService;
         this.conjunctionRepository = conjunctionRepository;
         this.propagationService = propagationService;
         this.scanService = scanService;
         this.collisionProbabilityService = collisionProbabilityService;
         this.scanLogService = scanLogService;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostConstruct
@@ -100,6 +105,16 @@ public class ConjunctionService {
     @Transactional(readOnly = true)
     public List<ConjunctionInfo> getConjunctionInfosByNoradId(int id) {
         return conjunctionRepository.getConjunctionInfosByNoradId(id);
+    }
+
+    @Transactional(readOnly = true)
+    public long countActive() {
+        return conjunctionRepository.countActive();
+    }
+
+    @Transactional(readOnly = true)
+    public long countHighRisk() {
+        return conjunctionRepository.countHighRisk();
     }
 
     @Transactional
@@ -164,5 +179,6 @@ public class ConjunctionService {
                 stopWatch.getTime(), conjunctions.size());
 
         scanLogService.saveScanLog(startedAt, stopWatch.getTime(), satellites.size(), conjunctions.size());
+        eventPublisher.publishEvent(new DataChangedEvent());
     }
 }

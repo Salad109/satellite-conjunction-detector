@@ -1,0 +1,14 @@
+<!--
+  fragments/bar-row.html
+  A single row of a horizontal bar chart: label + filled track + numeric value.
+  Args: label, count, total (count/total => width %), modifier ('', 'amber', 'purple', 'muted')
+-->
+<div class="bar-row"
+     th:fragment="barRow(label, count, total, modifier)" xmlns:th="http://www.thymeleaf.org">
+    <div class="bar-label" th:text="${label}">Label</div>
+    <div class="bar-track">
+        <div th:class="${'bar-fill' + (modifier != null and modifier != '' ? ' ' + modifier : '')}"
+             th:style="'width:' + ${count * 100 / total} + '%'"></div>
+    </div>
+    <div class="bar-val" th:text="${#numbers.formatInteger(count, 1, 'COMMA')}">0</div>
+</div>

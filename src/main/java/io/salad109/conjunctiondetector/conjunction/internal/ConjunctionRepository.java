@@ -15,6 +15,12 @@ public interface ConjunctionRepository extends JpaRepository<Conjunction, Long> 
     @Query(value = "TRUNCATE TABLE conjunction", nativeQuery = true)
     void truncate();
 
+    @Query("SELECT COUNT(c) FROM Conjunction c WHERE c.relativeVelocityMS > 10")
+    long countActive();
+
+    @Query("SELECT COUNT(c) FROM Conjunction c WHERE c.collisionProbability >= 1e-6")
+    long countHighRisk();
+
     @Query("SELECT new io.salad109.conjunctiondetector.conjunction.internal.ConjunctionInfo(" +
             "c.id, c.missDistanceKm, c.tca, c.relativeVelocityMS, c.collisionProbability, " +
             "c.object1NoradId, s1.objectName, s1.objectType, " +
