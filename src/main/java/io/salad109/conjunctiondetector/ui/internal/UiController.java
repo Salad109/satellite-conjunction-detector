@@ -49,13 +49,13 @@ public class UiController {
     private static String svgPoints(List<ScanResult> logs, ToLongFunction<ScanResult> fn, long min, long max) {
         int n = logs.size();
         StringBuilder sb = new StringBuilder();
-        // logs are newest-first; chart x-axis is oldest-left, so map index i to the right end.
+        // Emit points left-to-right (oldest first). Logs are newest-first, so iterate in reverse.
         for (int i = 0; i < n; i++) {
-            double x = CHART_X_OFFSET + (double) (n - 1 - i) / (n - 1) * CHART_WIDTH;
+            double x = CHART_X_OFFSET + (double) i / (n - 1) * CHART_WIDTH;
             double y = (max == min)
                     ? CHART_Y_OFFSET + CHART_HEIGHT / 2.0
                     : CHART_Y_OFFSET + CHART_HEIGHT
-                      - (double) (fn.applyAsLong(logs.get(i)) - min) / (max - min) * CHART_HEIGHT;
+                      - (double) (fn.applyAsLong(logs.get(n - 1 - i)) - min) / (max - min) * CHART_HEIGHT;
             if (i > 0) sb.append(' ');
             sb.append(String.format(Locale.ROOT, "%.1f,%.1f", x, y));
         }
