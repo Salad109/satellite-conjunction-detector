@@ -56,12 +56,12 @@
     <!-- ── Time-series charts ── -->
     <div class="split-grid" th:if="${conjChartPoints != null}">
         <div th:replace="~{fragments/chart-card :: chartCard(
-                'Conjunctions detected - last 30 days',
+                'Conjunctions detected - last 30 scans',
                 ${conjChartPoints}, ${conjChartMin}, ${conjChartMax},
                 ${chartStartLabel}, ${chartEndLabel},
                 'gradConj', 'var(--series-blue)')}"></div>
         <div th:replace="~{fragments/chart-card :: chartCard(
-                'Satellites tracked - last 30 days',
+                'Satellites tracked - last 30 scans',
                 ${satChartPoints}, ${satChartMin}, ${satChartMax},
                 ${chartStartLabel}, ${chartEndLabel},
                 'gradSat', 'var(--series-green)')}"></div>

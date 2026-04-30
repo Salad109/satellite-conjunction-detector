@@ -8,7 +8,8 @@
     <table class="data-table" hx-indicator="#results">
         <thead>
         <tr>
-            <th>NORAD ID</th>
+            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                    'noradCatId', 'NORAD ID', '/hx/satellites', ${sortField}, ${sortDir}, '', false, null)}"></th>
             <th>Name</th>
             <th>Type</th>
             <th>Country</th>
