@@ -6,29 +6,42 @@
 -->
 <th:block th:fragment="navStatusSync" xmlns:th="http://www.thymeleaf.org">
     <th:block th:if="${log != null}">
-        <div class="nav-status-dot" th:classappend="${!log.successful} ? ' error' : ''"></div>
-        <span>sync</span>
-        <span class="nav-val" th:text="${#temporals.format(log.startedAt, 'yyyy-MM-dd HH:mm')}">2025-04-19 14:00</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-ok" th:if="${log.successful}">OK</span>
-        <span class="nav-err" th:unless="${log.successful}">FAILED</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${log.objectsInserted}">312</span>
-        <span>inserted</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${#numbers.formatInteger(log.objectsUpdated, 1, 'COMMA')}">1,840</span>
-        <span>updated</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${#numbers.formatInteger(log.objectsUnchanged, 1, 'COMMA')}">23,218</span>
-        <span>unchanged</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${log.objectsSkipped}">42</span>
-        <span>skipped</span>
-        <th:block th:if="${log.objectsDeleted > 0}">
-            <span class="nav-sep">·</span>
-            <span class="nav-val nav-err" th:text="${log.objectsDeleted}">0</span>
+        <span class="nav-stat">
+            <span class="nav-ok" th:if="${log.successful}">OK</span>
+            <span class="nav-err" th:unless="${log.successful}">FAILED</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span>sync</span>
+            <span class="nav-val"
+                  th:text="${#temporals.format(log.startedAt, 'yyyy-MM-dd HH:mm')}">2025-04-19 14:00</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${log.objectsInserted}">312</span>
+            <span>inserted</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${#numbers.formatInteger(log.objectsUpdated, 1, 'COMMA')}">1,840</span>
+            <span>updated</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${#numbers.formatInteger(log.objectsUnchanged, 1, 'COMMA')}">23,218</span>
+            <span>unchanged</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${log.objectsSkipped}">42</span>
+            <span>skipped</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:classappend="${log.objectsDeleted > 0} ? ' nav-err' : ''"
+                  th:text="${log.objectsDeleted}">0</span>
             <span>deleted</span>
-        </th:block>
+        </span>
     </th:block>
     <th:block th:if="${log == null}">
         <span>no sync data</span>

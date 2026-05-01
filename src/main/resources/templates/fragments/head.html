@@ -22,6 +22,18 @@
             const isLight = document.documentElement.classList.toggle('light');
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
+
+        function toggleDrawer() {
+            document.body.classList.toggle('drawer-open');
+        }
+
+        function closeDrawer() {
+            document.body.classList.remove('drawer-open');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDrawer();
+        });
     </script>
 </head>
 </html>

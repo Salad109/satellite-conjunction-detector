@@ -63,8 +63,8 @@
                    th:text="${visualization.object1Name}">ISS (ZARYA)</a>
             </div>
             <div style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:3px"
-                 th:text="${visualization.object1NoradId} + ' · ' + ${visualization.object1Type}">
-                25544 · PAYLOAD
+                 th:text="${visualization.object1NoradId} + ' - ' +${visualization.object1Type}">
+                25544 - PAYLOAD
             </div>
         </div>
         <div class="card" style="border-left:3px solid var(--err)">
@@ -75,15 +75,15 @@
                    th:text="${visualization.object2Name}">STARLINK-1234</a>
             </div>
             <div style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:3px"
-                 th:text="${visualization.object2NoradId} + ' · ' + ${visualization.object2Type}">
-                43205 · PAYLOAD
+                 th:text="${visualization.object2NoradId} + ' - ' +${visualization.object2Type}">
+                43205 - PAYLOAD
             </div>
         </div>
     </div>
 
     <!-- 3D canvas (unchanged Three.js logic) -->
     <div id="canvas-container">
-        <div id="time-display">Time: Loading…</div>
+        <div id="time-display">Time: Loading...</div>
 
         <div id="viz-legend">
             <div class="legend-item">
@@ -101,7 +101,7 @@
             <button class="viz-btn" id="play-pause" style="border-color:var(--accent);color:var(--accent)">&#9208;
             </button>
             <input id="speed-slider" max="500" min="-500" type="range" value="100">
-            <span id="speed-value">100×</span>
+            <span id="speed-value">100x</span>
         </div>
     </div>
 </main>
@@ -242,12 +242,12 @@
         currentTime = new Date(startTime);
         speedSlider.value = 100;
         timeSpeed = 100;
-        speedValue.textContent = '100×';
+        speedValue.textContent = '100x';
         rebuildTrails();
     };
     speedSlider.oninput = e => {
         timeSpeed = +e.target.value;
-        speedValue.textContent = timeSpeed + '×';
+        speedValue.textContent = timeSpeed + 'x';
     };
 
     function toScreen(v) {
@@ -285,7 +285,7 @@
         const m = Math.floor(Math.abs(dt) / 60), s = Math.floor(Math.abs(dt) % 60);
         document.getElementById('time-display').textContent =
             currentTime.toISOString().slice(0, 19).replace('T', ' ') +
-            ' | ' + (dt >= 0 ? 'T−' : 'T+') + m + ':' + String(s).padStart(2, '0');
+            ' | ' + (dt >= 0 ? 'T-' : 'T+') + m + ':' + String(s).padStart(2, '0');
         renderer.render(scene, camera);
     }
 

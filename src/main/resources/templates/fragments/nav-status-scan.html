@@ -6,17 +6,26 @@
 -->
 <th:block th:fragment="navStatusScan" xmlns:th="http://www.thymeleaf.org">
     <th:block th:if="${scan != null}">
-        <div class="nav-status-dot"></div>
-        <span>scan</span>
-        <span class="nav-val" th:text="${#temporals.format(scan.startedAt, 'yyyy-MM-dd HH:mm')}">2025-04-19 14:32</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${#numbers.formatInteger(scan.conjunctionsDetected, 1, 'COMMA')}">41,284</span>
-        <span>conjunctions</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${#numbers.formatInteger(scan.satellitesScanned, 1, 'COMMA')}">25,412</span>
-        <span>objects</span>
-        <span class="nav-sep">·</span>
-        <span class="nav-val" th:text="${scan.durationMs / 1000} + ' s'">147 s</span>
+        <span class="nav-stat">
+            <span>scan</span>
+            <span class="nav-val"
+                  th:text="${#temporals.format(scan.startedAt, 'yyyy-MM-dd HH:mm')}">2025-04-19 14:32</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val"
+                  th:text="${#numbers.formatInteger(scan.conjunctionsDetected, 1, 'COMMA')}">41,284</span>
+            <span>conjunctions</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${#numbers.formatInteger(scan.satellitesScanned, 1, 'COMMA')}">25,412</span>
+            <span>objects</span>
+        </span>
+        <span class="nav-sep">|</span>
+        <span class="nav-stat">
+            <span class="nav-val" th:text="${scan.durationMs / 1000} + ' s'">147 s</span>
+        </span>
     </th:block>
     <th:block th:if="${scan == null}">
         <span>no scan data</span>

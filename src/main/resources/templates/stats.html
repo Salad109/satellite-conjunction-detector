@@ -13,9 +13,7 @@
      style="display:none"></div>
 
 <main class="page-body">
-    <div class="section-head">System overview</div>
-
-    <!-- ── KPI strip ── -->
+    <!-- KPI strip -->
     <div class="stat-grid"
          th:with="lastScan=${snap.chartLogs.isEmpty() ? null : snap.chartLogs[0]},
                   lastSync=${snap.recentSyncs.isEmpty() ? null : snap.recentSyncs[0]}">
@@ -53,7 +51,7 @@
         </div>
     </div>
 
-    <!-- ── Time-series charts ── -->
+    <!-- Time-series charts -->
     <div class="split-grid" th:if="${conjChartPoints != null}">
         <div th:replace="~{fragments/chart-card :: chartCard(
                 'Conjunctions detected - last 30 scans',
@@ -67,7 +65,7 @@
                 'gradSat', 'var(--series-green)')}"></div>
     </div>
 
-    <!-- ── Breakdown bar charts ── -->
+    <!-- Breakdown bar charts -->
     <div class="split-grid" th:with="b=${snap.breakdown},
                                      otherPayload=${b.payloadCount - b.starlinkCount - b.onewebCount - b.cosmosCount},
                                      heo=${snap.satelliteCount - b.leoCount - b.meoCount - b.geoCount}">
@@ -95,12 +93,13 @@
         </div>
     </div>
 
-    <!-- ── Log tables ── -->
+    <!-- Log tables -->
     <div class="split-grid">
 
         <!-- Recent scans -->
         <div class="card">
             <div class="card-title">Recent scans</div>
+            <div class="table-scroll">
             <table class="data-table log-table" style="margin-top:6px">
                 <thead>
                 <tr>
@@ -119,11 +118,13 @@
                 </tr>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Recent syncs -->
         <div class="card">
             <div class="card-title">Recent syncs (Space-Track)</div>
+            <div class="table-scroll">
             <table class="data-table log-table" style="margin-top:6px">
                 <thead>
                 <tr>
@@ -153,6 +154,7 @@
                 </tr>
                 </tbody>
             </table>
+            </div>
         </div>
 
     </div>

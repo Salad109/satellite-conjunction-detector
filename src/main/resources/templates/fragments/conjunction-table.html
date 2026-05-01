@@ -5,6 +5,7 @@
 -->
 <th:block xmlns:th="http://www.thymeleaf.org">
 
+    <div class="table-scroll">
     <table class="data-table" hx-indicator="#results">
         <thead>
         <tr>
@@ -68,18 +69,19 @@
         </tr>
         </tbody>
     </table>
+    </div>
 
     <div class="pagination">
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/conjunctions?page=' + ${page.number - 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
                 th:if="${page.hasPrevious()}">
-            ← Prev
+            &lt;- Prev
         </button>
         <span th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">Page 1 of 441</span>
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/conjunctions?page=' + ${page.number + 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
                 th:if="${page.hasNext()}">
-            Next →
+            Next -&gt;
         </button>
     </div>
 

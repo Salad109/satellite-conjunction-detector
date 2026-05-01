@@ -155,13 +155,36 @@ a:hover {
     flex-shrink: 0;
 }
 
-.nav-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--ok);
-    flex-shrink: 0;
-    margin-right: 3px;
+.nav-stat {
+    display: contents;
+}
+
+/* Drawer wrapper: transparent on desktop, sidebar on mobile */
+.nav-drawer {
+    display: contents;
+}
+
+.nav-burger {
+    display: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 8px;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-burger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+}
+
+.nav-backdrop {
+    display: none;
 }
 
 .nav-sep {
@@ -262,6 +285,12 @@ html.light .theme-btn::before {
 }
 
 /* ── Tables ── */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -846,36 +875,103 @@ html.light .type-badge[data-type="ROCKET BODY"] {
 
     .app-nav {
         padding: 0 14px;
-        height: auto;
-        min-height: 48px;
-        flex-wrap: wrap;
-        gap: 4px 10px;
-        padding-top: 8px;
-        padding-bottom: 8px;
+        height: 48px;
     }
 
     .nav-brand {
-        margin-right: 12px;
         font-size: 14px;
+        margin-right: 0;
+    }
+
+    .nav-burger {
+        display: flex;
+    }
+
+    .nav-drawer {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(78vw, 320px);
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        padding: 60px 14px 20px;
+        transform: translateX(-100%);
+        transition: transform 180ms ease;
+        z-index: 60;
+        overflow-y: auto;
+    }
+
+    body.drawer-open .nav-drawer {
+        transform: translateX(0);
+    }
+
+    .nav-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+        z-index: 55;
+    }
+
+    body.drawer-open .nav-backdrop {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .nav-links {
-        order: 3;
-        flex-basis: 100%;
-        overflow-x: auto;
+        flex-direction: column;
+        flex: 0 0 auto;
+        margin-bottom: 16px;
     }
 
     .nav-link {
-        height: 36px;
+        height: 40px;
         padding: 0 10px;
-        font-size: 12px;
+        font-size: 14px;
+        border-bottom: none;
+        border-left: 2px solid transparent;
+    }
+
+    .nav-link.active {
+        border-bottom-color: transparent;
+        border-left-color: var(--accent);
     }
 
     .nav-right {
-        font-size: 10px;
+        font-size: 11px;
         flex-wrap: wrap;
-        justify-content: flex-end;
-        row-gap: 2px;
+        gap: 0;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .nav-stat {
+        display: flex;
+        flex-basis: 100%;
+        gap: 5px;
+        align-items: baseline;
+        padding: 2px 0;
+    }
+
+    .nav-sep {
+        display: none;
+    }
+
+    .theme-btn {
+        margin-left: 0;
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        align-self: stretch;
+        text-align: left;
     }
 
     .page-body {
@@ -885,6 +981,11 @@ html.light .type-badge[data-type="ROCKET BODY"] {
     .stat-grid {
         grid-template-columns: 1fr 1fr;
         gap: 10px;
+    }
+
+    .split-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
     }
 
     .detail-grid-3,
@@ -918,5 +1019,9 @@ html.light .type-badge[data-type="ROCKET BODY"] {
 
     #canvas-container {
         height: clamp(320px, 70vh, 560px);
+    }
+
+    .chart-wrap svg {
+        aspect-ratio: 620 / 165;
     }
 }

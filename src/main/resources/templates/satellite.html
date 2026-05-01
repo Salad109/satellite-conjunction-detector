@@ -131,7 +131,8 @@
     <p style="font-size:13px;color:var(--muted)"
        th:if="${#lists.isEmpty(conjunctions)}">No conjunctions detected for this satellite.</p>
 
-    <table class="data-table" th:unless="${#lists.isEmpty(conjunctions)}">
+    <div class="table-scroll" th:unless="${#lists.isEmpty(conjunctions)}">
+        <table class="data-table">
         <thead>
         <tr>
             <th class="sortable">ID</th>
@@ -169,6 +170,7 @@
         </tr>
         </tbody>
     </table>
+    </div>
 
 </main>
 
