@@ -3,7 +3,7 @@
 <!--
   fragments/nav.html
   Usage: <nav th:replace="~{fragments/nav :: nav('home')}"></nav>
-  activePage: 'home' | 'catalog' | 'stats' | '' (satellite/viz detail pages)
+  activePage: 'home' | 'catalog' | 'stats' | 'playground' | '' (satellite/viz detail pages)
 
   Each page loads its own status into #nav-status via HTMX.
   See fragments/nav-status-scan.html and nav-status-sync.html.
@@ -21,6 +21,8 @@
                th:classappend="${activePage == 'catalog'} ? ' active' : ''">Satellite Catalog</a>
             <a class="nav-link" href="/stats"
                th:classappend="${activePage == 'stats'} ? ' active' : ''">Stats</a>
+            <a class="nav-link" href="/playground"
+               th:classappend="${activePage == 'playground'} ? ' active' : ''">Playground</a>
         </div>
         <div class="nav-right" id="nav-status">
             <!-- Populated by each page via: hx-get="..." hx-target="#nav-status" hx-trigger="load" -->

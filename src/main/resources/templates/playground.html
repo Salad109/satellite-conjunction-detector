@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Playground')}"></head>
+<body>
+
+<nav th:replace="~{fragments/nav :: nav('playground')}"></nav>
+
+<main class="page-body playground-page">
+
+    <div class="pg-grid">
+        <div class="card pg-canvas-card">
+            <div class="pg-canvas-wrap">
+                <canvas id="scene"></canvas>
+                <div class="pg-overlays-panel">
+                    <div class="pg-overlays-title">Overlays</div>
+                    <label class="overlay-toggle"><input type="checkbox" id="show-grid" checked> Spatial grid</label>
+                    <label class="overlay-toggle"><input type="checkbox" id="show-knots" checked> SGP4 knot points</label>
+                    <label class="overlay-toggle"><input type="checkbox" id="show-interp" checked> Interpolated samples</label>
+                    <label class="overlay-toggle"><input type="checkbox" id="show-tolerance" checked> Tolerance radius</label>
+                    <label class="overlay-toggle"><input type="checkbox" id="show-refine" checked> Distance line</label>
+                </div>
+                <div class="pg-badge pg-badge-grid" id="grid-badge">SPATIAL GRID FLAG</div>
+                <div class="pg-badge pg-badge-coarse" id="coarse-badge">COARSE DETECTION</div>
+                <div class="pg-badge pg-badge-conjunction" id="conjunction-badge">CONJUNCTION</div>
+            </div>
+            <div class="pg-preset-row" id="preset-row">
+                <span class="pg-preset-label">Preset:</span>
+            </div>
+            <div class="scrubber-row">
+                <button class="viz-btn" id="play" title="Play / pause">▶</button>
+                <input type="range" id="time" min="0" max="1000" value="176" aria-label="Scrub time">
+                <span class="slider-val" id="time-label"></span>
+            </div>
+            <div class="pg-legend-row">
+                <span><span class="legend-dot" style="background:var(--muted)"></span>Earth</span>
+                <span><span class="legend-dot" style="background:var(--accent)"></span>Satellite A</span>
+                <span><span class="legend-dot" style="background:var(--err)"></span>Satellite B</span>
+                <span><span class="legend-dot" style="background:var(--accent-bright)"></span>SGP4 Knot</span>
+                <span><span class="legend-dot" style="background:var(--series-blue)"></span>Interpolated sample</span>
+                <span><span class="legend-dot" style="background:transparent;border:2px solid var(--series-purple);border-radius:0"></span>Active grid cell</span>
+            </div>
+        </div>
+
+        <div class="card pg-controls-card">
+            <div class="pg-refine-section">
+                <p class="pg-chart-note">Center-to-center distance between satellites A and B. Horizontal dashed lines mark <code>tolerance-km</code> (yellow) and the 5 km collision threshold (red). The green parabola is fit across the current <code>step-seconds</code> interval to locate the time of closest approach (TCA) within it.</p>
+                <div class="pg-refine-wrap">
+                    <canvas id="refine"></canvas>
+                </div>
+                <div class="pg-legend-row">
+                    <span><span class="legend-dot" style="background:var(--series-green)"></span>Parabola fit / TCA</span>
+                </div>
+            </div>
+
+            <div class="pg-controls-bottom">
+                <div class="params-head">
+                    <div class="card-title">Parameters</div>
+                    <button class="viz-btn pg-reset-btn" id="reset-defaults" title="Reset to application.properties defaults" aria-label="Reset defaults">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20 11A8 8 0 1 0 12 20"/>
+                            <polyline points="20 4 20 11 13 11"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="slider-row">
+                    <div class="slider-head">
+                        <label for="tolerance"><code>tolerance-km</code>: coarse-scan distance threshold; pairs whose center-to-center distance falls below this are flagged for refinement.</label>
+                        <span class="slider-val" id="tolerance-val">72</span>
+                    </div>
+                    <input type="range" id="tolerance" min="5" max="200" step="1" value="72">
+                </div>
+
+                <div class="slider-row">
+                    <div class="slider-head">
+                        <label for="cell-size"><code>cell-size-km</code>: spatial grid cell edge. Smaller cells mean fewer candidates per cell, but cells smaller than the tolerance can leave a close pair sitting in non-adjacent cells and never compared.</label>
+                        <span class="slider-val" id="cell-size-val">48</span>
+                    </div>
+                    <input type="range" id="cell-size" min="5" max="120" step="1" value="48">
+                </div>
+
+                <div class="slider-row">
+                    <div class="slider-head">
+                        <label for="step-seconds"><code>step-seconds</code>: time interval between successive position checks. Smaller steps catch fast approaches but multiply propagation work.</label>
+                        <span class="slider-val" id="step-seconds-val">9</span>
+                    </div>
+                    <input type="range" id="step-seconds" min="1" max="60" step="1" value="9">
+                </div>
+
+                <div class="slider-row">
+                    <div class="slider-head">
+                        <label for="stride"><code>interpolation-stride</code>: one real SGP4 call per N steps; intermediate positions are filled in by Hermite cubic interpolation on position and velocity at each knot.</label>
+                        <span class="slider-val" id="stride-val">50</span>
+                    </div>
+                    <input type="range" id="stride" min="1" max="100" step="1" value="50">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<footer class="app-footer" th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/playground.js}"></script>
+</body>
+</html>

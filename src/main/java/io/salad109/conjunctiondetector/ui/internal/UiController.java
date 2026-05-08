@@ -85,6 +85,11 @@ public class UiController {
         return "catalog";
     }
 
+    @GetMapping("/playground")
+    public String playground() {
+        return "playground";
+    }
+
     @GetMapping("/hx/satellites")
     public String satellitesFragment(@PageableDefault(sort = "noradCatId", direction = Sort.Direction.ASC) Pageable pageable, Model model) {
         model.addAttribute("page", satelliteService.getBriefInfos(pageable));
