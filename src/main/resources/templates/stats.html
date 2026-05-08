@@ -54,12 +54,12 @@
     <!-- Time-series charts -->
     <div class="split-grid" th:if="${conjChartPoints != null}">
         <div th:replace="~{fragments/chart-card :: chartCard(
-                'Conjunctions detected - last 30 scans',
+                'Conjunctions detected - last 100 scans',
                 ${conjChartPoints}, ${conjChartMin}, ${conjChartMax},
                 ${chartStartLabel}, ${chartEndLabel},
                 'gradConj', 'var(--series-blue)')}"></div>
         <div th:replace="~{fragments/chart-card :: chartCard(
-                'Satellites tracked - last 30 scans',
+                'Satellites tracked - last 100 scans',
                 ${satChartPoints}, ${satChartMin}, ${satChartMax},
                 ${chartStartLabel}, ${chartEndLabel},
                 'gradSat', 'var(--series-green)')}"></div>
@@ -100,24 +100,25 @@
         <div class="card">
             <div class="card-title">Recent scans</div>
             <div class="table-scroll">
-            <table class="data-table log-table" style="margin-top:6px">
-                <thead>
-                <tr>
-                    <th>Started At</th>
-                    <th class="num">Satellites</th>
-                    <th class="num">Conjunctions</th>
-                    <th class="num">Duration</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="s : ${snap.recentScans}">
-                    <td th:text="${#temporals.format(s.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:32:07</td>
-                    <td class="num" th:text="${#numbers.formatInteger(s.satellitesScanned, 1, 'COMMA')}">25,412</td>
-                    <td class="num" th:text="${#numbers.formatInteger(s.conjunctionsDetected, 1, 'COMMA')}">41,284</td>
-                    <td class="num" th:text="${s.durationMs / 1000} + ' s'">147 s</td>
-                </tr>
-                </tbody>
-            </table>
+                <table class="data-table log-table" style="margin-top:6px">
+                    <thead>
+                    <tr>
+                        <th>Started At</th>
+                        <th class="num">Satellites</th>
+                        <th class="num">Conjunctions</th>
+                        <th class="num">Duration</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${snap.recentScans}">
+                        <td th:text="${#temporals.format(s.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:32:07</td>
+                        <td class="num" th:text="${#numbers.formatInteger(s.satellitesScanned, 1, 'COMMA')}">25,412</td>
+                        <td class="num" th:text="${#numbers.formatInteger(s.conjunctionsDetected, 1, 'COMMA')}">41,284
+                        </td>
+                        <td class="num" th:text="${s.durationMs / 1000} + ' s'">147 s</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -125,35 +126,35 @@
         <div class="card">
             <div class="card-title">Recent syncs (Space-Track)</div>
             <div class="table-scroll">
-            <table class="data-table log-table" style="margin-top:6px">
-                <thead>
-                <tr>
-                    <th>Started At</th>
-                    <th class="num">Inserted</th>
-                    <th class="num">Updated</th>
-                    <th class="num">Unchanged</th>
-                    <th class="num">Skipped</th>
-                    <th class="num">Deleted</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="l : ${snap.recentSyncs}">
-                    <td th:text="${#temporals.format(l.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:00:00</td>
-                    <td class="num" th:text="${l.objectsInserted}">312</td>
-                    <td class="num" th:text="${#numbers.formatInteger(l.objectsUpdated, 1, 'COMMA')}">1,840</td>
-                    <td class="num" th:text="${#numbers.formatInteger(l.objectsUnchanged, 1, 'COMMA')}">23,218</td>
-                    <td class="num" th:text="${l.objectsSkipped}">42</td>
-                    <td class="num" th:classappend="${l.objectsDeleted > 0} ? ' nav-err' : ''"
-                        th:text="${l.objectsDeleted}">0
-                    </td>
-                    <td>
-                        <span class="nav-ok" th:if="${l.successful}">OK</span>
-                        <span class="nav-err" th:unless="${l.successful}">FAILED</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+                <table class="data-table log-table" style="margin-top:6px">
+                    <thead>
+                    <tr>
+                        <th>Started At</th>
+                        <th class="num">Inserted</th>
+                        <th class="num">Updated</th>
+                        <th class="num">Unchanged</th>
+                        <th class="num">Skipped</th>
+                        <th class="num">Deleted</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="l : ${snap.recentSyncs}">
+                        <td th:text="${#temporals.format(l.startedAt, 'yyyy-MM-dd HH:mm:ss')}">2025-04-19 14:00:00</td>
+                        <td class="num" th:text="${l.objectsInserted}">312</td>
+                        <td class="num" th:text="${#numbers.formatInteger(l.objectsUpdated, 1, 'COMMA')}">1,840</td>
+                        <td class="num" th:text="${#numbers.formatInteger(l.objectsUnchanged, 1, 'COMMA')}">23,218</td>
+                        <td class="num" th:text="${l.objectsSkipped}">42</td>
+                        <td class="num" th:classappend="${l.objectsDeleted > 0} ? ' nav-err' : ''"
+                            th:text="${l.objectsDeleted}">0
+                        </td>
+                        <td>
+                            <span class="nav-ok" th:if="${l.successful}">OK</span>
+                            <span class="nav-err" th:unless="${l.successful}">FAILED</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 

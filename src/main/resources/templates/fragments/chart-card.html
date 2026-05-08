@@ -5,7 +5,8 @@
         startLabel, endLabel, gradId (unique per chart), color (CSS var or hex)
 -->
 <div class="card"
-     th:fragment="chartCard(title, points, min, max, startLabel, endLabel, gradId, color)" xmlns:th="http://www.thymeleaf.org">
+     th:fragment="chartCard(title, points, min, max, startLabel, endLabel, gradId, color)"
+     xmlns:th="http://www.thymeleaf.org">
     <div class="card-title" th:text="${title}">Chart title</div>
     <div class="chart-wrap">
         <svg preserveAspectRatio="none" style="width:100%;height:auto;display:block"

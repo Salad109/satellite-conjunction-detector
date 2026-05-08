@@ -12,52 +12,52 @@
         {
             id: 'crossing',
             label: 'Crossing',
-            orbitA: { a: 260, e: 0.20, omega: 0 },
-            orbitB: { a: 260, e: 0.30, omega: Math.PI / 2.5 },
+            orbitA: {a: 260, e: 0.20, omega: 0},
+            orbitB: {a: 260, e: 0.30, omega: Math.PI / 2.5},
             mode: 'pin-crossing'
         },
         {
             id: 'near-miss',
             label: 'Near-miss',
-            orbitA: { a: 260, e: 0.20, omega: 0 },
-            orbitB: { a: 260, e: 0.30, omega: Math.PI / 2.5 },
+            orbitA: {a: 260, e: 0.20, omega: 0},
+            orbitB: {a: 260, e: 0.30, omega: Math.PI / 2.5},
             mode: 'pin-crossing',
             mBExtra: 0.15907
         },
         {
             id: 'formation',
             label: 'Formation',
-            orbitA: { a: 260, e: 0.10, omega: 0 },
-            orbitB: { a: 260, e: 0.10, omega: Math.PI / 30 },
+            orbitA: {a: 260, e: 0.10, omega: 0},
+            orbitB: {a: 260, e: 0.10, omega: Math.PI / 30},
             mode: 'periapsis-aligned'
         },
         {
             id: 'eccentric',
             label: 'Eccentric',
-            orbitA: { a: 260, e: 0.05, omega: 0 },
-            orbitB: { a: 260, e: 0.55, omega: Math.PI / 3 },
+            orbitA: {a: 260, e: 0.05, omega: 0},
+            orbitB: {a: 260, e: 0.55, omega: Math.PI / 3},
             mode: 'pin-crossing'
         },
         {
             id: 'head-on',
             label: 'Head-on',
-            orbitA: { a: 260, e: 0.25, omega: 0 },
-            orbitB: { a: 260, e: 0.25, omega: Math.PI / 3, dir: -1 },
+            orbitA: {a: 260, e: 0.25, omega: 0},
+            orbitB: {a: 260, e: 0.25, omega: Math.PI / 3, dir: -1},
             mode: 'pin-crossing'
         }
     ];
 
     let orbitA = PRESETS[0].orbitA;
     let orbitB = PRESETS[0].orbitB;
-    let phases = { mAOffset: 0, mBOffset: 0 };
+    let phases = {mAOffset: 0, mBOffset: 0};
 
-    const DEFAULTS = { tolerance: 72, cellSize: 48, stepSeconds: 9, stride: 50 };
+    const DEFAULTS = {tolerance: 72, cellSize: 48, stepSeconds: 9, stride: 50};
 
     const HALF_NEIGHBORS_2D = [
-        { dx: 1, dy: 0 },
-        { dx: 1, dy: 1 },
-        { dx: 0, dy: 1 },
-        { dx: -1, dy: 1 }
+        {dx: 1, dy: 0},
+        {dx: 1, dy: 1},
+        {dx: 0, dy: 1},
+        {dx: -1, dy: 1}
     ];
 
     const sceneCanvas = document.getElementById('scene');
@@ -106,7 +106,7 @@
     }
 
     function orbitState(orbit, M) {
-        const { a, e, omega, dir = 1 } = orbit;
+        const {a, e, omega, dir = 1} = orbit;
         const nu = trueAnomaly(M * dir, e);
         const p = a * (1 - e * e);
         const r = p / (1 + e * Math.cos(nu));
@@ -117,7 +117,7 @@
         const vScale = (h / p) * dir;
         const vx = vScale * (-Math.sin(theta) - e * Math.sin(omega));
         const vy = vScale * (Math.cos(theta) + e * Math.cos(omega));
-        return { x: r * cosT, y: r * sinT, vx, vy };
+        return {x: r * cosT, y: r * sinT, vx, vy};
     }
 
     function findIntersectionTrueAnomalies(A, B) {
@@ -128,7 +128,7 @@
             const nuB = (j / N) * TWO_PI;
             const pB = B.a * (1 - B.e * B.e) / (1 + B.e * Math.cos(nuB));
             const thB = nuB + B.omega;
-            ptsB[j] = { x: pB * Math.cos(thB), y: pB * Math.sin(thB), nu: nuB };
+            ptsB[j] = {x: pB * Math.cos(thB), y: pB * Math.sin(thB), nu: nuB};
         }
         for (let i = 0; i < N; i++) {
             const nuA = (i / N) * TWO_PI;
@@ -138,17 +138,21 @@
             for (let j = 0; j < N; j++) {
                 const dx = xA - ptsB[j].x, dy = yA - ptsB[j].y;
                 const d2 = dx * dx + dy * dy;
-                if (d2 < bestD2) { bestD2 = d2; bestNuA = nuA; bestNuB = ptsB[j].nu; }
+                if (d2 < bestD2) {
+                    bestD2 = d2;
+                    bestNuA = nuA;
+                    bestNuB = ptsB[j].nu;
+                }
             }
         }
-        return { nuA: bestNuA, nuB: bestNuB };
+        return {nuA: bestNuA, nuB: bestNuB};
     }
 
     function applyPreset(preset) {
         orbitA = preset.orbitA;
         orbitB = preset.orbitB;
         if (preset.mode === 'pin-crossing') {
-            const { nuA, nuB } = findIntersectionTrueAnomalies(orbitA, orbitB);
+            const {nuA, nuB} = findIntersectionTrueAnomalies(orbitA, orbitB);
             const dirA = orbitA.dir || 1;
             const dirB = orbitB.dir || 1;
             phases = {
@@ -156,7 +160,7 @@
                 mBOffset: dirB * meanAnomalyFromTrue(nuB, orbitB.e) - TWO_PI * COLLISION_T + (preset.mBExtra || 0)
             };
         } else {
-            phases = { mAOffset: 0, mBOffset: 0 };
+            phases = {mAOffset: 0, mBOffset: 0};
         }
     }
 
@@ -221,26 +225,26 @@
             canvas.height = Math.round(h * dpr);
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        return { w, h };
+        return {w, h};
     }
 
     function sceneScale(w, h) {
         const s = Math.min(w / (2 * SCENE_HALF_W), h / (2 * SCENE_HALF_H));
-        return { sx: s, sy: s, ox: w / 2, oy: h / 2 };
+        return {sx: s, sy: s, ox: w / 2, oy: h / 2};
     }
 
     function sceneToPx(p, w, h) {
-        const { sx, sy, ox, oy } = sceneScale(w, h);
-        return { x: ox + p.x * sx, y: oy - p.y * sy };
+        const {sx, sy, ox, oy} = sceneScale(w, h);
+        return {x: ox + p.x * sx, y: oy - p.y * sy};
     }
 
     function cellOf(p) {
-        return { cx: Math.floor(p.x / state.cellSize), cy: Math.floor(p.y / state.cellSize) };
+        return {cx: Math.floor(p.x / state.cellSize), cy: Math.floor(p.y / state.cellSize)};
     }
 
     function fillCell(ctx, cx, cy, w, h, color, alpha) {
-        const tl = sceneToPx({ x: cx * state.cellSize, y: (cy + 1) * state.cellSize }, w, h);
-        const { sx, sy } = sceneScale(w, h);
+        const tl = sceneToPx({x: cx * state.cellSize, y: (cy + 1) * state.cellSize}, w, h);
+        const {sx, sy} = sceneScale(w, h);
         ctx.fillStyle = color;
         ctx.globalAlpha = alpha;
         ctx.fillRect(tl.x, tl.y, state.cellSize * sx, state.cellSize * sy);
@@ -248,8 +252,8 @@
     }
 
     function strokeCell(ctx, cx, cy, w, h, color, lineWidth) {
-        const tl = sceneToPx({ x: cx * state.cellSize, y: (cy + 1) * state.cellSize }, w, h);
-        const { sx, sy } = sceneScale(w, h);
+        const tl = sceneToPx({x: cx * state.cellSize, y: (cy + 1) * state.cellSize}, w, h);
+        const {sx, sy} = sceneScale(w, h);
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
         ctx.strokeRect(tl.x + 0.5, tl.y + 0.5, state.cellSize * sx - 1, state.cellSize * sy - 1);
@@ -262,12 +266,12 @@
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = -SCENE_HALF_W; x <= SCENE_HALF_W + 0.001; x += cell) {
-            const px = sceneToPx({ x, y: 0 }, w, h).x;
+            const px = sceneToPx({x, y: 0}, w, h).x;
             ctx.moveTo(px, 0);
             ctx.lineTo(px, h);
         }
         for (let y = -SCENE_HALF_H; y <= SCENE_HALF_H + 0.001; y += cell) {
-            const py = sceneToPx({ x: 0, y }, w, h).y;
+            const py = sceneToPx({x: 0, y}, w, h).y;
             ctx.moveTo(0, py);
             ctx.lineTo(w, py);
         }
@@ -327,7 +331,7 @@
 
     function drawDisc(ctx, p, sceneRadius, color, w, h, fillAlpha, strokeAlpha) {
         const px = sceneToPx(p, w, h);
-        const { sx } = sceneScale(w, h);
+        const {sx} = sceneScale(w, h);
         ctx.beginPath();
         ctx.arc(px.x, px.y, sceneRadius * sx, 0, TWO_PI);
         ctx.fillStyle = color;
@@ -349,7 +353,7 @@
     }
 
     function drawEarth(ctx, w, h, C) {
-        const px = sceneToPx({ x: 0, y: 0 }, w, h);
+        const px = sceneToPx({x: 0, y: 0}, w, h);
         ctx.beginPath();
         ctx.arc(px.x, px.y, 7, 0, TWO_PI);
         ctx.fillStyle = C.muted;
@@ -362,7 +366,7 @@
     }
 
     function drawScene() {
-        const { w, h } = fitCanvas(sceneCanvas, sceneCtx);
+        const {w, h} = fitCanvas(sceneCanvas, sceneCtx);
         const C = readColors();
         sceneCtx.clearRect(0, 0, w, h);
 
@@ -436,7 +440,7 @@
     }
 
     function drawRefineChart() {
-        const { w, h } = fitCanvas(refineCanvas, refineCtx);
+        const {w, h} = fitCanvas(refineCanvas, refineCtx);
         const C = readColors();
         refineCtx.clearRect(0, 0, w, h);
 
@@ -450,7 +454,7 @@
         for (let i = 0; i <= N; i++) {
             const t = i / N;
             const d = Math.sqrt(distSq(stateA(t), stateB(t)));
-            samples[i] = { t, d };
+            samples[i] = {t, d};
             if (d > dMax) dMax = d;
         }
         const yMax = Math.max(dMax, state.tolerance * 1.4);
@@ -563,18 +567,18 @@
     }
 
     const SLIDERS = [
-        { id: 'tolerance',    valId: 'tolerance-val',    key: 'tolerance' },
-        { id: 'cell-size',    valId: 'cell-size-val',    key: 'cellSize' },
-        { id: 'step-seconds', valId: 'step-seconds-val', key: 'stepSeconds' },
-        { id: 'stride',       valId: 'stride-val',       key: 'stride' }
+        {id: 'tolerance', valId: 'tolerance-val', key: 'tolerance'},
+        {id: 'cell-size', valId: 'cell-size-val', key: 'cellSize'},
+        {id: 'step-seconds', valId: 'step-seconds-val', key: 'stepSeconds'},
+        {id: 'stride', valId: 'stride-val', key: 'stride'}
     ];
 
     const TOGGLES = [
-        { id: 'show-grid',      key: 'showGrid' },
-        { id: 'show-knots',     key: 'showKnots' },
-        { id: 'show-interp',    key: 'showInterp' },
-        { id: 'show-tolerance', key: 'showTolerance' },
-        { id: 'show-refine',    key: 'showRefine' }
+        {id: 'show-grid', key: 'showGrid'},
+        {id: 'show-knots', key: 'showKnots'},
+        {id: 'show-interp', key: 'showInterp'},
+        {id: 'show-tolerance', key: 'showTolerance'},
+        {id: 'show-refine', key: 'showRefine'}
     ];
 
     function setSliderUi(id, valId, v) {
@@ -631,12 +635,14 @@
             presetRow.appendChild(btn);
             return btn;
         });
+
         function selectPreset(id) {
             const preset = PRESETS.find(p => p.id === id);
             applyPreset(preset);
             for (const b of presetBtns) b.classList.toggle('active', b.dataset.preset === id);
             redraw();
         }
+
         selectPreset(PRESETS[0].id);
     }
 

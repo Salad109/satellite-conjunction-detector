@@ -133,43 +133,43 @@
 
     <div class="table-scroll" th:unless="${#lists.isEmpty(conjunctions)}">
         <table class="data-table">
-        <thead>
-        <tr>
-            <th class="sortable">ID</th>
-            <th class="sortable num">Miss Dist (km)</th>
-            <th class="sortable">TCA (UTC)</th>
-            <th class="sortable num">Rel. Vel (m/s)</th>
-            <th>Pc</th>
-            <th>Other Object</th>
-            <th>Type</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="c : ${conjunctions}"
-            th:with="isObj1=${c.object1NoradId == satellite.noradCatId},
+            <thead>
+            <tr>
+                <th class="sortable">ID</th>
+                <th class="sortable num">Miss Dist (km)</th>
+                <th class="sortable">TCA (UTC)</th>
+                <th class="sortable num">Rel. Vel (m/s)</th>
+                <th>Pc</th>
+                <th>Other Object</th>
+                <th>Type</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${conjunctions}"
+                th:with="isObj1=${c.object1NoradId == satellite.noradCatId},
                    otherName=${isObj1 ? c.object2Name : c.object1Name},
                    otherId=${isObj1 ? c.object2NoradId : c.object1NoradId},
                    otherType=${isObj1 ? c.object2Type : c.object1Type},
                    pcClass=${c.collisionProbability >= 1e-6 ? 'pc-hi' : (c.collisionProbability >= 1e-8 ? 'pc-med' : '')}">
-            <td class="mono"><a th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}">8821</a></td>
-            <td class="num" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}">0.051</td>
-            <td class="mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}">2025-04-20 03:17:42</td>
-            <td class="num" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}">14823.1</td>
-            <td class="mono" th:classappend="${pcClass}"
-                th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}">0.0000000821
-            </td>
-            <td>
-                <a th:href="@{/satellites/{id}(id=${otherId})}"
-                   th:text="${otherName + ' (' + otherId + ')'}">STARLINK-1234 (43205)</a>
-            </td>
-            <td>
+                <td class="mono"><a th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}">8821</a></td>
+                <td class="num" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}">0.051</td>
+                <td class="mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}">2025-04-20 03:17:42</td>
+                <td class="num" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}">14823.1</td>
+                <td class="mono" th:classappend="${pcClass}"
+                    th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}">0.0000000821
+                </td>
+                <td>
+                    <a th:href="@{/satellites/{id}(id=${otherId})}"
+                       th:text="${otherName + ' (' + otherId + ')'}">STARLINK-1234 (43205)</a>
+                </td>
+                <td>
           <span class="type-badge"
                 th:attr="data-type=${otherType}"
                 th:text="${otherType}">PAYLOAD</span>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
 </main>

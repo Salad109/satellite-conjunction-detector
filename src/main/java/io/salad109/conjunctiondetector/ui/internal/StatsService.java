@@ -45,8 +45,8 @@ public class StatsService {
                 conjunctionService.countActive(),
                 conjunctionService.countHighRisk(),
                 satelliteService.getCatalogBreakdown(),
-                ingestionLogService.getRecent(5),
-                scanLogService.getRecent(30)
+                ingestionLogService.getRecent(8),
+                scanLogService.getRecent(100)
         );
     }
 
@@ -70,7 +70,7 @@ public class StatsService {
         }
 
         public List<ScanResult> recentScans() {
-            return chartLogs.subList(0, Math.min(5, chartLogs.size()));
+            return chartLogs.subList(0, Math.min(8, chartLogs.size()));
         }
     }
 }

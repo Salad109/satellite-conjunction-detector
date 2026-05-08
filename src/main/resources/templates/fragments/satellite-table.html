@@ -6,63 +6,68 @@
 <th:block xmlns:th="http://www.thymeleaf.org">
 
     <div class="table-scroll">
-    <table class="data-table" hx-indicator="#results">
-        <thead>
-        <tr>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+        <table class="data-table" hx-indicator="#results">
+            <thead>
+            <tr>
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'noradCatId', 'NORAD ID', '/hx/satellites', ${sortField}, ${sortDir}, '', false, null)}"></th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Country</th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th>Name</th>
+                <th>Type</th>
+                <th>Country</th>
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'perigeeKm', 'Perigee (km)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'apogeeKm', 'Apogee (km)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'inclination', 'Incl. (°)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'period', 'Period (min)', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'conjunctionCount', 'Conjunctions', '/hx/satellites', ${sortField}, ${sortDir}, '', true, null)}"></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="s : ${page.content}">
-            <td class="mono">
-                <a th:href="@{/satellites/{id}(id=${s.noradCatId})}" th:text="${s.noradCatId}">25544</a>
-            </td>
-            <td th:text="${s.objectName}">ISS (ZARYA)</td>
-            <td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${page.content}">
+                <td class="mono">
+                    <a th:href="@{/satellites/{id}(id=${s.noradCatId})}" th:text="${s.noradCatId}">25544</a>
+                </td>
+                <td th:text="${s.objectName}">ISS (ZARYA)</td>
+                <td>
         <span class="type-badge"
               th:attr="data-type=${s.objectType}"
               th:text="${s.objectType}">PAYLOAD</span>
-            </td>
-            <td class="mono" style="color:var(--muted)" th:text="${s.countryCode} ?: '-'">US</td>
-            <td class="num" th:text="${s.perigee != null} ? ${#numbers.formatDecimal(s.perigee, 1, 1)} : '-'">408.2</td>
-            <td class="num" th:text="${s.apogee != null} ? ${#numbers.formatDecimal(s.apogee, 1, 1)} : '-'">416.5</td>
-            <td class="num"
-                th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} + '°' : '-'">51.64°
-            </td>
-            <td class="num" th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '-'">92.7</td>
-            <td class="num">
-                <a th:href="@{/satellites/{id}(id=${s.noradCatId})}" th:text="${s.conjunctions}">3</a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                </td>
+                <td class="mono" style="color:var(--muted)" th:text="${s.countryCode} ?: '-'">US</td>
+                <td class="num" th:text="${s.perigee != null} ? ${#numbers.formatDecimal(s.perigee, 1, 1)} : '-'">
+                    408.2
+                </td>
+                <td class="num" th:text="${s.apogee != null} ? ${#numbers.formatDecimal(s.apogee, 1, 1)} : '-'">416.5
+                </td>
+                <td class="num"
+                    th:text="${s.inclination != null} ? ${#numbers.formatDecimal(s.inclination, 1, 2)} + '°' : '-'">
+                    51.64°
+                </td>
+                <td class="num" th:text="${s.period != null} ? ${#numbers.formatDecimal(s.period, 1, 1)} : '-'">92.7
+                </td>
+                <td class="num">
+                    <a th:href="@{/satellites/{id}(id=${s.noradCatId})}" th:text="${s.conjunctions}">3</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="pagination">
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/satellites?page=' + ${page.number - 1} + '&sort=' + ${sortField} + ',' + ${sortDir}"
                 th:if="${page.hasPrevious()}">
-            &lt;- Prev
+            &larr; Prev
         </button>
         <span th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">Page 1 of 2542</span>
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/satellites?page=' + ${page.number + 1} + '&sort=' + ${sortField} + ',' + ${sortDir}"
                 th:if="${page.hasNext()}">
-            Next -&gt;
+            Next &rarr;
         </button>
     </div>
 

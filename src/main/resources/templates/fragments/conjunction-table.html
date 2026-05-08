@@ -6,82 +6,82 @@
 <th:block xmlns:th="http://www.thymeleaf.org">
 
     <div class="table-scroll">
-    <table class="data-table" hx-indicator="#results">
-        <thead>
-        <tr>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+        <table class="data-table" hx-indicator="#results">
+            <thead>
+            <tr>
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'id', 'ID', '/hx/conjunctions', ${sortField}, ${sortDir},
                     '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'missDistanceKm', 'Miss Dist (km)', '/hx/conjunctions', ${sortField}, ${sortDir},
                     '&includeFormations=' + ${includeFormations}, true, 2)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'tca', 'TCA (UTC)', '/hx/conjunctions', ${sortField}, ${sortDir},
                     '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'relativeVelocityMS', 'Rel. Vel (m/s)', '/hx/conjunctions', ${sortField}, ${sortDir},
                     '&includeFormations=' + ${includeFormations}, true, 2)}"></th>
-            <th th:replace="~{fragments/sortable-th :: sortableTh(
+                <th th:replace="~{fragments/sortable-th :: sortableTh(
                     'collisionProbability', 'Pc', '/hx/conjunctions', ${sortField}, ${sortDir},
                     '&includeFormations=' + ${includeFormations}, false, 2)}"></th>
-            <th class="col-head-sep" colspan="3" style="text-align:center">Object 1</th>
-            <th class="col-head-sep" colspan="3" style="text-align:center">Object 2</th>
-        </tr>
-        <tr>
-            <th class="col-sep">NORAD ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th class="col-sep">NORAD ID</th>
-            <th>Name</th>
-            <th>Type</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="c : ${page.content}"
-            th:with="pcClass=${c.collisionProbability >= 1e-6 ? 'pc-hi' : (c.collisionProbability >= 1e-8 ? 'pc-med' : '')}">
-            <td class="mono">
-                <a th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}">8821</a>
-            </td>
-            <td class="num" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}">0.051</td>
-            <td class="mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}">2025-04-20 03:17:42</td>
-            <td class="num" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}">14823.1</td>
-            <td class="mono" th:classappend="${pcClass}"
-                th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}">0.0000000821
-            </td>
-            <td class="mono col-sep">
-                <a th:href="@{/satellites/{id}(id=${c.object1NoradId})}" th:text="${c.object1NoradId}">25544</a>
-            </td>
-            <td th:text="${c.object1Name}">ISS (ZARYA)</td>
-            <td>
+                <th class="col-head-sep" colspan="3" style="text-align:center">Object 1</th>
+                <th class="col-head-sep" colspan="3" style="text-align:center">Object 2</th>
+            </tr>
+            <tr>
+                <th class="col-sep">NORAD ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th class="col-sep">NORAD ID</th>
+                <th>Name</th>
+                <th>Type</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${page.content}"
+                th:with="pcClass=${c.collisionProbability >= 1e-6 ? 'pc-hi' : (c.collisionProbability >= 1e-8 ? 'pc-med' : '')}">
+                <td class="mono">
+                    <a th:href="@{/conjunctions/{id}(id=${c.id})}" th:text="${c.id}">8821</a>
+                </td>
+                <td class="num" th:text="${#numbers.formatDecimal(c.missDistanceKm, 1, 3)}">0.051</td>
+                <td class="mono" th:text="${#temporals.format(c.tca, 'yyyy-MM-dd HH:mm:ss')}">2025-04-20 03:17:42</td>
+                <td class="num" th:text="${#numbers.formatDecimal(c.relativeVelocityMS, 1, 1)}">14823.1</td>
+                <td class="mono" th:classappend="${pcClass}"
+                    th:text="${#numbers.formatDecimal(c.collisionProbability, 1, 10)}">0.0000000821
+                </td>
+                <td class="mono col-sep">
+                    <a th:href="@{/satellites/{id}(id=${c.object1NoradId})}" th:text="${c.object1NoradId}">25544</a>
+                </td>
+                <td th:text="${c.object1Name}">ISS (ZARYA)</td>
+                <td>
         <span class="type-badge"
               th:attr="data-type=${c.object1Type}"
               th:text="${c.object1Type}">PAYLOAD</span>
-            </td>
-            <td class="mono col-sep">
-                <a th:href="@{/satellites/{id}(id=${c.object2NoradId})}" th:text="${c.object2NoradId}">43205</a>
-            </td>
-            <td th:text="${c.object2Name}">STARLINK-1234</td>
-            <td>
+                </td>
+                <td class="mono col-sep">
+                    <a th:href="@{/satellites/{id}(id=${c.object2NoradId})}" th:text="${c.object2NoradId}">43205</a>
+                </td>
+                <td th:text="${c.object2Name}">STARLINK-1234</td>
+                <td>
         <span class="type-badge"
               th:attr="data-type=${c.object2Type}"
               th:text="${c.object2Type}">PAYLOAD</span>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="pagination">
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/conjunctions?page=' + ${page.number - 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
                 th:if="${page.hasPrevious()}">
-            &lt;- Prev
+            &larr; Prev
         </button>
         <span th:text="'Page ' + (${page.number} + 1) + ' of ' + ${page.totalPages}">Page 1 of 441</span>
         <button class="btn" hx-target="#results"
                 th:hx-get="'/hx/conjunctions?page=' + ${page.number + 1} + '&sort=' + ${sortField} + ',' + ${sortDir} + '&includeFormations=' + ${includeFormations}"
                 th:if="${page.hasNext()}">
-            Next -&gt;
+            Next &rarr;
         </button>
     </div>
 
