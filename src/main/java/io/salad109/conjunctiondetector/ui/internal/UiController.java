@@ -62,9 +62,9 @@ public class UiController {
         return sb.toString();
     }
 
-    @GetMapping
-    public String index() {
-        return "index";
+    @GetMapping("/conjunctions")
+    public String conjunctions() {
+        return "conjunctions";
     }
 
     @GetMapping("/conjunctions/{id}")
@@ -127,7 +127,7 @@ public class UiController {
         return "fragments/nav-status-scan";
     }
 
-    @GetMapping("/stats")
+    @GetMapping("/")
     public String stats(Model model) {
         StatsService.StatsSnapshot snap = statsService.getSnapshot();
         model.addAttribute("snap", snap);

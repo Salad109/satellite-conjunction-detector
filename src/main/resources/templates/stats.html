@@ -66,18 +66,18 @@
     </div>
 
     <!-- Breakdown bar charts -->
-    <div class="split-grid" th:with="b=${snap.breakdown},
-                                     otherPayload=${b.payloadCount - b.starlinkCount - b.onewebCount - b.cosmosCount},
-                                     heo=${snap.satelliteCount - b.leoCount - b.meoCount - b.geoCount}">
+    <div class="asym-grid" th:with="b=${snap.breakdown},
+                                    heo=${snap.satelliteCount - b.leoCount - b.meoCount - b.geoCount}">
 
-        <!-- Major satellite groups -->
-        <div class="card">
-            <div class="card-title">Major satellite groups</div>
-            <div class="bar-chart" th:if="${b.payloadCount > 0}">
-                <div th:replace="~{fragments/bar-row :: barRow('Starlink', ${b.starlinkCount}, ${b.payloadCount}, '')}"></div>
-                <div th:replace="~{fragments/bar-row :: barRow('OneWeb',   ${b.onewebCount},   ${b.payloadCount}, '')}"></div>
-                <div th:replace="~{fragments/bar-row :: barRow('COSMOS',   ${b.cosmosCount},   ${b.payloadCount}, 'amber')}"></div>
-                <div th:replace="~{fragments/bar-row :: barRow('Other',    ${otherPayload},    ${b.payloadCount}, 'muted')}"></div>
+        <!-- Catalog composition -->
+        <div class="card span-rows">
+            <div class="card-title">Catalog composition</div>
+            <div class="bar-chart" th:if="${not #lists.isEmpty(b.topNameTokens)}"
+                 th:with="modifiers=${ {'', 'amber', 'purple', 'green'} },
+                          maxCount=${b.topNameTokens[0].count}">
+                <th:block th:each="t, iter : ${b.topNameTokens}">
+                    <div th:replace="~{fragments/bar-row :: barRow(${t.fragment}, ${t.count}, ${maxCount}, ${modifiers[iter.index % 4]})}"></div>
+                </th:block>
             </div>
         </div>
 
@@ -88,7 +88,18 @@
                 <div th:replace="~{fragments/bar-row :: barRow('LEO',         ${b.leoCount}, ${snap.satelliteCount}, '')}"></div>
                 <div th:replace="~{fragments/bar-row :: barRow('GEO',         ${b.geoCount}, ${snap.satelliteCount}, 'amber')}"></div>
                 <div th:replace="~{fragments/bar-row :: barRow('MEO',         ${b.meoCount}, ${snap.satelliteCount}, 'purple')}"></div>
-                <div th:replace="~{fragments/bar-row :: barRow('HEO / Other', ${heo},        ${snap.satelliteCount}, 'muted')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('HEO / Other', ${heo},        ${snap.satelliteCount}, 'green')}"></div>
+            </div>
+        </div>
+
+        <!-- Object type -->
+        <div class="card">
+            <div class="card-title">Object type breakdown</div>
+            <div class="bar-chart" th:if="${snap.satelliteCount > 0}">
+                <div th:replace="~{fragments/bar-row :: barRow('Payload',     ${b.payloadCount},    ${snap.satelliteCount}, '')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('Debris',      ${b.debrisCount},     ${snap.satelliteCount}, 'amber')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('Rocket body', ${b.rocketBodyCount}, ${snap.satelliteCount}, 'purple')}"></div>
+                <div th:replace="~{fragments/bar-row :: barRow('Unknown',     ${b.unknownCount},    ${snap.satelliteCount}, 'green')}"></div>
             </div>
         </div>
     </div>

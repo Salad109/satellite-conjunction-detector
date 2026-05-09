@@ -614,6 +614,20 @@ html.light .type-badge[data-type="ROCKET BODY"] {
     margin-bottom: 0;
 }
 
+.asym-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+        "left right1"
+        "left right2";
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.asym-grid > .span-rows {
+    grid-area: left;
+}
+
 .unit {
     font-size: 14px;
     font-weight: 400;
@@ -639,6 +653,10 @@ html.light .type-badge[data-type="ROCKET BODY"] {
 .bar-fill.muted {
     background: var(--muted);
     opacity: 0.35;
+}
+
+.bar-fill.green {
+    background: var(--series-green);
 }
 
 .bar-val {
@@ -983,8 +1001,10 @@ html.light .type-badge[data-type="ROCKET BODY"] {
         gap: 10px;
     }
 
-    .split-grid {
+    .split-grid,
+    .asym-grid {
         grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: none;
         gap: 12px;
     }
 
@@ -1045,7 +1065,7 @@ html.light .type-badge[data-type="ROCKET BODY"] {
 .pg-canvas-wrap {
     position: relative;
     width: 100%;
-    height: clamp(420px, 65vh, 900px);
+    height: clamp(450px, 68vh, 930px);
     background: var(--bg3);
     border-radius: 4px;
     overflow: hidden;

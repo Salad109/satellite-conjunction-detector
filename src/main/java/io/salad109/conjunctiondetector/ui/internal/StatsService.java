@@ -44,7 +44,7 @@ public class StatsService {
                 satelliteService.count(),
                 conjunctionService.countActive(),
                 conjunctionService.countHighRisk(),
-                satelliteService.getCatalogBreakdown(),
+                satelliteService.getCatalogBreakdown(11),
                 ingestionLogService.getRecent(8),
                 scanLogService.getRecent(100)
         );

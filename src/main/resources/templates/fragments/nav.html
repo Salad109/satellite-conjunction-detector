@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <!--
   fragments/nav.html
-  Usage: <nav th:replace="~{fragments/nav :: nav('home')}"></nav>
-  activePage: 'home' | 'catalog' | 'stats' | 'playground' | '' (satellite/viz detail pages)
+  Usage: <nav th:replace="~{fragments/nav :: nav('stats')}"></nav>
+  activePage: 'stats' | 'conjunctions' | 'catalog' | 'playground' | '' (satellite/viz detail pages)
 
   Each page loads its own status into #nav-status via HTMX.
   See fragments/nav-status-scan.html and nav-status-sync.html.
@@ -16,11 +16,11 @@
     <div class="nav-drawer">
         <div class="nav-links">
             <a class="nav-link" href="/"
-               th:classappend="${activePage == 'home'} ? ' active' : ''">Conjunctions</a>
+               th:classappend="${activePage == 'stats'} ? ' active' : ''">Stats</a>
+            <a class="nav-link" href="/conjunctions"
+               th:classappend="${activePage == 'conjunctions'} ? ' active' : ''">Conjunctions</a>
             <a class="nav-link" href="/catalog"
                th:classappend="${activePage == 'catalog'} ? ' active' : ''">Satellite Catalog</a>
-            <a class="nav-link" href="/stats"
-               th:classappend="${activePage == 'stats'} ? ' active' : ''">Stats</a>
             <a class="nav-link" href="/playground"
                th:classappend="${activePage == 'playground'} ? ' active' : ''">Playground</a>
         </div>

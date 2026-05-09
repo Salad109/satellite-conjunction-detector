@@ -34,7 +34,8 @@ public class SatelliteService {
     }
 
     @Transactional(readOnly = true)
-    public CatalogBreakdown getCatalogBreakdown() {
+    public CatalogBreakdown getCatalogBreakdown(int topNameTokenLimit) {
+        List<NameTokenCount> topNameTokens = satelliteRepository.findTopNameTokens(topNameTokenLimit);
         return new CatalogBreakdown(
                 satelliteRepository.countByObjectType("PAYLOAD"),
                 satelliteRepository.countByObjectType("DEBRIS"),
@@ -44,9 +45,7 @@ public class SatelliteService {
                 satelliteRepository.countLeo(),
                 satelliteRepository.countMeo(),
                 satelliteRepository.countGeo(),
-                satelliteRepository.countByObjectNameStartingWith("STARLINK"),
-                satelliteRepository.countByObjectNameStartingWith("ONEWEB"),
-                satelliteRepository.countByObjectNameStartingWith("COSMOS")
+                topNameTokens
         );
     }
 
@@ -90,9 +89,13 @@ public class SatelliteService {
             long leoCount,
             long meoCount,
             long geoCount,
-            long starlinkCount,
-            long onewebCount,
-            long cosmosCount
+            List<NameTokenCount> topNameTokens
     ) {
+        public CatalogBreakdown {
+            topNameTokens = List.copyOf(topNameTokens);
+        }
+    }
+
+    public record NameTokenCount(String fragment, long count) {
     }
 }

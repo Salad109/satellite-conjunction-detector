@@ -4,6 +4,7 @@ import io.salad109.conjunctiondetector.satellite.Satellite;
 import io.salad109.conjunctiondetector.satellite.SatelliteBriefInfo;
 import io.salad109.conjunctiondetector.satellite.SatelliteDetails;
 import io.salad109.conjunctiondetector.satellite.SatelliteScanInfo;
+import io.salad109.conjunctiondetector.satellite.SatelliteService.NameTokenCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,7 +22,22 @@ public interface SatelliteRepository extends JpaRepository<Satellite, Integer> {
 
     long countByObjectType(String objectType);
 
-    long countByObjectNameStartingWith(String prefix);
+    @Query(value = """
+            WITH tokens AS (
+                SELECT regexp_split_to_table(upper(trim(object_name)), '[^A-Z0-9]+') AS fragment
+                FROM satellite
+                WHERE object_name IS NOT NULL
+            )
+            SELECT fragment, COUNT(*) AS count
+            FROM tokens
+            WHERE length(fragment) >= 3
+              AND fragment ~ '[A-Z]'
+              AND fragment NOT IN ('OBJECT', 'ASSIGNED', 'TBA')
+            GROUP BY fragment
+            ORDER BY count DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<NameTokenCount> findTopNameTokens(int limit);
 
     @Query("SELECT COUNT(s) FROM Satellite s WHERE s.apogeeKm <= 2000")
     long countLeo();
