@@ -73,10 +73,10 @@
         <div class="card span-rows">
             <div class="card-title">Catalog composition</div>
             <div class="bar-chart" th:if="${not #lists.isEmpty(b.topNameTokens)}"
-                 th:with="modifiers=${ {'', 'amber', 'purple', 'green'} },
-                          maxCount=${b.topNameTokens[0].count}">
-                <th:block th:each="t, iter : ${b.topNameTokens}">
-                    <div th:replace="~{fragments/bar-row :: barRow(${t.fragment}, ${t.count}, ${maxCount}, ${modifiers[iter.index % 4]})}"></div>
+                 th:with="maxCount=${b.topNameTokens[0].count}">
+                <th:block th:each="t, iter : ${b.topNameTokens}"
+                          th:with="cls=${iter.index % 4 == 1 ? 'amber' : (iter.index % 4 == 2 ? 'purple' : (iter.index % 4 == 3 ? 'green' : ''))}">
+                    <div th:replace="~{fragments/bar-row :: barRow(${t.fragment}, ${t.count}, ${maxCount}, ${cls})}"></div>
                 </th:block>
             </div>
         </div>

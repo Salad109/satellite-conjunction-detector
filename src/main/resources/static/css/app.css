@@ -618,14 +618,14 @@ html.light .type-badge[data-type="ROCKET BODY"] {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-        "left right1"
-        "left right2";
+        "tall r1"
+        "tall r2";
     gap: 18px;
     margin-bottom: 18px;
 }
 
 .asym-grid > .span-rows {
-    grid-area: left;
+    grid-area: tall;
 }
 
 .unit {

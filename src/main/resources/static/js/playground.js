@@ -76,7 +76,8 @@
         showKnots: true,
         showInterp: true,
         showTolerance: true,
-        showRefine: true
+        showRefine: true,
+        showTruth: true
     };
 
     function solveKepler(M, e) {
@@ -199,6 +200,21 @@
         const t1 = t0 + knotDtParam;
         const u = (t - t0) / knotDtParam;
         return hermite(stateFn(t0), stateFn(t1), u, dtSeconds);
+    }
+
+    function algoPos(stateFn, t) {
+        const stepDt = state.stepSeconds / PERIOD_SECONDS;
+        const maxStep = Math.floor(1 / stepDt);
+        const idx = Math.min(maxStep - 1, Math.max(0, Math.floor(t / stepDt)));
+        const t0 = idx * stepDt;
+        const t1 = (idx + 1) * stepDt;
+        const u = (t - t0) / (t1 - t0);
+        const p0 = interpPos(stateFn, t0);
+        const p1 = interpPos(stateFn, t1);
+        return {
+            x: (1 - u) * p0.x + u * p1.x,
+            y: (1 - u) * p0.y + u * p1.y
+        };
     }
 
     function readColors() {
@@ -352,6 +368,17 @@
         ctx.fill();
     }
 
+    function drawSatelliteGhost(ctx, p, color, w, h) {
+        const px = sceneToPx(p, w, h);
+        ctx.beginPath();
+        ctx.arc(px.x, px.y, 7, 0, TWO_PI);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.75;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
+
     function drawEarth(ctx, w, h, C) {
         const px = sceneToPx({x: 0, y: 0}, w, h);
         ctx.beginPath();
@@ -370,8 +397,10 @@
         const C = readColors();
         sceneCtx.clearRect(0, 0, w, h);
 
-        const a = stateA(state.t);
-        const b = stateB(state.t);
+        const aIdeal = stateA(state.t);
+        const bIdeal = stateB(state.t);
+        const a = algoPos(stateA, state.t);
+        const b = algoPos(stateB, state.t);
         const aCell = cellOf(a);
         const bCell = cellOf(b);
         const sameCell = aCell.cx === bCell.cx && aCell.cy === bCell.cy;
@@ -412,6 +441,10 @@
             drawDisc(sceneCtx, b, state.tolerance, C.err, w, h, 0.10, 0.5);
         }
 
+        if (state.showTruth) {
+            drawSatelliteGhost(sceneCtx, aIdeal, C.accent, w, h);
+            drawSatelliteGhost(sceneCtx, bIdeal, C.err, w, h);
+        }
         drawSatellite(sceneCtx, a, C.accent, w, h);
         drawSatellite(sceneCtx, b, C.err, w, h);
 
@@ -423,7 +456,7 @@
             || isForwardNeighbor(aCell, bCell)
             || isForwardNeighbor(bCell, aCell);
         gridBadge.classList.toggle('active', gridFlag);
-        coarseBadge.classList.toggle('active', dist < state.tolerance);
+        coarseBadge.classList.toggle('active', gridFlag && dist < state.tolerance);
         conjunctionBadge.classList.toggle('active', conjunction);
 
         if (state.showRefine) {
@@ -448,14 +481,38 @@
         const plotW = w - padL - padR;
         const plotH = h - padT - padB;
 
+        const stepDt = state.stepSeconds / PERIOD_SECONDS;
+        const maxStep = Math.floor(1 / stepDt);
+
         const N = 500;
         let dMax = 0;
-        const samples = new Array(N + 1);
+        const truthD = new Array(N + 1);
+        const algoD = new Array(N + 1);
+        let segIdx = -1;
+        let A0, A1, B0, B1;
         for (let i = 0; i <= N; i++) {
             const t = i / N;
-            const d = Math.sqrt(distSq(stateA(t), stateB(t)));
-            samples[i] = {t, d};
-            if (d > dMax) dMax = d;
+            const dT = Math.sqrt(distSq(stateA(t), stateB(t)));
+            truthD[i] = dT;
+            if (dT > dMax) dMax = dT;
+
+            const idx = Math.min(maxStep - 1, Math.max(0, Math.floor(t / stepDt)));
+            if (idx !== segIdx) {
+                segIdx = idx;
+                A0 = interpPos(stateA, idx * stepDt);
+                A1 = interpPos(stateA, (idx + 1) * stepDt);
+                B0 = interpPos(stateB, idx * stepDt);
+                B1 = interpPos(stateB, (idx + 1) * stepDt);
+            }
+            const u = (t - idx * stepDt) / stepDt;
+            const ax = (1 - u) * A0.x + u * A1.x;
+            const ay = (1 - u) * A0.y + u * A1.y;
+            const bx = (1 - u) * B0.x + u * B1.x;
+            const by = (1 - u) * B0.y + u * B1.y;
+            const dx = ax - bx, dy = ay - by;
+            const dA = Math.sqrt(dx * dx + dy * dy);
+            algoD[i] = dA;
+            if (dA > dMax) dMax = dA;
         }
         const yMax = Math.max(dMax, state.tolerance * 1.4);
         const tx = t => padL + t * plotW;
@@ -488,52 +545,60 @@
         refineCtx.lineWidth = 1.5;
         refineCtx.beginPath();
         for (let i = 0; i <= N; i++) {
-            const px = tx(samples[i].t), py = ty(samples[i].d);
+            const px = tx(i / N), py = ty(truthD[i]);
             if (i === 0) refineCtx.moveTo(px, py); else refineCtx.lineTo(px, py);
         }
         refineCtx.stroke();
         refineCtx.globalAlpha = 1;
 
-        const stepDt = state.stepSeconds / PERIOD_SECONDS;
-        const stepIdx = Math.floor(state.t / stepDt);
-        const t0 = stepIdx * stepDt;
-        const t1 = Math.min(1, t0 + stepDt);
+        refineCtx.strokeStyle = C.green;
+        refineCtx.globalAlpha = 0.85;
+        refineCtx.lineWidth = 1.5;
+        refineCtx.beginPath();
+        for (let i = 0; i <= N; i++) {
+            const px = tx(i / N), py = ty(algoD[i]);
+            if (i === 0) refineCtx.moveTo(px, py); else refineCtx.lineTo(px, py);
+        }
+        refineCtx.stroke();
+        refineCtx.globalAlpha = 1;
 
-        if (t1 > t0) {
-            const tMid = (t0 + t1) / 2;
-            const d2_0 = distSq(stateA(t0), stateB(t0));
-            const d2_m = distSq(stateA(tMid), stateB(tMid));
-            const d2_1 = distSq(stateA(t1), stateB(t1));
-            const aCoef = d2_0;
-            const cCoef = 2 * (d2_0 - 2 * d2_m + d2_1);
-            const bCoef = d2_1 - aCoef - cCoef;
+        const step = Math.max(0, Math.min(maxStep, Math.round(state.t / stepDt)));
 
-            refineCtx.strokeStyle = C.green;
-            refineCtx.lineWidth = 2;
-            refineCtx.beginPath();
-            const M = 40;
-            for (let i = 0; i <= M; i++) {
-                const u = i / M;
-                const d2 = Math.max(0, aCoef + bCoef * u + cCoef * u * u);
-                const tAbs = t0 + u * (t1 - t0);
-                const px = tx(tAbs), py = ty(Math.sqrt(d2));
-                if (i === 0) refineCtx.moveTo(px, py); else refineCtx.lineTo(px, py);
-            }
-            refineCtx.stroke();
+        const intervals = [];
+        if (step > 0) intervals.push({s0: step - 1, s1: step});
+        if (step < maxStep) intervals.push({s0: step, s1: step + 1});
 
-            const uStar = Math.abs(cCoef) > 1e-9 ? Math.max(0, Math.min(1, -bCoef / (2 * cCoef))) : 0;
-            const tStar = t0 + uStar * (t1 - t0);
-            const dStar = Math.sqrt(Math.max(0, aCoef + bCoef * uStar + cCoef * uStar * uStar));
+        const candidates = intervals.map(({s0, s1}) => {
+            const t0 = s0 * stepDt;
+            const t1 = s1 * stepDt;
+            const A0 = interpPos(stateA, t0), A1 = interpPos(stateA, t1);
+            const B0 = interpPos(stateB, t0), B1 = interpPos(stateB, t1);
+            const sepX0 = A0.x - B0.x, sepY0 = A0.y - B0.y;
+            const dSepX = (A1.x - B1.x) - sepX0;
+            const dSepY = (A1.y - B1.y) - sepY0;
+            const sep0Sq = sepX0 * sepX0 + sepY0 * sepY0;
+            const sepDotD = sepX0 * dSepX + sepY0 * dSepY;
+            const dSepSq = dSepX * dSepX + dSepY * dSepY;
+            const u = dSepSq < 1e-12 ? 0.5 : Math.max(0, Math.min(1, -sepDotD / dSepSq));
+            const dStar = Math.sqrt(Math.max(0, sep0Sq + 2 * sepDotD * u + dSepSq * u * u));
+            return {t0, t1, a: sep0Sq, b: 2 * sepDotD, c: dSepSq, u, dStar};
+        });
+
+        const winner = candidates.reduce(
+            (best, c) => !best || c.dStar < best.dStar ? c : best, null);
+
+        if (winner) {
+            const tStar = winner.t0 + winner.u * (winner.t1 - winner.t0);
             refineCtx.strokeStyle = C.green;
             refineCtx.setLineDash([2, 3]);
             refineCtx.beginPath();
             refineCtx.moveTo(tx(tStar), ty(0));
-            refineCtx.lineTo(tx(tStar), ty(dStar));
+            refineCtx.lineTo(tx(tStar), ty(winner.dStar));
             refineCtx.stroke();
             refineCtx.setLineDash([]);
             refineCtx.fillStyle = C.green;
             refineCtx.beginPath();
-            refineCtx.arc(tx(tStar), ty(dStar), 4, 0, TWO_PI);
+            refineCtx.arc(tx(tStar), ty(winner.dStar), 4, 0, TWO_PI);
             refineCtx.fill();
         }
 
@@ -578,7 +643,8 @@
         {id: 'show-knots', key: 'showKnots'},
         {id: 'show-interp', key: 'showInterp'},
         {id: 'show-tolerance', key: 'showTolerance'},
-        {id: 'show-refine', key: 'showRefine'}
+        {id: 'show-refine', key: 'showRefine'},
+        {id: 'show-truth', key: 'showTruth'}
     ];
 
     function setSliderUi(id, valId, v) {

@@ -20,6 +20,7 @@
                     <label class="overlay-toggle"><input checked id="show-tolerance" type="checkbox"> Tolerance
                         radius</label>
                     <label class="overlay-toggle"><input checked id="show-refine" type="checkbox"> Distance line</label>
+                    <label class="overlay-toggle"><input checked id="show-truth" type="checkbox"> True positions</label>
                 </div>
                 <div class="pg-badge pg-badge-grid" id="grid-badge">SPATIAL GRID FLAG</div>
                 <div class="pg-badge pg-badge-coarse" id="coarse-badge">COARSE DETECTION</div>
@@ -35,8 +36,12 @@
             </div>
             <div class="pg-legend-row">
                 <span><span class="legend-dot" style="background:var(--muted)"></span>Earth</span>
-                <span><span class="legend-dot" style="background:var(--accent)"></span>Satellite A</span>
-                <span><span class="legend-dot" style="background:var(--err)"></span>Satellite B</span>
+                <span><span class="legend-dot" style="background:var(--accent)"></span>Satellite A (algo)</span>
+                <span><span class="legend-dot"
+                            style="background:transparent;border:2px solid var(--accent)"></span>Satellite A (truth)</span>
+                <span><span class="legend-dot" style="background:var(--err)"></span>Satellite B (algo)</span>
+                <span><span class="legend-dot"
+                            style="background:transparent;border:2px solid var(--err)"></span>Satellite B (truth)</span>
                 <span><span class="legend-dot" style="background:var(--accent-bright)"></span>SGP4 Knot</span>
                 <span><span class="legend-dot" style="background:var(--series-blue)"></span>Interpolated sample</span>
                 <span><span class="legend-dot"
@@ -46,16 +51,16 @@
 
         <div class="card pg-controls-card">
             <div class="pg-refine-section">
-                <p class="pg-chart-note">Center-to-center distance between satellites A and B. Horizontal dashed lines
-                    mark <code>tolerance-km</code> (yellow) and the 5 km collision threshold (red). The green parabola
-                    is fit across the current <code>step-seconds</code> interval to locate the time of closest approach
-                    (TCA) within it.</p>
+                <p class="pg-chart-note">Black line: the actual Kepler distance between A and B. Green line:
+                    the algorithm's view, formed by linearly interpolating between consecutive interpolated step
+                    samples. The dot is the TCA within the active segment. Dashed lines mark
+                    <code>tolerance-km</code> (yellow) and the 5 km collision threshold (red).</p>
                 <div class="pg-refine-wrap">
                     <canvas id="refine"></canvas>
                 </div>
                 <div class="pg-legend-row">
                     <span><span class="legend-dot"
-                                style="background:var(--series-green)"></span>Parabola fit / TCA</span>
+                                style="background:var(--series-green)"></span>Algorithm view / TCA</span>
                 </div>
             </div>
 
