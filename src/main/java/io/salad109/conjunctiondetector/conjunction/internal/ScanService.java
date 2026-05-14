@@ -115,7 +115,8 @@ public class ScanService {
         int idxA = cache.noradIdToArrayId().get(pair.a().noradCatId());
         int idxB = cache.noradIdToArrayId().get(pair.b().noradCatId());
 
-        double thresholdSq = thresholdKm * thresholdKm;
+        double gateKm = thresholdKm * 1.1;
+        double gateSq = gateKm * gateKm;
         double bestDistSq = Double.MAX_VALUE;
         double bestT = 0;
         int bestIntervalStart = step;
@@ -143,7 +144,7 @@ public class ScanService {
         }
 
         // Early exit for events obviously above threshold
-        if (bestDistSq > thresholdSq) {
+        if (bestDistSq > gateSq) {
             return null;
         }
 

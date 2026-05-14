@@ -7,6 +7,8 @@ target/
 *.so
 docs/*.csv
 stuff/
+docs/8-socrates-comparison/*.csv
+docs/8-socrates-comparison/active.txt
 
 ### STS ###
 .apt_generated

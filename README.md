@@ -4,21 +4,23 @@ All-vs-all satellite conjunction screener. Scans the full public catalog (~30,00
 in under 30 seconds on consumer hardware.
 
 Validated against [CelesTrak SOCRATES](https://celestrak.org/SOCRATES/): when filtered to equivalent scope
-(payload-vs-catalog, excluding intra-constellation pairs), detection counts match within 8%. Full all-vs-all screening
-finds ~48,000 conjunctions per 24h window, including debris-vs-debris pairs that SOCRATES excludes.
+(payload-vs-catalog, excluding intra-constellation pairs) and given identical TLE input, 99.4% of SOCRATES events
+are also flagged by this pipeline, with TCA agreeing to 9 ms and miss distance to 5 m at p95 - see
+[docs/8](docs/8-socrates-comparison) for the breakdown. Full all-vs-all screening finds ~48,000 conjunctions per 24h
+window, including secondary pairs that SOCRATES excludes.
 
 Backtested against the 2009 Iridium 33 / Cosmos 2251 collision and the 1996 CERISE / Ariane debris collision. The
 pipeline flags both events with 10 and 7 ms TCA accuracy respectively.
 
-|                  | This                                        | SOCRATES (CelesTrak)     |
-|------------------|---------------------------------------------|--------------------------|
-| Input            | Space-Track TLEs                            | Space-Track TLEs         |
-| Propagator       | SGP4 (Orekit)                               | SGP4 (STK)               |
-| Window           | 24h (configurable)                          | 7 days                   |
-| Threshold        | 5 km (configurable)                         | 5 km                     |
-| Scope            | All-vs-all (~450M pairs)                    | Primaries vs secondaries |
-| 24h conjunctions | ~48,000 (19,374 filtered to SOCRATES scope) | 17,893 (in same window)  |
-| Compute time     | ~30 seconds (~2,880x realtime)              | ~10 hours (17x realtime) |
+|                  | This                                         | SOCRATES (CelesTrak)     |
+|------------------|----------------------------------------------|--------------------------|
+| Input            | Space-Track TLEs                             | Space-Track TLEs         |
+| Propagator       | SGP4 (Orekit)                                | SGP4 (STK)               |
+| Window           | 24h (configurable)                           | 7 days                   |
+| Threshold        | 5 km (configurable)                          | 5 km                     |
+| Scope            | All-vs-all (~450M pairs)                     | Primaries vs secondaries |
+| 24h conjunctions | ~48,000 (~19,000 filtered to SOCRATES scope) | ~19,000                  |
+| Compute time     | ~30 seconds (~2,880x realtime)               | ~10 hours (17x realtime) |
 
 ## How It Works
 
