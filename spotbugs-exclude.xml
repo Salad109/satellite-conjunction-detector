@@ -17,6 +17,6 @@
     <!-- Spring constructor injection is intended -->
     <Match>
         <Bug pattern="EI_EXPOSE_REP2"/>
-        <Class name="~.*Service|.*Controller|.*Client"/>
+        <Class name="~.*Service|.*Controller|.*Client|.*Benchmark"/>
     </Match>
 </FindBugsFilter>
